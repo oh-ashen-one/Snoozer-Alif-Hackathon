@@ -93,7 +93,7 @@ export default function AlarmRingingScreen() {
         });
 
         const { sound } = await Audio.Sound.createAsync(
-          require('@/assets/alarm-sound.mp3'),
+          { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
           {
             isLooping: true,
             volume: 1.0,
