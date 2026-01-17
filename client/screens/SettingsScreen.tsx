@@ -288,15 +288,15 @@ export default function SettingsScreen() {
   }, []);
 
   // Danger zone handlers
-  const handleDeleteAllData = useCallback(() => {
+  const handleSignOut = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
-      'Delete All Data',
-      'This will permanently delete all your alarms, photos, and videos. This action cannot be undone.',
+      'Sign Out?',
+      'This will reset the app and take you back to setup. All your alarms, photos, and videos will be deleted.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete Everything',
+          text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             await clearAllData();
@@ -472,6 +472,15 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <ThemedText style={styles.dangerLabel}>DANGER ZONE</ThemedText>
           <View style={styles.dangerCard}>
+            <SettingsRow
+              emoji="🚪"
+              iconBg={ICON_COLORS.red}
+              label="Start over"
+              onPress={handleStartOver}
+              showChevron={false}
+              isDestructive
+            />
+            <View style={styles.rowDivider} />
             <SettingsRow
               emoji="🗑️"
               iconBg={ICON_COLORS.red}
