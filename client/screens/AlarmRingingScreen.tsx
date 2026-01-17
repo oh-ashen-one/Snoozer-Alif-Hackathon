@@ -73,6 +73,8 @@ export default function AlarmRingingScreen() {
   const isPlayingRef = useRef(false);
 
   useEffect(() => {
+    if (__DEV__) console.log('ALARM: Ringing screen mounted');
+    
     const loadFallbackAlarm = async () => {
       if (!alarmData.alarmId) {
         try {
@@ -180,10 +182,23 @@ export default function AlarmRingingScreen() {
   const { time, period } = formatTime(currentTime);
 
   const handleTakePhoto = async () => {
+    if (__DEV__) console.log('ALARM: User chose proof photo');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     await stopAlarm();
     navigation.navigate('ProofCamera', {
       alarmId: alarmData.alarmId,
+      referencePhotoUri: alarmData.referencePhotoUri,
+    });
+  };
+
+  const handleSkipToShame = async () => {
+    if (__DEV__) console.log('ALARM: User chose snooze (debug skip)');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    await stopAlarm();
+    navigation.navigate('ShamePlayback', {
+      alarmId: alarmData.alarmId,
+      shameVideoUri: alarmData.shameVideoUri,
+      alarmLabel: alarmData.alarmLabel,
       referencePhotoUri: alarmData.referencePhotoUri,
     });
   };
@@ -203,6 +218,7 @@ export default function AlarmRingingScreen() {
     setSnoozeInput(text);
 
     if (text.toUpperCase() === SNOOZE_CONFIRMATION) {
+      if (__DEV__) console.log('ALARM: User chose snooze');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       await stopAlarm();
       navigation.navigate('ShamePlayback', {
@@ -284,6 +300,16 @@ export default function AlarmRingingScreen() {
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </View>
+        )}
+
+        {__DEV__ && (
+          <Pressable
+            testID="button-skip-shame"
+            style={styles.debugSkipButton}
+            onPress={handleSkipToShame}
+          >
+            <Text style={styles.debugSkipText}>Skip to Shame Video (DEV)</Text>
+          </Pressable>
         )}
       </View>
     </View>
@@ -437,5 +463,20 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: 'center',
     letterSpacing: 4,
+  },
+  debugSkipButton: {
+    marginTop: Spacing.lg,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 1,
+    borderColor: Colors.red,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    alignSelf: 'center',
+  },
+  debugSkipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.red,
   },
 });

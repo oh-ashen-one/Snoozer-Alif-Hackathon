@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, Platform } from 'react-native';
+import { View, StyleSheet, Text, Platform, Pressable } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
@@ -57,6 +57,8 @@ export default function ShamePlaybackScreen() {
   const borderPulse = useSharedValue(1);
 
   useEffect(() => {
+    if (__DEV__) console.log('ALARM: Shame video playing');
+    
     // Intense haptic feedback - you snoozed!
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
@@ -140,12 +142,21 @@ export default function ShamePlaybackScreen() {
   }, [alarmId, routeVideoUri, alarmLabel, referencePhotoUri, videoUri, navigation, textPulse, borderPulse]);
 
   const navigateBackToAlarm = () => {
+    if (__DEV__) console.log('ALARM: Shame video ended, returning to alarm');
     navigation.navigate('AlarmRinging', {
       alarmId,
       alarmLabel,
       referencePhotoUri,
       shameVideoUri: videoUri,
     });
+  };
+
+  const handleSkipVideo = () => {
+    if (__DEV__) console.log('ALARM: Video skipped (debug)');
+    if (mockTimerRef.current) {
+      clearInterval(mockTimerRef.current);
+    }
+    navigateBackToAlarm();
   };
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
@@ -219,6 +230,16 @@ export default function ShamePlaybackScreen() {
         <ThemedText style={styles.countdownText}>
           {remainingSeconds}s remaining
         </ThemedText>
+
+        {__DEV__ && (
+          <Pressable
+            testID="button-skip-video"
+            style={styles.debugSkipButton}
+            onPress={handleSkipVideo}
+          >
+            <Text style={styles.debugSkipText}>Skip Video (DEV)</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -337,5 +358,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: Colors.text,
     fontWeight: '600',
+  },
+  debugSkipButton: {
+    marginTop: Spacing.lg,
+    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+    borderWidth: 1,
+    borderColor: Colors.red,
+    borderRadius: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  debugSkipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.red,
   },
 });

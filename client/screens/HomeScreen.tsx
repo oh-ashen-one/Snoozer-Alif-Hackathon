@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
+import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -12,10 +12,12 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Colors } from '@/constants/theme';
+import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm } from '@/utils/storage';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+
+const DEBUG_LONG_PRESS_DURATION = 3000;
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -103,15 +105,35 @@ function DayPills({ selectedDays }: { selectedDays: number[] }) {
   );
 }
 
-// Header Component
-function Header() {
+// Header Component with debug mode long press
+function Header({ onDebugModeActivate }: { onDebugModeActivate: () => void }) {
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handlePressIn = () => {
+    longPressTimerRef.current = setTimeout(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onDebugModeActivate();
+    }, DEBUG_LONG_PRESS_DURATION);
+  };
+
+  const handlePressOut = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
   return (
-    <View style={styles.header}>
+    <Pressable
+      style={styles.header}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
       <View>
         <ThemedText style={styles.greeting}>{getGreeting()}</ThemedText>
-        <ThemedText style={styles.userName}>Alex 👋</ThemedText>
+        <ThemedText style={styles.userName}>Alex</ThemedText>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -296,12 +318,37 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { alarms, loading, toggleAlarm, loadAlarms } = useAlarms();
   const [activeTab] = useState('alarms');
+  const [debugMode, setDebugMode] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       loadAlarms();
     }, [loadAlarms])
   );
+
+  const handleDebugModeActivate = useCallback(() => {
+    setDebugMode(prev => {
+      const newValue = !prev;
+      if (__DEV__) console.log('[Home] Debug mode:', newValue ? 'ENABLED' : 'DISABLED');
+      if (Platform.OS === 'web') {
+        window.alert(newValue ? 'DEBUG MODE ENABLED' : 'DEBUG MODE DISABLED');
+      } else {
+        Alert.alert(newValue ? 'DEBUG MODE ENABLED' : 'DEBUG MODE DISABLED');
+      }
+      return newValue;
+    });
+  }, []);
+
+  const handleTestAlarmNow = useCallback(() => {
+    if (__DEV__) console.log('[Home] Test Alarm Now pressed - navigating to AlarmRinging');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    navigation.navigate('AlarmRinging', {
+      alarmId: 'test',
+      alarmLabel: 'Test Alarm',
+      referencePhotoUri: '',
+      shameVideoUri: '',
+    });
+  }, [navigation]);
 
   const nextAlarm = useMemo(() => {
     const enabledAlarms = alarms.filter(a => a.enabled);
@@ -352,7 +399,18 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Header />
+        <Header onDebugModeActivate={handleDebugModeActivate} />
+
+        {debugMode && (
+          <Pressable
+            testID="button-test-alarm"
+            style={styles.debugButton}
+            onPress={handleTestAlarmNow}
+          >
+            <Feather name="zap" size={20} color={Colors.text} />
+            <ThemedText style={styles.debugButtonText}>Test Alarm Now</ThemedText>
+          </Pressable>
+        )}
 
         {nextAlarm ? (
           <>
@@ -375,7 +433,7 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      <BottomNav activeTab={activeTab} onSettingsPress={handleSettingsPress} />
+      <BottomNav activeTab={activeTab} onStatsPress={handleStatsPress} onSettingsPress={handleSettingsPress} />
     </View>
   );
 }
@@ -754,5 +812,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FAFAF9',
+  },
+
+  // Debug Mode
+  debugButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.red,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: Colors.red,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  debugButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
   },
 });

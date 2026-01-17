@@ -78,7 +78,7 @@ export default function ProofCameraScreen() {
 
   const handleConfirm = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    console.log('[ProofCamera] Confirmed - dismissing alarm');
+    if (__DEV__) console.log('ALARM: Alarm dismissed');
 
     try {
       if (photoUri && !photoUri.startsWith('mock://')) {
@@ -90,7 +90,7 @@ export default function ProofCameraScreen() {
         await cancelAlarm(alarm.notificationId);
       }
     } catch (error) {
-      console.log('[ProofCamera] Error during dismiss:', error);
+      if (__DEV__) console.log('[ProofCamera] Error during dismiss:', error);
     }
 
     navigation.dispatch(
