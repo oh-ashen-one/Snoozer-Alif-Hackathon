@@ -16,6 +16,8 @@ import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import StatsScreen from '@/screens/StatsScreen';
+import HelpScreen from '@/screens/HelpScreen';
+import LegalScreen from '@/screens/LegalScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { getOnboardingComplete } from '@/utils/storage';
@@ -26,6 +28,8 @@ export type RootStackParamList = {
   Home: undefined;
   Settings: undefined;
   Stats: undefined;
+  Help: undefined;
+  Legal: { type: 'terms' | 'privacy' };
   AddAlarm: { isOnboarding: boolean };
   ReferencePhoto: {
     alarmTime: string;
@@ -175,6 +179,20 @@ export default function RootStackNavigator() {
         options={{
           headerShown: false,
           gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="Help"
+        component={HelpScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Legal"
+        component={LegalScreen}
+        options={{
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
