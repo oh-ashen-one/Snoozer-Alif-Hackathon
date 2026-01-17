@@ -13,6 +13,7 @@ import OnboardingCompleteScreen from '@/screens/OnboardingCompleteScreen';
 import AlarmRingingScreen from '@/screens/AlarmRingingScreen';
 import ProofCameraScreen from '@/screens/ProofCameraScreen';
 import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
+import SettingsScreen from '@/screens/SettingsScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { getOnboardingComplete } from '@/utils/storage';
@@ -20,6 +21,7 @@ import { Colors } from '@/constants/theme';
 
 export type RootStackParamList = {
   Home: undefined;
+  Settings: undefined;
   AddAlarm: { isOnboarding: boolean };
   ReferencePhoto: {
     alarmTime: string;
