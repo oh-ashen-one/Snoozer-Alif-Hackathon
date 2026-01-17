@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text, Platform } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
@@ -10,6 +10,7 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
 
@@ -20,6 +21,20 @@ import { scheduleSnoozeAlarm } from '@/utils/notifications';
 import { getAlarmById } from '@/utils/storage';
 import { getShameVideo } from '@/utils/fileSystem';
 
+// Check if we're in dev mode or on web (no video)
+const isDev = __DEV__;
+const isWeb = Platform.OS === 'web';
+const useMockVideo = isDev || isWeb;
+
+// Mock video component for dev/web
+const MockVideoView = ({ remainingSeconds }: { remainingSeconds: number }) => (
+  <View style={styles.mockVideo}>
+    <Text style={styles.mockVideoEmoji}>🎬</Text>
+    <Text style={styles.mockVideoText}>Shame video playing...</Text>
+    <Text style={styles.mockVideoSubtext}>{remainingSeconds}s remaining</Text>
+  </View>
+);
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ShamePlayback'>;
 
@@ -27,25 +42,40 @@ export default function ShamePlaybackScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { alarmId, shameVideoUri: routeVideoUri, alarmLabel, referencePhotoUri } = route.params;
-  
+
   const videoRef = useRef<Video>(null);
   const hasScheduledSnooze = useRef(false);
-  
+  const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [videoUri, setVideoUri] = useState<string>(routeVideoUri);
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(15);
   const [videoDuration, setVideoDuration] = useState<number>(0);
-  
-  const pulseOpacity = useSharedValue(1);
+
+  // Pulsing animations
+  const textPulse = useSharedValue(1);
+  const borderPulse = useSharedValue(1);
 
   useEffect(() => {
+    // Intense haptic feedback - you snoozed!
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    
-    pulseOpacity.value = withRepeat(
-      withTiming(0.4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+
+    // Pulsing text animation (opacity)
+    textPulse.value = withRepeat(
+      withTiming(0.3, { duration: 500, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
-    
+
+    // Pulsing border animation (opacity)
+    borderPulse.value = withRepeat(
+      withSequence(
+        withTiming(0.4, { duration: 300, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 300, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+
     const setupAudioAndScheduleSnooze = async () => {
       try {
         await Audio.setAudioModeAsync({
@@ -57,7 +87,7 @@ export default function ShamePlaybackScreen() {
         console.error('Error setting audio mode:', error);
       }
 
-      if (!routeVideoUri) {
+      if (!routeVideoUri || routeVideoUri.startsWith('mock://')) {
         const storedUri = await getShameVideo();
         if (storedUri) {
           setVideoUri(storedUri);
@@ -76,9 +106,37 @@ export default function ShamePlaybackScreen() {
         }
       }
     };
-    
+
     setupAudioAndScheduleSnooze();
-  }, [alarmId, routeVideoUri]);
+
+    // Mock video timer for dev mode
+    if (useMockVideo) {
+      mockTimerRef.current = setInterval(() => {
+        setRemainingSeconds(prev => {
+          if (prev <= 1) {
+            if (mockTimerRef.current) {
+              clearInterval(mockTimerRef.current);
+            }
+            // Navigate when mock video "ends"
+            navigation.navigate('AlarmRinging', {
+              alarmId,
+              alarmLabel,
+              referencePhotoUri,
+              shameVideoUri: videoUri,
+            });
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (mockTimerRef.current) {
+        clearInterval(mockTimerRef.current);
+      }
+    };
+  }, [alarmId, routeVideoUri, alarmLabel, referencePhotoUri, videoUri, navigation, textPulse, borderPulse]);
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
     if (!status.isLoaded) return;
@@ -102,19 +160,27 @@ export default function ShamePlaybackScreen() {
     }
   };
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: pulseOpacity.value,
+  // Animated styles
+  const textPulseStyle = useAnimatedStyle(() => ({
+    opacity: textPulse.value,
+  }));
+
+  const borderPulseStyle = useAnimatedStyle(() => ({
+    opacity: borderPulse.value,
   }));
 
   return (
     <View style={styles.container}>
-      <View style={styles.topOverlay}>
-        <Animated.View style={pulseStyle}>
-          <ThemedText style={styles.shameText}>YOU SNOOZED</ThemedText>
-        </Animated.View>
-      </View>
-      
-      {videoUri ? (
+      {/* Pulsing red border - all 4 sides */}
+      <Animated.View style={[styles.borderTop, borderPulseStyle]} />
+      <Animated.View style={[styles.borderBottom, borderPulseStyle]} />
+      <Animated.View style={[styles.borderLeft, borderPulseStyle]} />
+      <Animated.View style={[styles.borderRight, borderPulseStyle]} />
+
+      {/* Video layer */}
+      {useMockVideo || !videoUri || videoUri.startsWith('mock://') ? (
+        <MockVideoView remainingSeconds={remainingSeconds} />
+      ) : (
         <Video
           ref={videoRef}
           source={{ uri: videoUri }}
@@ -126,18 +192,21 @@ export default function ShamePlaybackScreen() {
           isMuted={false}
           onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
         />
-      ) : (
-        <View style={styles.loadingContainer}>
-          <ThemedText style={styles.loadingText}>Loading video...</ThemedText>
-        </View>
       )}
 
+      {/* Top overlay - YOU SNOOZED */}
+      <View style={styles.topOverlay}>
+        <Animated.View style={textPulseStyle}>
+          <ThemedText style={styles.shameText}>YOU SNOOZED</ThemedText>
+        </Animated.View>
+      </View>
+
+      {/* Bottom overlay - countdown */}
       <View style={styles.bottomOverlay}>
-        {remainingSeconds > 0 ? (
-          <ThemedText style={styles.countdownText}>
-            Video will end in {remainingSeconds}s
-          </ThemedText>
-        ) : null}
+        <ThemedText style={styles.watchText}>You must watch this</ThemedText>
+        <ThemedText style={styles.countdownText}>
+          {remainingSeconds}s remaining
+        </ThemedText>
       </View>
     </View>
   );
@@ -148,50 +217,113 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
+
+  // Pulsing red border (4px on all sides)
+  borderTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: Colors.red,
+    zIndex: 100,
+  },
+  borderBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: Colors.red,
+    zIndex: 100,
+  },
+  borderLeft: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 4,
+    backgroundColor: Colors.red,
+    zIndex: 100,
+  },
+  borderRight: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: 4,
+    backgroundColor: Colors.red,
+    zIndex: 100,
+  },
+
+  // Video
   video: {
     ...StyleSheet.absoluteFillObject,
   },
-  loadingContainer: {
+
+  // Mock video for dev/web
+  mockVideo: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#1C1917',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  loadingText: {
-    fontSize: 16,
+  mockVideoEmoji: {
+    fontSize: 64,
+    marginBottom: Spacing.lg,
+  },
+  mockVideoText: {
+    fontSize: 18,
+    color: Colors.red,
+    fontWeight: '700',
+  },
+  mockVideoSubtext: {
+    fontSize: 14,
     color: Colors.textMuted,
+    marginTop: Spacing.sm,
   },
+
+  // Top overlay - YOU SNOOZED
   topOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     paddingTop: 80,
-    paddingBottom: Spacing.xl,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingBottom: Spacing['2xl'],
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     zIndex: 10,
     alignItems: 'center',
   },
   shameText: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#EF4444',
+    color: Colors.red,
     textTransform: 'uppercase',
-    letterSpacing: 4,
+    letterSpacing: 6,
   },
+
+  // Bottom overlay - countdown
   bottomOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     paddingBottom: 60,
-    paddingTop: Spacing.xl,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingTop: Spacing['2xl'],
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     zIndex: 10,
     alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  watchText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: '500',
   },
   countdownText: {
-    fontSize: 16,
-    color: '#78716C',
-    fontWeight: '500',
+    fontSize: 18,
+    color: Colors.text,
+    fontWeight: '600',
   },
 });

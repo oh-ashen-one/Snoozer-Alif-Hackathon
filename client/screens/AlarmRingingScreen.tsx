@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
   Text,
   Pressable,
   TextInput,
+  Vibration,
+  BackHandler,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
@@ -21,8 +25,8 @@ type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
 type SnoozeState = 'idle' | 'confirm' | 'input';
 
 const SNOOZE_CONFIRMATION = 'I FAIL';
+const VIBRATION_PATTERN = [500, 500, 500, 500];
 
-// Camera Icon
 const CameraIcon = () => (
   <Svg width={48} height={48} viewBox="0 0 24 24" fill="none">
     <Rect x={2} y={6} width={20} height={14} rx={3} stroke="#22C55E" strokeWidth={2} fill="rgba(34, 197, 94, 0.1)" />
@@ -31,7 +35,6 @@ const CameraIcon = () => (
   </Svg>
 );
 
-// Flame Icon for streak badge
 const FlameIcon = () => (
   <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
     <Path
@@ -57,16 +60,72 @@ export default function AlarmRingingScreen() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [snoozeState, setSnoozeState] = useState<SnoozeState>('idle');
   const [snoozeInput, setSnoozeInput] = useState('');
-  const [streak] = useState(12); // TODO: Get from storage
+  const [streak] = useState(12);
+
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const isPlayingRef = useRef(false);
+
+  const stopAlarm = async () => {
+    try {
+      Vibration.cancel();
+      
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      isPlayingRef.current = false;
+    } catch (error) {
+      console.log('[AlarmRinging] Error stopping alarm:', error);
+    }
+  };
 
   useEffect(() => {
+    const startAlarm = async () => {
+      if (isPlayingRef.current) return;
+      isPlayingRef.current = true;
+
+      try {
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: false,
+        });
+
+        const { sound } = await Audio.Sound.createAsync(
+          require('@/assets/alarm-sound.mp3'),
+          {
+            isLooping: true,
+            volume: 1.0,
+            shouldPlay: true,
+          }
+        );
+        soundRef.current = sound;
+      } catch (error) {
+        console.log('[AlarmRinging] Error playing sound (may not have sound file):', error);
+      }
+
+      if (Platform.OS !== 'web') {
+        Vibration.vibrate(VIBRATION_PATTERN, true);
+      }
+    };
+
+    startAlarm();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      return true;
+    });
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      backHandler.remove();
+      stopAlarm();
+    };
   }, []);
 
   const formatTime = (date: Date) => {
@@ -82,8 +141,9 @@ export default function AlarmRingingScreen() {
 
   const { time, period } = formatTime(currentTime);
 
-  const handleTakePhoto = () => {
+  const handleTakePhoto = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    await stopAlarm();
     navigation.navigate('ProofCamera', {
       alarmId,
       referencePhotoUri,
@@ -101,11 +161,12 @@ export default function AlarmRingingScreen() {
     }
   };
 
-  const handleSnoozeInputChange = (text: string) => {
+  const handleSnoozeInputChange = async (text: string) => {
     setSnoozeInput(text);
 
     if (text.toUpperCase() === SNOOZE_CONFIRMATION) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      await stopAlarm();
       navigation.navigate('ShamePlayback', {
         alarmId,
         shameVideoUri,
@@ -123,13 +184,11 @@ export default function AlarmRingingScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + Spacing['2xl'] }]}>
-      {/* Streak Badge */}
       <View style={styles.streakBadge}>
         <FlameIcon />
         <Text style={styles.streakText}>{streak} day streak</Text>
       </View>
 
-      {/* Time Display */}
       <View style={styles.timeContainer}>
         <View style={styles.timeRow}>
           <Text style={styles.time}>{time}</Text>
@@ -138,7 +197,6 @@ export default function AlarmRingingScreen() {
         <Text style={styles.wakeUpText}>Time to wake up</Text>
       </View>
 
-      {/* Hero Card */}
       <View style={styles.heroCard}>
         <CameraIcon />
         <Text style={styles.heroTitle}>Prove you're up</Text>
@@ -147,14 +205,12 @@ export default function AlarmRingingScreen() {
         </Pressable>
       </View>
 
-      {/* Divider with "or" */}
       <View style={styles.dividerContainer}>
         <View style={styles.dividerLine} />
         <Text style={styles.dividerText}>or</Text>
         <View style={styles.dividerLine} />
       </View>
 
-      {/* Snooze Section */}
       <View style={[styles.snoozeContainer, { paddingBottom: insets.bottom + Spacing['3xl'] }]}>
         {snoozeState === 'idle' && (
           <Pressable style={styles.snoozeButton} onPress={handleSnoozePress}>

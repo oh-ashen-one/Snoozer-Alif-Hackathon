@@ -52,7 +52,9 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
           referencePhotoUri: alarm.referencePhotoUri,
           shameVideoUri: alarm.shameVideoUri,
         },
-        sound: true,
+        sound: 'default',
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        vibrate: [0, 250, 250, 250],
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -88,7 +90,9 @@ export async function scheduleSnoozeAlarm(alarm: Alarm, snoozeMinutes: number = 
           referencePhotoUri: alarm.referencePhotoUri,
           shameVideoUri: alarm.shameVideoUri,
         },
-        sound: true,
+        sound: 'default',
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        vibrate: [0, 250, 250, 250],
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
