@@ -137,4 +137,22 @@ export async function fileExists(uri: string): Promise<boolean> {
   }
 }
 
+export function generateVideoFilename(alarmId: string): string {
+  const timestamp = Date.now();
+  return `shame_${alarmId}_${timestamp}.mp4`;
+}
+
+export async function saveVideo(uri: string, filename: string): Promise<string | null> {
+  try {
+    await ensureDirectories();
+    const destination = `${VIDEOS_DIR}${filename}`;
+
+    await FileSystem.copyAsync({ from: uri, to: destination });
+    return destination;
+  } catch (error) {
+    console.error('Error saving video:', error);
+    return null;
+  }
+}
+
 export { PHOTOS_DIR, VIDEOS_DIR, STORAGE_KEYS };

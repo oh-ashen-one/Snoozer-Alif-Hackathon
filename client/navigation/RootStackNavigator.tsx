@@ -105,10 +105,9 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="AddAlarm"
         component={AddAlarmScreen}
-        options={({ route }) => ({
-          headerTitle: 'Set Alarm',
-          headerBackVisible: !route.params?.isOnboarding,
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="ReferencePhoto"
