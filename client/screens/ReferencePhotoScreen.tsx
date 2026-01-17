@@ -154,8 +154,8 @@ const styles = StyleSheet.create({
   },
   instructionBar: {
     position: 'absolute',
-    left: Spacing.lg,
-    right: Spacing.lg,
+    left: Spacing.xl,
+    right: Spacing.xl,
     backgroundColor: 'rgba(20, 18, 17, 0.9)',
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   photoControls: {
     flexDirection: 'row',
     gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
     width: '100%',
   },
   retakeButton: {

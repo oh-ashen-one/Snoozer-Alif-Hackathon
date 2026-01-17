@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   referenceContainer: {
     position: 'absolute',
-    right: Spacing.lg,
+    right: Spacing.xl,
     zIndex: 10,
     alignItems: 'center',
   },
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   instructionBar: {
     position: 'absolute',
-    left: Spacing.lg,
+    left: Spacing.xl,
     right: 100,
     backgroundColor: 'rgba(20, 18, 17, 0.9)',
     borderRadius: BorderRadius.sm,

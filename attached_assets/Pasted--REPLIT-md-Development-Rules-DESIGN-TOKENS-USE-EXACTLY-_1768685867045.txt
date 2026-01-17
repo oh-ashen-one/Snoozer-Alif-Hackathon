@@ -1,4 +1,4 @@
-# CLAUDE.md — Development Rules
+# REPLIT.md — Development Rules
 
 ## DESIGN TOKENS — USE EXACTLY
 

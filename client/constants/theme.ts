@@ -41,23 +41,20 @@ export const Spacing = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
-  "2xl": 24,
-  "3xl": 32,
-  "4xl": 40,
-  "5xl": 48,
+  xl: 24,
+  "2xl": 32,
+  "3xl": 48,
   inputHeight: 48,
-  buttonHeight: 52,
+  buttonHeight: 56,
 };
 
 export const BorderRadius = {
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 30,
-  "2xl": 40,
-  "3xl": 50,
+  xs: 6,
+  sm: 10,
+  md: 14,
+  lg: 16,
+  xl: 20,
+  pill: 100,
   full: 9999,
 };
 

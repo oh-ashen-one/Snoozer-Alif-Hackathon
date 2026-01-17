@@ -16,10 +16,10 @@ interface ToggleProps {
   style?: ViewStyle;
 }
 
-const TRACK_WIDTH = 51;
-const TRACK_HEIGHT = 31;
-const THUMB_SIZE = 27;
-const THUMB_MARGIN = 2;
+const TRACK_WIDTH = 52;
+const TRACK_HEIGHT = 32;
+const THUMB_SIZE = 26;
+const THUMB_MARGIN = 3;
 
 export function Toggle({ value, onValueChange, disabled = false, style }: ToggleProps) {
   const progress = useSharedValue(value ? 1 : 0);

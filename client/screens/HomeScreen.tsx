@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
     gap: Spacing.md,
   },
   emptyList: {
@@ -134,8 +134,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   alarmCard: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: Spacing.lg,

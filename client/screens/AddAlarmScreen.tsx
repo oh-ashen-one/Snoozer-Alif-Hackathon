@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
   content: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
   },
   section: {
     marginBottom: Spacing['2xl'],

@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp } from "react-native";
+import { StyleSheet, Pressable, ViewStyle, StyleProp, Platform } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -10,11 +10,14 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, BorderRadius, Spacing } from "@/constants/theme";
 
+type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger';
+
 interface ButtonProps {
   onPress?: () => void;
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
+  variant?: ButtonVariant;
 }
 
 const springConfig: WithSpringConfig = {
@@ -27,13 +30,43 @@ const springConfig: WithSpringConfig = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const getVariantStyles = (variant: ButtonVariant) => {
+  switch (variant) {
+    case 'success':
+      return {
+        backgroundColor: Colors.green,
+        shadowColor: Colors.green,
+      };
+    case 'danger':
+      return {
+        backgroundColor: Colors.red,
+        shadowColor: Colors.red,
+      };
+    case 'secondary':
+      return {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: Colors.border,
+        shadowColor: 'transparent',
+      };
+    case 'primary':
+    default:
+      return {
+        backgroundColor: Colors.orange,
+        shadowColor: Colors.orange,
+      };
+  }
+};
+
 export function Button({
   onPress,
   children,
   style,
   disabled = false,
+  variant = 'primary',
 }: ButtonProps) {
   const scale = useSharedValue(1);
+  const variantStyles = getVariantStyles(variant);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -41,7 +74,7 @@ export function Button({
 
   const handlePressIn = () => {
     if (!disabled) {
-      scale.value = withSpring(0.98, springConfig);
+      scale.value = withSpring(0.97, springConfig);
     }
   };
 
@@ -51,6 +84,8 @@ export function Button({
     }
   };
 
+  const isSecondary = variant === 'secondary';
+
   return (
     <AnimatedPressable
       onPress={disabled ? undefined : onPress}
@@ -59,15 +94,19 @@ export function Button({
       disabled={disabled}
       style={[
         styles.button,
+        variantStyles,
+        !isSecondary && styles.buttonShadow,
         {
-          backgroundColor: Colors.orange,
           opacity: disabled ? 0.5 : 1,
         },
         style,
         animatedStyle,
       ]}
     >
-      <ThemedText style={styles.buttonText}>
+      <ThemedText style={[
+        styles.buttonText,
+        isSecondary && styles.secondaryText,
+      ]}>
         {children}
       </ThemedText>
     </AnimatedPressable>
@@ -76,15 +115,35 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.sm,
+    height: 56,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing["2xl"],
+  },
+  buttonShadow: {
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
+      },
+    }),
   },
   buttonText: {
     fontWeight: "600",
     fontSize: 16,
     color: Colors.bgCard,
+  },
+  secondaryText: {
+    color: Colors.text,
   },
 });
