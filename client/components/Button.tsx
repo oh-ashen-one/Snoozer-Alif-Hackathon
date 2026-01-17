@@ -8,8 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { Colors, BorderRadius, Spacing } from "@/constants/theme";
 
 interface ButtonProps {
   onPress?: () => void;
@@ -34,7 +33,6 @@ export function Button({
   style,
   disabled = false,
 }: ButtonProps) {
-  const { theme } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -62,17 +60,14 @@ export function Button({
       style={[
         styles.button,
         {
-          backgroundColor: theme.link,
+          backgroundColor: Colors.orange,
           opacity: disabled ? 0.5 : 1,
         },
         style,
         animatedStyle,
       ]}
     >
-      <ThemedText
-        type="body"
-        style={[styles.buttonText, { color: theme.buttonText }]}
-      >
+      <ThemedText style={styles.buttonText}>
         {children}
       </ThemedText>
     </AnimatedPressable>
@@ -82,11 +77,14 @@ export function Button({
 const styles = StyleSheet.create({
   button: {
     height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing["2xl"],
   },
   buttonText: {
     fontWeight: "600",
+    fontSize: 16,
+    color: Colors.bgCard,
   },
 });
