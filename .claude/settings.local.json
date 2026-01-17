@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx expo export:*)",
+      "Bash(timeout 30s npx expo start:*)",
+      "Bash(pkill:*)"
     ]
   }
 }

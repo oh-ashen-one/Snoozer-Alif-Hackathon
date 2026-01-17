@@ -11,13 +11,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { getAlarms } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
@@ -55,8 +56,14 @@ export default function AlarmRingingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmId, alarmLabel, referencePhotoUri, shameVideoUri } = route.params;
+  const params = route.params || {};
 
+  const [alarmData, setAlarmData] = useState({
+    alarmId: params.alarmId || '',
+    alarmLabel: params.alarmLabel || 'Alarm',
+    referencePhotoUri: params.referencePhotoUri || '',
+    shameVideoUri: params.shameVideoUri || '',
+  });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [snoozeState, setSnoozeState] = useState<SnoozeState>('idle');
   const [snoozeInput, setSnoozeInput] = useState('');
@@ -64,6 +71,37 @@ export default function AlarmRingingScreen() {
 
   const soundRef = useRef<Audio.Sound | null>(null);
   const isPlayingRef = useRef(false);
+
+  useEffect(() => {
+    const loadFallbackAlarm = async () => {
+      if (!alarmData.alarmId) {
+        try {
+          const alarms = await getAlarms();
+          const enabledAlarm = alarms.find(a => a.enabled);
+          if (enabledAlarm) {
+            setAlarmData({
+              alarmId: enabledAlarm.id,
+              alarmLabel: enabledAlarm.label || 'Alarm',
+              referencePhotoUri: enabledAlarm.referencePhotoUri || '',
+              shameVideoUri: enabledAlarm.shameVideoUri || '',
+            });
+            if (__DEV__) console.log('[AlarmRinging] Loaded fallback alarm:', enabledAlarm.id);
+          } else {
+            if (__DEV__) console.log('[AlarmRinging] No alarms found, navigating home');
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              })
+            );
+          }
+        } catch (error) {
+          if (__DEV__) console.error('[AlarmRinging] Error loading fallback alarm:', error);
+        }
+      }
+    };
+    loadFallbackAlarm();
+  }, [alarmData.alarmId, navigation]);
 
   const stopAlarm = async () => {
     try {
@@ -145,8 +183,8 @@ export default function AlarmRingingScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     await stopAlarm();
     navigation.navigate('ProofCamera', {
-      alarmId,
-      referencePhotoUri,
+      alarmId: alarmData.alarmId,
+      referencePhotoUri: alarmData.referencePhotoUri,
     });
   };
 
@@ -168,10 +206,10 @@ export default function AlarmRingingScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       await stopAlarm();
       navigation.navigate('ShamePlayback', {
-        alarmId,
-        shameVideoUri,
-        alarmLabel,
-        referencePhotoUri,
+        alarmId: alarmData.alarmId,
+        shameVideoUri: alarmData.shameVideoUri,
+        alarmLabel: alarmData.alarmLabel,
+        referencePhotoUri: alarmData.referencePhotoUri,
       });
     }
   };

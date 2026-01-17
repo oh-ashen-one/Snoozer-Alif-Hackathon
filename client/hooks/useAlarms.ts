@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Alert, Platform, Linking } from 'react-native';
 import { 
   Alarm, 
   getAlarms, 
@@ -22,8 +23,9 @@ export function useAlarms() {
       const loadedAlarms = await getAlarms();
       setAlarms(loadedAlarms);
     } catch (e) {
+      if (__DEV__) console.error('[useAlarms] Failed to load alarms:', e);
       setError('Failed to load alarms');
-      console.error(e);
+      setAlarms([]);
     } finally {
       setLoading(false);
     }
@@ -45,14 +47,30 @@ export function useAlarms() {
       let notificationId: string | null = null;
       if (newAlarm.enabled) {
         notificationId = await scheduleAlarm(newAlarm);
+        if (!notificationId && Platform.OS !== 'web') {
+          Alert.alert(
+            'Notification Permission',
+            'Please enable notifications to receive alarm alerts.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => {
+                if (Platform.OS !== 'web') {
+                  try { Linking.openSettings(); } catch {}
+                }
+              }},
+            ]
+          );
+        }
         newAlarm.notificationId = notificationId;
       }
       
       await addAlarmToStorage(newAlarm);
       setAlarms(prev => [...prev, newAlarm]);
+      if (__DEV__) console.log('[useAlarms] Alarm added:', newAlarm.id);
       return newAlarm;
     } catch (e) {
-      console.error('Error adding alarm:', e);
+      if (__DEV__) console.error('[useAlarms] Error adding alarm:', e);
+      Alert.alert('Error', 'Failed to save alarm. Please try again.');
       throw e;
     }
   }, []);
@@ -87,9 +105,10 @@ export function useAlarms() {
       }
 
       await updateAlarm(id, { enabled: newEnabled, notificationId });
+      if (__DEV__) console.log('[useAlarms] Alarm toggled:', id, 'enabled:', newEnabled);
     } catch (e) {
-      console.error('Error toggling alarm:', e);
-      throw e;
+      if (__DEV__) console.error('[useAlarms] Error toggling alarm:', e);
+      Alert.alert('Error', 'Failed to update alarm. Please try again.');
     }
   }, [alarms, updateAlarm]);
 

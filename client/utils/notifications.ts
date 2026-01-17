@@ -28,7 +28,7 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
   try {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) {
-      console.warn('Notification permissions not granted');
+      if (__DEV__) console.warn('[Notifications] Permission not granted');
       return null;
     }
 
@@ -62,9 +62,10 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
       },
     });
 
+    if (__DEV__) console.log('[Notifications] Alarm scheduled:', alarm.id, 'at', trigger.toLocaleTimeString());
     return identifier;
   } catch (error) {
-    console.error('Error scheduling alarm:', error);
+    if (__DEV__) console.error('[Notifications] Error scheduling alarm:', error);
     return null;
   }
 }
@@ -100,9 +101,10 @@ export async function scheduleSnoozeAlarm(alarm: Alarm, snoozeMinutes: number = 
       },
     });
 
+    if (__DEV__) console.log('[Notifications] Snooze alarm scheduled:', alarm.id, 'at', trigger.toLocaleTimeString());
     return identifier;
   } catch (error) {
-    console.error('Error scheduling snooze alarm:', error);
+    if (__DEV__) console.error('[Notifications] Error scheduling snooze alarm:', error);
     return null;
   }
 }

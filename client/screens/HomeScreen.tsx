@@ -179,8 +179,8 @@ export default function HomeScreen() {
 
   const handleSettingsPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navigate to settings when available
-  }, []);
+    navigation.navigate('Settings');
+  }, [navigation]);
 
   const handleToggleAlarm = useCallback((id: string) => {
     return () => toggleAlarm(id);

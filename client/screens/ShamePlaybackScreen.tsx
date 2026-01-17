@@ -47,9 +47,10 @@ export default function ShamePlaybackScreen() {
   const hasScheduledSnooze = useRef(false);
   const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [videoUri, setVideoUri] = useState<string>(routeVideoUri);
+  const [videoUri, setVideoUri] = useState<string>(routeVideoUri || '');
   const [remainingSeconds, setRemainingSeconds] = useState<number>(15);
   const [videoDuration, setVideoDuration] = useState<number>(0);
+  const [videoError, setVideoError] = useState<boolean>(false);
 
   // Pulsing animations
   const textPulse = useSharedValue(1);
@@ -138,8 +139,24 @@ export default function ShamePlaybackScreen() {
     };
   }, [alarmId, routeVideoUri, alarmLabel, referencePhotoUri, videoUri, navigation, textPulse, borderPulse]);
 
+  const navigateBackToAlarm = () => {
+    navigation.navigate('AlarmRinging', {
+      alarmId,
+      alarmLabel,
+      referencePhotoUri,
+      shameVideoUri: videoUri,
+    });
+  };
+
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    if (!status.isLoaded) return;
+    if (!status.isLoaded) {
+      if (status.error) {
+        if (__DEV__) console.error('[ShamePlayback] Video error:', status.error);
+        setVideoError(true);
+        setTimeout(navigateBackToAlarm, 2000);
+      }
+      return;
+    }
 
     if (status.durationMillis && videoDuration === 0) {
       setVideoDuration(Math.ceil(status.durationMillis / 1000));
@@ -151,12 +168,7 @@ export default function ShamePlaybackScreen() {
     }
 
     if (status.didJustFinish) {
-      navigation.navigate('AlarmRinging', {
-        alarmId,
-        alarmLabel,
-        referencePhotoUri,
-        shameVideoUri: videoUri,
-      });
+      navigateBackToAlarm();
     }
   };
 
