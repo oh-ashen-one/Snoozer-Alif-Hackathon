@@ -104,16 +104,13 @@ function DayPills({ selectedDays }: { selectedDays: number[] }) {
 }
 
 // Header Component
-function Header({ onSettingsPress }: { onSettingsPress: () => void }) {
+function Header() {
   return (
     <View style={styles.header}>
       <View>
         <ThemedText style={styles.greeting}>{getGreeting()}</ThemedText>
         <ThemedText style={styles.userName}>Alex 👋</ThemedText>
       </View>
-      <Pressable style={styles.settingsButton} onPress={onSettingsPress} hitSlop={8}>
-        <Feather name="settings" size={20} color="#A8A29E" />
-      </Pressable>
     </View>
   );
 }
@@ -244,14 +241,14 @@ function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void
 }
 
 // Bottom Nav Component
-function BottomNav({ activeTab }: { activeTab: string }) {
+function BottomNav({ activeTab, onStatsPress, onSettingsPress }: { activeTab: string; onStatsPress: () => void; onSettingsPress: () => void }) {
   const insets = useSafeAreaInsets();
 
   const tabs = [
-    { key: 'alarms', icon: 'clock', label: 'Alarms' },
-    { key: 'stats', icon: 'bar-chart-2', label: 'Stats' },
-    { key: 'buddy', icon: 'users', label: 'Buddy' },
-    { key: 'settings', icon: 'sliders', label: 'Settings' },
+    { key: 'alarms', icon: 'clock', label: 'Alarms', onPress: undefined },
+    { key: 'stats', icon: 'bar-chart-2', label: 'Stats', onPress: onStatsPress },
+    { key: 'buddy', icon: 'users', label: 'Buddy', onPress: undefined },
+    { key: 'settings', icon: 'sliders', label: 'Settings', onPress: onSettingsPress },
   ];
 
   return (
@@ -259,7 +256,7 @@ function BottomNav({ activeTab }: { activeTab: string }) {
       {tabs.map(tab => {
         const isActive = tab.key === activeTab;
         return (
-          <Pressable key={tab.key} style={styles.navTab}>
+          <Pressable key={tab.key} style={styles.navTab} onPress={tab.onPress}>
             <Feather
               name={tab.icon as any}
               size={24}
@@ -322,6 +319,11 @@ export default function HomeScreen() {
     navigation.navigate('Settings');
   }, [navigation]);
 
+  const handleStatsPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('Stats');
+  }, [navigation]);
+
   const handleToggleAlarm = useCallback(
     (id: string) => {
       return () => {
@@ -350,7 +352,7 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Header onSettingsPress={handleSettingsPress} />
+        <Header />
 
         {nextAlarm ? (
           <>
@@ -373,7 +375,7 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      <BottomNav activeTab={activeTab} />
+      <BottomNav activeTab={activeTab} onSettingsPress={handleSettingsPress} />
     </View>
   );
 }
@@ -410,16 +412,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FAFAF9',
     marginTop: 4,
-  },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1C1917',
-    borderWidth: 1,
-    borderColor: '#292524',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // Active Badge

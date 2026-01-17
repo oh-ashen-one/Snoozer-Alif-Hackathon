@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bg,
-    paddingHorizontal: Spacing['2xl'],
+    paddingHorizontal: Spacing.xl,
   },
   content: {
     flex: 1,
@@ -276,7 +276,9 @@ const styles = StyleSheet.create({
   },
   inviteLink: {
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: Spacing.sm,
+    minHeight: 44,
   },
   inviteLinkText: {
     fontSize: 14,

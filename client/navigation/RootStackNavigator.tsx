@@ -15,6 +15,7 @@ import ProofCameraScreen from '@/screens/ProofCameraScreen';
 import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
+import StatsScreen from '@/screens/StatsScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { getOnboardingComplete } from '@/utils/storage';
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
   Settings: undefined;
+  Stats: undefined;
   AddAlarm: { isOnboarding: boolean };
   ReferencePhoto: {
     alarmTime: string;
@@ -107,6 +109,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Stats"
+        component={StatsScreen}
         options={{
           headerShown: false,
         }}

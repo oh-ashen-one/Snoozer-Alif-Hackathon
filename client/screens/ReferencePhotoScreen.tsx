@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   },
   cameraContainer: {
     flex: 1,
-    marginHorizontal: Spacing.lg,
+    marginHorizontal: Spacing.xl,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: Colors.bgElevated,
