@@ -46,28 +46,32 @@ export default function ProofCameraScreen() {
 
     setCapturing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (__DEV__) console.log('[ProofCamera] Capture started');
 
     try {
       if (useMockCamera) {
         // Mock capture - just use a placeholder
-        console.log('[ProofCamera] Mock capture - would take photo here');
+        if (__DEV__) console.log('[ProofCamera] Mock capture - setting photo URI');
         // Simulate a brief delay
         await new Promise(resolve => setTimeout(resolve, 300));
         setPhotoUri('mock://proof-photo');
+        if (__DEV__) console.log('[ProofCamera] Photo URI set to mock');
       } else if (cameraRef.current) {
         const photo = await cameraRef.current.takePictureAsync({
           quality: 0.7,
         });
         if (photo?.uri) {
           setPhotoUri(photo.uri);
+          if (__DEV__) console.log('[ProofCamera] Photo URI set:', photo.uri);
         }
       }
     } catch (error) {
-      console.log('[ProofCamera] Capture error:', error);
+      if (__DEV__) console.log('[ProofCamera] Capture error:', error);
       // On error, use mock data to continue flow
       setPhotoUri('mock://proof-photo');
     } finally {
       setCapturing(false);
+      if (__DEV__) console.log('[ProofCamera] Capture complete, photoUri should be set');
     }
   };
 
@@ -120,11 +124,11 @@ export default function ProofCameraScreen() {
         )}
 
         <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
-          <Pressable style={styles.secondaryButton} onPress={handleRetake}>
+          <Pressable testID="button-retake-proof" style={styles.secondaryButton} onPress={handleRetake}>
             <ThemedText style={styles.secondaryButtonText}>Retake</ThemedText>
           </Pressable>
 
-          <Pressable style={styles.greenButton} onPress={handleConfirm}>
+          <Pressable testID="button-confirm-proof" style={styles.greenButton} onPress={handleConfirm}>
             <ThemedText style={styles.greenButtonText}>Looks good!</ThemedText>
           </Pressable>
         </View>
@@ -179,6 +183,9 @@ export default function ProofCameraScreen() {
       {/* Capture button */}
       <View style={[styles.captureContainer, { paddingBottom: insets.bottom + 24 }]}>
         <Pressable
+          testID="button-capture-proof"
+          accessibilityRole="button"
+          accessibilityLabel="Capture photo"
           onPress={handleCapture}
           disabled={capturing}
           style={({ pressed }) => [
