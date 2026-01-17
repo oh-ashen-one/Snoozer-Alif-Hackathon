@@ -1,27 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, Modal, Pressable } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  Pressable,
+  TextInput,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
-import { ThemedText } from '@/components/ThemedText';
-import { Button } from '@/components/Button';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
 
+type SnoozeState = 'idle' | 'confirm' | 'input';
+
 const SNOOZE_CONFIRMATION = 'I FAIL';
+
+// Camera Icon
+const CameraIcon = () => (
+  <Svg width={48} height={48} viewBox="0 0 24 24" fill="none">
+    <Rect x={2} y={6} width={20} height={14} rx={3} stroke="#22C55E" strokeWidth={2} fill="rgba(34, 197, 94, 0.1)" />
+    <Circle cx={12} cy={13} r={4} stroke="#22C55E" strokeWidth={2} />
+    <Path d="M7 6V5C7 4.44772 7.44772 4 8 4H10L11 6" stroke="#22C55E" strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+// Flame Icon for streak badge
+const FlameIcon = () => (
+  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 2C12 2 7 7 7 12C7 14.5 8.5 17 12 17C15.5 17 17 14.5 17 12C17 9 14 6 14 6C14 6 14 9 12 11C10 9 10 6 12 2Z"
+      fill="rgba(251, 146, 60, 0.3)"
+    />
+    <Path
+      d="M12 2C12 2 7 7 7 12C7 14.5 8.5 17 12 17C15.5 17 17 14.5 17 12C17 9 14 6 14 6C14 6 14 9 12 11C10 9 10 6 12 2Z"
+      stroke="#FB923C"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 export default function AlarmRingingScreen() {
   const insets = useSafeAreaInsets();
@@ -30,29 +55,19 @@ export default function AlarmRingingScreen() {
   const { alarmId, alarmLabel, referencePhotoUri, shameVideoUri } = route.params;
 
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+  const [snoozeState, setSnoozeState] = useState<SnoozeState>('idle');
   const [snoozeInput, setSnoozeInput] = useState('');
-  const pulse = useSharedValue(1);
+  const [streak] = useState(12); // TODO: Get from storage
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
-    pulse.value = withRepeat(
-      withTiming(1.1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
     return () => clearInterval(interval);
   }, []);
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }));
 
   const formatTime = (date: Date) => {
     const hours = date.getHours();
@@ -77,110 +92,106 @@ export default function AlarmRingingScreen() {
 
   const handleSnoozePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setShowSnoozeModal(true);
-    setSnoozeInput('');
+
+    if (snoozeState === 'idle') {
+      setSnoozeState('confirm');
+    } else if (snoozeState === 'confirm') {
+      setSnoozeState('input');
+      setSnoozeInput('');
+    }
   };
 
-  const handleSnoozeConfirm = () => {
-    if (snoozeInput.toUpperCase() === SNOOZE_CONFIRMATION) {
+  const handleSnoozeInputChange = (text: string) => {
+    setSnoozeInput(text);
+
+    if (text.toUpperCase() === SNOOZE_CONFIRMATION) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setShowSnoozeModal(false);
       navigation.navigate('ShamePlayback', {
         alarmId,
         shameVideoUri,
         alarmLabel,
         referencePhotoUri,
       });
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
-  const handleSnoozeCancel = () => {
-    setShowSnoozeModal(false);
+  const handleCancelSnooze = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSnoozeState('idle');
     setSnoozeInput('');
   };
 
-  const isSnoozeValid = snoozeInput.toUpperCase() === SNOOZE_CONFIRMATION;
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top + Spacing['2xl'], paddingBottom: insets.bottom + Spacing.xl }]}>
-      <View style={styles.content}>
-        <Animated.View style={[styles.iconContainer, pulseStyle]}>
-          <Feather name="bell" size={48} color={Colors.orange} />
-        </Animated.View>
+    <View style={[styles.container, { paddingTop: insets.top + Spacing['2xl'] }]}>
+      {/* Streak Badge */}
+      <View style={styles.streakBadge}>
+        <FlameIcon />
+        <Text style={styles.streakText}>{streak} day streak</Text>
+      </View>
 
-        <View style={styles.timeContainer}>
-          <View style={styles.timeRow}>
-            <ThemedText style={styles.time}>{time}</ThemedText>
-            <ThemedText style={styles.period}>{period}</ThemedText>
+      {/* Time Display */}
+      <View style={styles.timeContainer}>
+        <View style={styles.timeRow}>
+          <Text style={styles.time}>{time}</Text>
+          <Text style={styles.period}>{period}</Text>
+        </View>
+        <Text style={styles.wakeUpText}>Time to wake up</Text>
+      </View>
+
+      {/* Hero Card */}
+      <View style={styles.heroCard}>
+        <CameraIcon />
+        <Text style={styles.heroTitle}>Prove you're up</Text>
+        <Pressable style={styles.heroButton} onPress={handleTakePhoto}>
+          <Text style={styles.heroButtonText}>Take Photo & Dismiss</Text>
+        </Pressable>
+      </View>
+
+      {/* Divider with "or" */}
+      <View style={styles.dividerContainer}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>or</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      {/* Snooze Section */}
+      <View style={[styles.snoozeContainer, { paddingBottom: insets.bottom + Spacing['3xl'] }]}>
+        {snoozeState === 'idle' && (
+          <Pressable style={styles.snoozeButton} onPress={handleSnoozePress}>
+            <Text style={styles.snoozeButtonText}>Snooze</Text>
+          </Pressable>
+        )}
+
+        {snoozeState === 'confirm' && (
+          <View style={styles.snoozeConfirmContainer}>
+            <Pressable style={styles.snoozeConfirmButton} onPress={handleSnoozePress}>
+              <Text style={styles.snoozeConfirmText}>Are you sure?</Text>
+            </Pressable>
+            <Pressable onPress={handleCancelSnooze}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
           </View>
-          <ThemedText style={styles.label}>{alarmLabel || 'Alarm'}</ThemedText>
-        </View>
-      </View>
+        )}
 
-      <View style={styles.buttonContainer}>
-        <Button onPress={handleTakePhoto} variant="success" style={styles.takePhotoButton}>
-          Take Photo to Dismiss
-        </Button>
-        
-        <View style={styles.snoozeSection}>
-          <Button onPress={handleSnoozePress} variant="danger" style={styles.snoozeButton}>
-            Snooze
-          </Button>
-          <ThemedText style={styles.snoozeWarning}>
-            Requires typing "I FAIL" - plays your shame video
-          </ThemedText>
-        </View>
-      </View>
-
-      <Modal
-        visible={showSnoozeModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleSnoozeCancel}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>Confirm Snooze</ThemedText>
-            <ThemedText style={styles.modalSubtitle}>
-              Type "I FAIL" to snooze and watch your shame video
-            </ThemedText>
-            
+        {snoozeState === 'input' && (
+          <View style={styles.snoozeInputContainer}>
+            <Text style={styles.snoozeInputLabel}>Type "I FAIL" to snooze</Text>
             <TextInput
-              style={styles.modalInput}
+              style={styles.snoozeInput}
               value={snoozeInput}
-              onChangeText={setSnoozeInput}
-              placeholder="Type here..."
+              onChangeText={handleSnoozeInputChange}
+              placeholder="I FAIL"
               placeholderTextColor={Colors.textMuted}
               autoCapitalize="characters"
               autoFocus
+              autoCorrect={false}
             />
-
-            <View style={styles.modalButtons}>
-              <Pressable 
-                style={styles.modalCancelButton} 
-                onPress={handleSnoozeCancel}
-              >
-                <ThemedText style={styles.modalCancelText}>Cancel</ThemedText>
-              </Pressable>
-              
-              <Pressable
-                style={[
-                  styles.modalConfirmButton,
-                  !isSnoozeValid && styles.modalConfirmButtonDisabled,
-                ]}
-                onPress={handleSnoozeConfirm}
-                disabled={!isSnoozeValid}
-              >
-                <ThemedText style={styles.modalConfirmText}>
-                  Confirm Snooze
-                </ThemedText>
-              </Pressable>
-            </View>
+            <Pressable onPress={handleCancelSnooze}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
           </View>
-        </View>
-      </Modal>
+        )}
+      </View>
     </View>
   );
 }
@@ -191,21 +202,24 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     paddingHorizontal: Spacing.xl,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  streakBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.bgCard,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing['2xl'],
+  streakText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.orange,
   },
   timeContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   timeRow: {
@@ -214,110 +228,120 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   time: {
-    fontSize: 72,
+    fontSize: 64,
     fontWeight: '700',
     color: Colors.text,
   },
   period: {
     fontSize: 24,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+    fontWeight: '500',
+    color: Colors.textMuted,
   },
-  label: {
-    fontSize: 18,
-    color: Colors.textSecondary,
+  wakeUpText: {
+    fontSize: 16,
+    color: Colors.textMuted,
     marginTop: Spacing.sm,
   },
-  buttonContainer: {
+  heroCard: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    alignItems: 'center',
     gap: Spacing.lg,
   },
-  takePhotoButton: {
-    height: 60,
+  heroTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
   },
-  snoozeSection: {
+  heroButton: {
+    width: '100%',
+    backgroundColor: Colors.green,
+    borderRadius: 14,
+    paddingVertical: 18,
     alignItems: 'center',
-    gap: Spacing.sm,
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  heroButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    paddingHorizontal: Spacing.lg,
+  },
+  snoozeContainer: {
+    alignItems: 'center',
   },
   snoozeButton: {
-    width: '100%',
+    backgroundColor: Colors.border,
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing['2xl'],
+    paddingVertical: Spacing.md,
   },
-  snoozeWarning: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-  },
-  modalContent: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-  },
-  modalSubtitle: {
+  snoozeButtonText: {
     fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing.xl,
+    fontWeight: '500',
+    color: Colors.textMuted,
   },
-  modalInput: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.lg,
-    fontSize: 18,
-    color: Colors.text,
-    textAlign: 'center',
-    fontWeight: '600',
-    letterSpacing: 2,
-    marginBottom: Spacing.xl,
-  },
-  modalButtons: {
-    flexDirection: 'row',
+  snoozeConfirmContainer: {
+    alignItems: 'center',
     gap: Spacing.md,
   },
-  modalCancelButton: {
-    flex: 1,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.md,
+  snoozeConfirmButton: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing['2xl'],
+    paddingVertical: Spacing.md,
+  },
+  snoozeConfirmText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.red,
+  },
+  cancelText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  snoozeInputContainer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  snoozeInputLabel: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  snoozeInput: {
+    width: '100%',
+    backgroundColor: Colors.bgCard,
     borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: Spacing.lg,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  modalConfirmButton: {
-    flex: 1,
-    backgroundColor: Colors.red,
+    borderColor: Colors.red,
     borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.lg,
-    alignItems: 'center',
-  },
-  modalConfirmButtonDisabled: {
-    opacity: 0.5,
-  },
-  modalConfirmText: {
-    fontSize: 16,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    fontSize: 18,
     fontWeight: '600',
     color: Colors.text,
+    textAlign: 'center',
+    letterSpacing: 4,
   },
 });

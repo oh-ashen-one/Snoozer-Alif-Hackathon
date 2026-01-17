@@ -13,12 +13,15 @@ import { queryClient } from "@/lib/query-client";
 import RootStackNavigator, { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { addNotificationResponseListener } from "@/utils/notifications";
+import { ensureDirectories } from "@/utils/fileSystem";
 
 export default function App() {
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
   const notificationResponseListener = useRef<Notifications.EventSubscription>();
 
   useEffect(() => {
+    ensureDirectories();
+    
     if (Platform.OS === 'web') {
       return;
     }

@@ -105,7 +105,7 @@ export default function RootStackNavigator() {
         name="ReferencePhoto"
         component={ReferencePhotoScreen}
         options={{
-          headerTitle: 'Reference Photo',
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -134,7 +134,7 @@ export default function RootStackNavigator() {
         name="ProofCamera"
         component={ProofCameraScreen}
         options={{
-          headerTitle: "Prove You're Awake",
+          headerShown: false,
           gestureEnabled: false,
         }}
       />
