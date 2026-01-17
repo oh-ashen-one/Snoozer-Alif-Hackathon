@@ -112,7 +112,7 @@ export default function RootStackNavigator() {
         name="RecordShame"
         component={RecordShameScreen}
         options={{
-          headerTitle: 'Shame Video',
+          headerShown: false,
         }}
       />
       <Stack.Screen

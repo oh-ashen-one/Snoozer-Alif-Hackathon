@@ -1,37 +1,66 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { Video, ResizeMode } from 'expo-av';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Button } from '@/components/Button';
-import { Colors, Spacing, BorderRadius } from '@/constants/theme';
+import { ProgressDots } from '@/components/ProgressDots';
+import { Colors, Spacing } from '@/constants/theme';
 import { saveVideo, generateVideoFilename } from '@/utils/fileSystem';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'RecordShame'>;
 
+const MAX_DURATION = 15;
+
+const PROMPTS = [
+  '"I\'m a pathetic snooze addict..."',
+  '"I broke my promise to myself again..."',
+  '"This is what a lazy person looks like..."',
+];
+
 export default function RecordShameScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { alarmTime, alarmLabel, referencePhotoUri, isOnboarding } = route.params;
 
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isRecording, setIsRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const cameraRef = useRef<CameraView>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const pulseAnim = useSharedValue(1);
+
+  useEffect(() => {
+    if (isRecording) {
+      pulseAnim.value = withRepeat(
+        withTiming(1.2, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+    } else {
+      pulseAnim.value = 1;
+    }
+  }, [isRecording, pulseAnim]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnim.value }],
+  }));
 
   useEffect(() => {
     return () => {
@@ -49,18 +78,24 @@ export default function RecordShameScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     timerRef.current = setInterval(() => {
-      setRecordingDuration(prev => prev + 1);
+      setRecordingDuration(prev => {
+        if (prev >= MAX_DURATION - 1) {
+          stopRecording();
+          return prev;
+        }
+        return prev + 1;
+      });
     }, 1000);
 
     try {
       const video = await cameraRef.current.recordAsync({
-        maxDuration: 30,
+        maxDuration: MAX_DURATION,
       });
       if (video?.uri) {
         setVideoUri(video.uri);
       }
     } catch (error) {
-      console.error('Error recording video:', error);
+      // Handle silently
     } finally {
       setIsRecording(false);
       if (timerRef.current) {
@@ -82,7 +117,7 @@ export default function RecordShameScreen() {
     setRecordingDuration(0);
   };
 
-  const handleNext = async () => {
+  const handleUseVideo = async () => {
     if (!videoUri) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -99,108 +134,126 @@ export default function RecordShameScreen() {
     });
   };
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const handleSkip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('OnboardingComplete', {
+      alarmTime,
+      alarmLabel,
+      referencePhotoUri,
+      shameVideoUri: '',
+    });
   };
 
-  const hasPermissions = cameraPermission?.granted && micPermission?.granted;
-
-  if (!cameraPermission || !micPermission) {
+  // Preview state after recording
+  if (videoUri) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ThemedText>Loading permissions...</ThemedText>
-      </View>
-    );
-  }
-
-  if (!hasPermissions) {
-    return (
-      <View style={[styles.container, styles.centerContent, { paddingTop: headerHeight }]}>
-        <View style={styles.permissionIcon}>
-          <Feather name="video-off" size={48} color={Colors.textMuted} />
-        </View>
-        <ThemedText style={styles.permissionTitle}>Camera & Microphone Required</ThemedText>
-        <ThemedText style={styles.permissionText}>
-          Snoozer needs camera and microphone access to record your shame video.
-        </ThemedText>
-        <View style={styles.permissionButtons}>
-          {!cameraPermission.granted ? (
-            <Button onPress={requestCameraPermission} style={styles.permissionButton}>
-              Enable Camera
-            </Button>
-          ) : null}
-          {!micPermission.granted ? (
-            <Button onPress={requestMicPermission} style={styles.permissionButton}>
-              Enable Microphone
-            </Button>
-          ) : null}
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <View style={[styles.instructionBar, { top: headerHeight + Spacing.lg }]}>
-        <ThemedText style={styles.instructionText}>
-          Record what you'll see if you snooze. Make it embarrassing.
-        </ThemedText>
-      </View>
-
-      {videoUri ? (
+      <View style={styles.container}>
         <Video
           source={{ uri: videoUri }}
-          style={styles.videoPreview}
+          style={styles.fullScreenVideo}
           resizeMode={ResizeMode.COVER}
           shouldPlay
           isLooping
           isMuted={false}
         />
-      ) : (
-        <CameraView
-          ref={cameraRef}
-          style={styles.camera}
-          facing="front"
-          mode="video"
-        />
-      )}
 
-      {isRecording ? (
-        <View style={[styles.recordingIndicator, { top: headerHeight + Spacing.lg + 60 }]}>
-          <View style={styles.recordingDot} />
-          <ThemedText style={styles.recordingTime}>
-            {formatDuration(recordingDuration)}
-          </ThemedText>
-        </View>
-      ) : null}
-
-      <View style={[styles.controls, { paddingBottom: insets.bottom + Spacing.xl }]}>
-        {videoUri ? (
-          <View style={styles.videoControls}>
-            <Button onPress={handleRetake} style={styles.retakeButton}>
-              Retake
-            </Button>
-            <Button onPress={handleNext} style={styles.nextButton}>
-              Next
-            </Button>
-          </View>
-        ) : (
-          <Pressable
-            onPress={isRecording ? stopRecording : startRecording}
-            style={({ pressed }) => [
-              styles.recordButton,
-              isRecording && styles.recordButtonActive,
-              pressed && styles.recordButtonPressed,
-            ]}
-          >
-            <View style={[
-              styles.recordButtonInner,
-              isRecording && styles.recordButtonInnerActive,
-            ]} />
+        <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
+          <Pressable style={styles.secondaryButton} onPress={handleRetake}>
+            <ThemedText style={styles.secondaryButtonText}>Record again</ThemedText>
           </Pressable>
-        )}
+
+          <Pressable style={styles.redButton} onPress={handleUseVideo}>
+            <ThemedText style={styles.redButtonText}>Use this video</ThemedText>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // Recording state
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerSpacer} />
+          <ThemedText style={styles.headerTitle}>Shame video</ThemedText>
+          <Pressable onPress={handleSkip} hitSlop={8}>
+            <ThemedText style={styles.skipButton}>Skip</ThemedText>
+          </Pressable>
+        </View>
+
+        {/* Progress dots */}
+        <View style={styles.progressContainer}>
+          <ProgressDots total={4} current={3} activeColor={Colors.red} />
+        </View>
+
+        {/* Red badge */}
+        <View style={styles.badge}>
+          <ThemedText style={styles.badgeEmoji}>🎬</ThemedText>
+          <ThemedText style={styles.badgeText}>Record your shame</ThemedText>
+        </View>
+
+        {/* Title */}
+        <ThemedText style={styles.title}>Record your shame video</ThemedText>
+        <ThemedText style={styles.subtitle}>
+          This plays at MAX VOLUME when you snooze.{'\n'}Make it embarrassing.
+        </ThemedText>
+
+        {/* Prompts */}
+        <View style={styles.promptsContainer}>
+          {PROMPTS.map((prompt, i) => (
+            <View key={i} style={styles.promptCard}>
+              <ThemedText style={styles.promptText}>{prompt}</ThemedText>
+            </View>
+          ))}
+        </View>
+
+        {/* Camera preview */}
+        <View style={styles.cameraWrapper}>
+          <View style={styles.cameraContainer}>
+            <CameraView
+              ref={cameraRef}
+              style={styles.camera}
+              facing="front"
+              mode="video"
+            />
+          </View>
+
+          {/* Timer when recording */}
+          {isRecording && (
+            <View style={styles.timerContainer}>
+              <ThemedText style={styles.timerText}>
+                {recordingDuration}s / {MAX_DURATION}s
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Record button */}
+      <View style={[styles.recordContainer, { paddingBottom: insets.bottom + 24 }]}>
+        <Pressable
+          onPress={isRecording ? stopRecording : startRecording}
+          style={styles.recordButton}
+        >
+          {isRecording ? (
+            <>
+              <Animated.View style={[styles.recordButtonPulse, pulseStyle]} />
+              <View style={styles.recordButtonOuter}>
+                <View style={styles.recordButtonStop} />
+              </View>
+            </>
+          ) : (
+            <View style={styles.recordButtonOuter}>
+              <View style={styles.recordButtonInner} />
+            </View>
+          )}
+        </Pressable>
       </View>
     </View>
   );
@@ -211,138 +264,199 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
-  centerContent: {
-    justifyContent: 'center',
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing['2xl'],
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
+    justifyContent: 'space-between',
+    paddingTop: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
-  instructionBar: {
-    position: 'absolute',
-    left: Spacing.xl,
-    right: Spacing.xl,
-    backgroundColor: 'rgba(20, 18, 17, 0.9)',
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
-    zIndex: 10,
+  headerSpacer: {
+    width: 40,
   },
-  instructionText: {
+  headerTitle: {
     fontSize: 14,
     color: Colors.textMuted,
+  },
+  skipButton: {
+    fontSize: 14,
+    color: '#57534E',
+  },
+
+  // Progress
+  progressContainer: {
+    marginBottom: Spacing['2xl'],
+  },
+
+  // Badge
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 100,
+    marginBottom: Spacing.xl,
+  },
+  badgeEmoji: {
+    fontSize: 16,
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.red,
+  },
+
+  // Title
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: Colors.text,
     textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: Spacing['2xl'],
+  },
+
+  // Prompts
+  promptsContainer: {
+    gap: Spacing.sm,
+    marginBottom: Spacing['2xl'],
+  },
+  promptCard: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: 12,
+    padding: Spacing.md,
+  },
+  promptText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // Camera
+  cameraWrapper: {
+    alignItems: 'center',
+    marginBottom: Spacing['2xl'],
+  },
+  cameraContainer: {
+    width: 200,
+    height: 280,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: Colors.bgElevated,
   },
   camera: {
     flex: 1,
   },
-  videoPreview: {
-    flex: 1,
+  timerContainer: {
+    marginTop: Spacing.md,
   },
-  recordingIndicator: {
-    position: 'absolute',
-    left: Spacing.xl,
-    right: Spacing.xl,
-    flexDirection: 'row',
+  timerText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.red,
+  },
+
+  // Record button
+  recordContainer: {
+    alignItems: 'center',
+    paddingTop: Spacing.lg,
+  },
+  recordButton: {
+    width: 80,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
-    zIndex: 10,
   },
-  recordingDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  recordButtonPulse: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: Colors.red,
+  },
+  recordButtonOuter: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.red,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  recordingTime: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.orange,
+  recordButtonInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.red,
+    borderWidth: 3,
+    borderColor: Colors.text,
   },
-  controls: {
+  recordButtonStop: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: Colors.text,
+  },
+
+  // Preview state
+  fullScreenVideo: {
+    flex: 1,
+  },
+  previewControls: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-    paddingTop: Spacing.xl,
-  },
-  recordButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: Colors.orange,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  recordButtonActive: {
-    backgroundColor: Colors.red,
-  },
-  recordButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
-  },
-  recordButtonInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: Colors.orange,
-    borderWidth: 3,
-    borderColor: Colors.text,
-  },
-  recordButtonInnerActive: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    backgroundColor: Colors.red,
-    borderWidth: 0,
-  },
-  videoControls: {
-    flexDirection: 'row',
+    paddingHorizontal: Spacing['2xl'],
     gap: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    width: '100%',
   },
-  retakeButton: {
-    flex: 1,
-    backgroundColor: Colors.bgElevated,
+  secondaryButton: {
+    width: '100%',
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  nextButton: {
-    flex: 1,
-    backgroundColor: Colors.orange,
-  },
-  permissionIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.bgCard,
-    justifyContent: 'center',
+    borderRadius: 14,
     alignItems: 'center',
-    marginBottom: Spacing.xl,
   },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: Spacing.sm,
-    textAlign: 'center',
-  },
-  permissionText: {
-    fontSize: 16,
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
     color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing['2xl'],
   },
-  permissionButtons: {
-    gap: Spacing.md,
+  redButton: {
     width: '100%',
+    paddingVertical: 18,
+    backgroundColor: Colors.red,
+    borderRadius: 14,
+    alignItems: 'center',
+    shadowColor: Colors.red,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  permissionButton: {
-    backgroundColor: Colors.orange,
+  redButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
   },
 });
