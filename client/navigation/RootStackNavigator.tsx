@@ -64,8 +64,8 @@ export default function RootStackNavigator() {
 
   useEffect(() => {
     const checkOnboarding = async () => {
-      const complete = await getOnboardingComplete();
-      setInitialRoute(complete ? 'Home' : 'AddAlarm');
+      // Always start at Home for now - onboarding can be triggered from there
+      setInitialRoute('Home');
     };
     checkOnboarding();
   }, []);
@@ -89,19 +89,9 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={({ navigation }) => ({
-          headerTitle: () => <HeaderTitle title="Snoozer" />,
-          headerRight: () => (
-            <HeaderButton
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate('AddAlarm', { isOnboarding: false });
-              }}
-            >
-              <Feather name="plus" size={24} color={Colors.orange} />
-            </HeaderButton>
-          ),
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="AddAlarm"

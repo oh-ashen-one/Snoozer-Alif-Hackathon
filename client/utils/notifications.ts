@@ -46,7 +46,12 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
       content: {
         title: 'Wake Up!',
         body: alarm.label || 'Time to get up!',
-        data: { alarmId: alarm.id },
+        data: { 
+          alarmId: alarm.id,
+          alarmLabel: alarm.label,
+          referencePhotoUri: alarm.referencePhotoUri,
+          shameVideoUri: alarm.shameVideoUri,
+        },
         sound: true,
       },
       trigger: {
@@ -58,6 +63,42 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
     return identifier;
   } catch (error) {
     console.error('Error scheduling alarm:', error);
+    return null;
+  }
+}
+
+export async function scheduleSnoozeAlarm(alarm: Alarm, snoozeMinutes: number = 5): Promise<string | null> {
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) {
+      console.warn('Notification permissions not granted');
+      return null;
+    }
+
+    const trigger = new Date();
+    trigger.setMinutes(trigger.getMinutes() + snoozeMinutes);
+
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Wake Up! (Snoozed)',
+        body: alarm.label || 'Time to get up! No more snoozing!',
+        data: { 
+          alarmId: alarm.id,
+          alarmLabel: alarm.label,
+          referencePhotoUri: alarm.referencePhotoUri,
+          shameVideoUri: alarm.shameVideoUri,
+        },
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: trigger,
+      },
+    });
+
+    return identifier;
+  } catch (error) {
+    console.error('Error scheduling snooze alarm:', error);
     return null;
   }
 }
@@ -78,7 +119,7 @@ export async function cancelAllAlarms(): Promise<void> {
   }
 }
 
-export function addNotificationListener(
+export function addNotificationReceivedListener(
   callback: (notification: Notifications.Notification) => void
 ): Notifications.EventSubscription {
   return Notifications.addNotificationReceivedListener(callback);
@@ -88,4 +129,8 @@ export function addNotificationResponseListener(
   callback: (response: Notifications.NotificationResponse) => void
 ): Notifications.EventSubscription {
   return Notifications.addNotificationResponseReceivedListener(callback);
+}
+
+export async function getLastNotificationResponse(): Promise<Notifications.NotificationResponse | null> {
+  return await Notifications.getLastNotificationResponseAsync();
 }

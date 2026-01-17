@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, Pressable, Image } from 'react-native';
+import { View, StyleSheet, Pressable, Image, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,6 +24,7 @@ export default function ProofCameraScreen() {
   const { alarmId, referencePhotoUri } = route.params;
 
   const [permission, requestPermission] = useCameraPermissions();
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
@@ -35,24 +36,33 @@ export default function ProofCameraScreen() {
 
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: 0.7,
       });
       
       if (photo?.uri) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'Home' }],
-          })
-        );
+        setPhotoUri(photo.uri);
       }
     } catch (error) {
       console.error('Error taking proof photo:', error);
     } finally {
       setCapturing(false);
     }
+  };
+
+  const handleRetake = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPhotoUri(null);
+  };
+
+  const handleConfirm = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      })
+    );
   };
 
   if (!permission) {
@@ -80,19 +90,42 @@ export default function ProofCameraScreen() {
     );
   }
 
+  if (photoUri) {
+    return (
+      <View style={styles.container}>
+        <Image source={{ uri: photoUri }} style={styles.preview} />
+        
+        <View style={[styles.controls, { paddingBottom: insets.bottom + Spacing.xl }]}>
+          <View style={styles.photoControls}>
+            <Button onPress={handleRetake} variant="secondary" style={styles.retakeButton}>
+              Retake
+            </Button>
+            <Button onPress={handleConfirm} variant="success" style={styles.confirmButton}>
+              Confirm
+            </Button>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={[styles.referenceContainer, { top: headerHeight + Spacing.lg }]}>
-        <Image
-          source={{ uri: referencePhotoUri }}
-          style={styles.referencePhoto}
-        />
-        <ThemedText style={styles.referenceLabel}>Reference</ThemedText>
+        {referencePhotoUri ? (
+          <>
+            <Image
+              source={{ uri: referencePhotoUri }}
+              style={styles.referencePhoto}
+            />
+            <ThemedText style={styles.referenceLabel}>Reference</ThemedText>
+          </>
+        ) : null}
       </View>
 
-      <View style={[styles.instructionBar, { top: headerHeight + Spacing.lg + 90 }]}>
+      <View style={[styles.instructionBar, { top: headerHeight + Spacing.lg + (referencePhotoUri ? 90 : 0) }]}>
         <ThemedText style={styles.instructionText}>
-          Match your reference photo
+          Match your reference photo to dismiss
         </ThemedText>
       </View>
 
@@ -164,6 +197,10 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
+  preview: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
   controls: {
     position: 'absolute',
     bottom: 0,
@@ -179,11 +216,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.green,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
   },
   captureButtonPressed: {
     opacity: 0.7,
@@ -199,6 +236,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.green,
     borderWidth: 3,
     borderColor: Colors.text,
+  },
+  photoControls: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    width: '100%',
+  },
+  retakeButton: {
+    flex: 1,
+  },
+  confirmButton: {
+    flex: 1,
   },
   permissionIcon: {
     width: 100,
@@ -220,10 +269,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing.xl,
   },
   permissionButton: {
-    backgroundColor: Colors.orange,
-    paddingHorizontal: Spacing['3xl'],
+    paddingHorizontal: Spacing['2xl'],
   },
 });

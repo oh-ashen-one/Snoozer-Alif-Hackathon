@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Alarm, getAlarms, saveAlarms, addAlarm as addAlarmToStorage, updateAlarm as updateAlarmInStorage, deleteAlarm as deleteAlarmFromStorage } from '@/utils/storage';
+import { 
+  Alarm, 
+  getAlarms, 
+  saveAlarms, 
+  addAlarm as addAlarmToStorage, 
+  updateAlarm as updateAlarmInStorage, 
+  deleteAlarm as deleteAlarmFromStorage,
+  getAlarmById as getAlarmByIdFromStorage,
+} from '@/utils/storage';
 import { scheduleAlarm, cancelAlarm } from '@/utils/notifications';
 
 export function useAlarms() {
@@ -25,18 +33,22 @@ export function useAlarms() {
     loadAlarms();
   }, [loadAlarms]);
 
-  const addAlarm = useCallback(async (alarm: Omit<Alarm, 'id' | 'createdAt'>) => {
+  const addAlarm = useCallback(async (alarm: Omit<Alarm, 'id' | 'createdAt' | 'notificationId'>) => {
     const newAlarm: Alarm = {
       ...alarm,
       id: Date.now().toString(),
       createdAt: Date.now(),
+      notificationId: null,
     };
 
     try {
-      await addAlarmToStorage(newAlarm);
+      let notificationId: string | null = null;
       if (newAlarm.enabled) {
-        await scheduleAlarm(newAlarm);
+        notificationId = await scheduleAlarm(newAlarm);
+        newAlarm.notificationId = notificationId;
       }
+      
+      await addAlarmToStorage(newAlarm);
       setAlarms(prev => [...prev, newAlarm]);
       return newAlarm;
     } catch (e) {
@@ -47,8 +59,11 @@ export function useAlarms() {
 
   const updateAlarm = useCallback(async (id: string, updates: Partial<Alarm>) => {
     try {
-      await updateAlarmInStorage(id, updates);
-      setAlarms(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+      const updatedAlarm = await updateAlarmInStorage(id, updates);
+      if (updatedAlarm) {
+        setAlarms(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+      }
+      return updatedAlarm;
     } catch (e) {
       console.error('Error updating alarm:', e);
       throw e;
@@ -60,22 +75,38 @@ export function useAlarms() {
     if (!alarm) return;
 
     const newEnabled = !alarm.enabled;
-    await updateAlarm(id, { enabled: newEnabled });
+    
+    try {
+      if (alarm.notificationId) {
+        await cancelAlarm(alarm.notificationId);
+      }
 
-    if (newEnabled) {
-      await scheduleAlarm({ ...alarm, enabled: newEnabled });
+      let notificationId: string | null = null;
+      if (newEnabled) {
+        notificationId = await scheduleAlarm({ ...alarm, enabled: newEnabled });
+      }
+
+      await updateAlarm(id, { enabled: newEnabled, notificationId });
+    } catch (e) {
+      console.error('Error toggling alarm:', e);
+      throw e;
     }
   }, [alarms, updateAlarm]);
 
   const deleteAlarm = useCallback(async (id: string) => {
     try {
+      const alarm = alarms.find(a => a.id === id);
+      if (alarm?.notificationId) {
+        await cancelAlarm(alarm.notificationId);
+      }
+      
       await deleteAlarmFromStorage(id);
       setAlarms(prev => prev.filter(a => a.id !== id));
     } catch (e) {
       console.error('Error deleting alarm:', e);
       throw e;
     }
-  }, []);
+  }, [alarms]);
 
   const getAlarmById = useCallback((id: string) => {
     return alarms.find(a => a.id === id);

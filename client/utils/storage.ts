@@ -1,7 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ALARMS_KEY = '@snoozer_alarms';
-const ONBOARDING_KEY = '@snoozer_onboarding_complete';
+const KEYS = {
+  ALARMS: '@snoozer/alarms',
+  ONBOARDED: '@snoozer/onboarded',
+  REFERENCE_PHOTO: '@snoozer/reference_photo',
+  SHAME_VIDEO: '@snoozer/shame_video',
+};
 
 export interface Alarm {
   id: string;
@@ -11,11 +15,12 @@ export interface Alarm {
   referencePhotoUri: string | null;
   shameVideoUri: string | null;
   createdAt: number;
+  notificationId?: string | null;
 }
 
 export async function getAlarms(): Promise<Alarm[]> {
   try {
-    const data = await AsyncStorage.getItem(ALARMS_KEY);
+    const data = await AsyncStorage.getItem(KEYS.ALARMS);
     return data ? JSON.parse(data) : [];
   } catch (error) {
     console.error('Error getting alarms:', error);
@@ -25,7 +30,7 @@ export async function getAlarms(): Promise<Alarm[]> {
 
 export async function saveAlarms(alarms: Alarm[]): Promise<void> {
   try {
-    await AsyncStorage.setItem(ALARMS_KEY, JSON.stringify(alarms));
+    await AsyncStorage.setItem(KEYS.ALARMS, JSON.stringify(alarms));
   } catch (error) {
     console.error('Error saving alarms:', error);
   }
@@ -37,13 +42,15 @@ export async function addAlarm(alarm: Alarm): Promise<void> {
   await saveAlarms(alarms);
 }
 
-export async function updateAlarm(id: string, updates: Partial<Alarm>): Promise<void> {
+export async function updateAlarm(id: string, updates: Partial<Alarm>): Promise<Alarm | null> {
   const alarms = await getAlarms();
   const index = alarms.findIndex(a => a.id === id);
   if (index !== -1) {
     alarms[index] = { ...alarms[index], ...updates };
     await saveAlarms(alarms);
+    return alarms[index];
   }
+  return null;
 }
 
 export async function deleteAlarm(id: string): Promise<void> {
@@ -52,9 +59,14 @@ export async function deleteAlarm(id: string): Promise<void> {
   await saveAlarms(filtered);
 }
 
+export async function getAlarmById(id: string): Promise<Alarm | null> {
+  const alarms = await getAlarms();
+  return alarms.find(a => a.id === id) || null;
+}
+
 export async function getOnboardingComplete(): Promise<boolean> {
   try {
-    const data = await AsyncStorage.getItem(ONBOARDING_KEY);
+    const data = await AsyncStorage.getItem(KEYS.ONBOARDED);
     return data === 'true';
   } catch (error) {
     console.error('Error getting onboarding state:', error);
@@ -64,7 +76,7 @@ export async function getOnboardingComplete(): Promise<boolean> {
 
 export async function setOnboardingComplete(complete: boolean): Promise<void> {
   try {
-    await AsyncStorage.setItem(ONBOARDING_KEY, complete ? 'true' : 'false');
+    await AsyncStorage.setItem(KEYS.ONBOARDED, complete ? 'true' : 'false');
   } catch (error) {
     console.error('Error saving onboarding state:', error);
   }
@@ -72,8 +84,10 @@ export async function setOnboardingComplete(complete: boolean): Promise<void> {
 
 export async function clearAllData(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([ALARMS_KEY, ONBOARDING_KEY]);
+    await AsyncStorage.multiRemove(Object.values(KEYS));
   } catch (error) {
     console.error('Error clearing data:', error);
   }
 }
+
+export { KEYS };

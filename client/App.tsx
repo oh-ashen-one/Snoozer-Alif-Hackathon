@@ -1,25 +1,70 @@
-import React from "react";
-import { StyleSheet } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import React, { useEffect, useRef } from "react";
+import { StyleSheet, Platform } from "react-native";
+import { NavigationContainer, NavigationContainerRef } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import * as Notifications from "expo-notifications";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 
-import RootStackNavigator from "@/navigation/RootStackNavigator";
+import RootStackNavigator, { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { addNotificationResponseListener } from "@/utils/notifications";
 
 export default function App() {
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  const notificationResponseListener = useRef<Notifications.EventSubscription>();
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
+    const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+      const data = response.notification.request.content.data;
+      
+      if (data?.alarmId && navigationRef.current) {
+        navigationRef.current.navigate('AlarmRinging', {
+          alarmId: data.alarmId as string,
+          alarmLabel: (data.alarmLabel as string) || 'Alarm',
+          referencePhotoUri: (data.referencePhotoUri as string) || '',
+          shameVideoUri: (data.shameVideoUri as string) || '',
+        });
+      }
+    };
+
+    const checkLastNotification = async () => {
+      try {
+        const response = await Notifications.getLastNotificationResponseAsync();
+        if (response) {
+          handleNotificationResponse(response);
+        }
+      } catch (error) {
+        console.log('getLastNotificationResponse not available on this platform');
+      }
+    };
+
+    checkLastNotification();
+
+    notificationResponseListener.current = addNotificationResponseListener(handleNotificationResponse);
+
+    return () => {
+      if (notificationResponseListener.current) {
+        notificationResponseListener.current.remove();
+      }
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <GestureHandlerRootView style={styles.root}>
             <KeyboardProvider>
-              <NavigationContainer>
+              <NavigationContainer ref={navigationRef}>
                 <RootStackNavigator />
               </NavigationContainer>
               <StatusBar style="light" />
