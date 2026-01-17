@@ -1,22 +1,25 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, FlatList, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Toggle } from '@/components/Toggle';
-import { Button } from '@/components/Button';
-import { ActiveBadge } from '@/components/ActiveBadge';
-import { DayPills } from '@/components/DayPills';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm } from '@/utils/storage';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -49,6 +52,58 @@ function formatTime(time: string): { time: string; period: string } {
   return { time: `${displayHours}:${minutes.toString().padStart(2, '0')}`, period };
 }
 
+// Toggle Component
+function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () => void }) {
+  const translateX = useSharedValue(value ? 23 : 3);
+
+  React.useEffect(() => {
+    translateX.value = withTiming(value ? 23 : 3, { duration: 200 });
+  }, [value, translateX]);
+
+  const knobStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onValueChange}
+      style={[styles.toggle, { backgroundColor: value ? Colors.green : '#292524' }]}
+    >
+      <Animated.View style={[styles.toggleKnob, knobStyle]} />
+    </Pressable>
+  );
+}
+
+// Day Pills Component
+function DayPills({ selectedDays }: { selectedDays: number[] }) {
+  return (
+    <View style={styles.dayPillsRow}>
+      {DAYS.map((day, index) => {
+        const isSelected = selectedDays.includes(index);
+        return (
+          <View
+            key={index}
+            style={[
+              styles.dayPill,
+              isSelected ? styles.dayPillSelected : styles.dayPillUnselected,
+            ]}
+          >
+            <ThemedText
+              style={[
+                styles.dayPillText,
+                isSelected ? styles.dayPillTextSelected : styles.dayPillTextUnselected,
+              ]}
+            >
+              {day}
+            </ThemedText>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+// Header Component
 function Header({ onSettingsPress }: { onSettingsPress: () => void }) {
   return (
     <View style={styles.header}>
@@ -56,101 +111,185 @@ function Header({ onSettingsPress }: { onSettingsPress: () => void }) {
         <ThemedText style={styles.greeting}>{getGreeting()}</ThemedText>
         <ThemedText style={styles.userName}>Alex 👋</ThemedText>
       </View>
-      <Pressable
-        style={styles.settingsButton}
-        onPress={onSettingsPress}
-        hitSlop={8}
-      >
-        <Feather name="settings" size={20} color={Colors.text} />
+      <Pressable style={styles.settingsButton} onPress={onSettingsPress} hitSlop={8}>
+        <Feather name="settings" size={20} color="#A8A29E" />
       </Pressable>
     </View>
   );
 }
 
-function NextAlarmCard({ alarm }: { alarm: Alarm | null }) {
-  if (!alarm) return null;
+// Active Badge Component
+function ActiveBadge() {
+  return (
+    <View style={styles.activeBadge}>
+      <View style={styles.activeDot} />
+      <ThemedText style={styles.activeText}>Active</ThemedText>
+    </View>
+  );
+}
 
+// Next Alarm Card Component
+function NextAlarmCard({ alarm }: { alarm: Alarm }) {
   const { time, period } = formatTime(alarm.time);
   const timeUntil = getTimeUntilAlarm(alarm.time);
 
   return (
     <View style={styles.nextAlarmCard}>
+      {/* Top row */}
       <View style={styles.nextAlarmHeader}>
         <ThemedText style={styles.nextAlarmLabel}>NEXT ALARM</ThemedText>
         <ActiveBadge />
       </View>
-      <View style={styles.nextAlarmTimeRow}>
+
+      {/* Time row */}
+      <View style={styles.timeRow}>
         <ThemedText style={styles.nextAlarmTime}>{time}</ThemedText>
         <ThemedText style={styles.nextAlarmPeriod}>{period}</ThemedText>
       </View>
-      <ThemedText style={styles.nextAlarmCountdown}>{timeUntil}</ThemedText>
+
+      {/* Subtitle row */}
+      <View style={styles.subtitleRow}>
+        <ThemedText style={styles.alarmLabelText}>{alarm.label || 'Wake up'}</ThemedText>
+        <ThemedText style={styles.subtitleDot}> · </ThemedText>
+        <ThemedText style={styles.countdownText}>{timeUntil}</ThemedText>
+      </View>
+
+      {/* Stakes row */}
+      <View style={styles.stakesRow}>
+        <View style={styles.stakeBox}>
+          <Feather name="alert-triangle" size={16} color={Colors.red} />
+          <ThemedText style={styles.stakeLabel}>If you snooze</ThemedText>
+          <ThemedText style={styles.stakePenalty}>-$2</ThemedText>
+        </View>
+        <View style={styles.stakeBox}>
+          <Feather name="eye" size={16} color="#78716C" />
+          <ThemedText style={styles.stakeLabel}>Buddy</ThemedText>
+          <ThemedText style={styles.stakeValue}>Solo mode</ThemedText>
+        </View>
+      </View>
     </View>
   );
 }
 
+// Stats Row Component
 function StatsRow() {
   return (
     <View style={styles.statsRow}>
+      {/* Streak Card */}
       <View style={styles.statCard}>
         <ThemedText style={styles.statEmoji}>🔥</ThemedText>
-        <ThemedText style={styles.statValue}>12 days</ThemedText>
         <ThemedText style={styles.statLabel}>Streak</ThemedText>
+        <ThemedText style={styles.statValueGray}>0</ThemedText>
+        <ThemedText style={styles.statSubLabel}>days</ThemedText>
       </View>
+
+      {/* Saved Card */}
       <View style={styles.statCard}>
         <ThemedText style={styles.statEmoji}>💰</ThemedText>
-        <ThemedText style={styles.statValue}>$48</ThemedText>
         <ThemedText style={styles.statLabel}>Saved</ThemedText>
+        <ThemedText style={styles.statValueGray}>$0</ThemedText>
+        <ThemedText style={styles.statSubLabel}>this month</ThemedText>
       </View>
-      <View style={styles.statCard}>
-        <ThemedText style={styles.statEmoji}>👥</ThemedText>
-        <ThemedText style={styles.statValue}>1</ThemedText>
+
+      {/* Buddy Card */}
+      <View style={[styles.statCard, styles.statCardDashed]}>
+        <ThemedText style={styles.statEmojiGray}>👥</ThemedText>
         <ThemedText style={styles.statLabel}>Buddy</ThemedText>
+        <ThemedText style={styles.addBuddyText}>+ Add</ThemedText>
+        <ThemedText style={styles.statSubLabel}>2x motivation</ThemedText>
       </View>
     </View>
   );
 }
 
-function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void }) {
-  const { time, period } = formatTime(alarm.time);
-  // Default to weekdays if no days specified
-  const selectedDays = [1, 2, 3, 4, 5];
-
+// Section Header Component
+function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.alarmCard,
-        pressed && styles.alarmCardPressed,
-      ]}
-      onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-    >
-      <View style={styles.alarmInfo}>
-        <View style={styles.timeRow}>
-          <ThemedText style={styles.alarmTime}>{time}</ThemedText>
-          <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
-        </View>
-        <ThemedText style={styles.alarmLabel}>{alarm.label || 'Alarm'}</ThemedText>
-        <View style={styles.dayPillsContainer}>
-          <DayPills selectedDays={selectedDays} />
-        </View>
-      </View>
-      <Toggle value={alarm.enabled} onValueChange={onToggle} />
-    </Pressable>
+    <View style={styles.sectionHeader}>
+      <ThemedText style={styles.sectionTitle}>Your Alarms</ThemedText>
+      <Pressable style={styles.addButton} onPress={onAddPress}>
+        <Feather name="plus" size={16} color={Colors.text} />
+        <ThemedText style={styles.addButtonText}>Add</ThemedText>
+      </Pressable>
+    </View>
   );
 }
 
+// Alarm List Item Component
+function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void }) {
+  const { time, period } = formatTime(alarm.time);
+  const selectedDays = [1, 2, 3, 4, 5]; // Default to weekdays
+
+  return (
+    <View style={styles.alarmCard}>
+      <View style={styles.alarmContent}>
+        <View style={styles.alarmTopRow}>
+          <View style={styles.alarmLeft}>
+            <View style={styles.alarmTimeRow}>
+              <ThemedText style={styles.alarmTime}>{time}</ThemedText>
+              <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
+            </View>
+            <View style={styles.alarmSubtitleRow}>
+              <ThemedText style={styles.alarmLabel}>{alarm.label || 'Wake up'}</ThemedText>
+              <ThemedText style={styles.alarmDot}> · </ThemedText>
+              <ThemedText style={styles.alarmPenalty}>-$2 if snooze</ThemedText>
+            </View>
+          </View>
+          <Toggle value={alarm.enabled} onValueChange={onToggle} />
+        </View>
+        <DayPills selectedDays={selectedDays} />
+      </View>
+    </View>
+  );
+}
+
+// Bottom Nav Component
+function BottomNav({ activeTab }: { activeTab: string }) {
+  const insets = useSafeAreaInsets();
+
+  const tabs = [
+    { key: 'alarms', icon: 'clock', label: 'Alarms' },
+    { key: 'stats', icon: 'bar-chart-2', label: 'Stats' },
+    { key: 'buddy', icon: 'users', label: 'Buddy' },
+    { key: 'settings', icon: 'sliders', label: 'Settings' },
+  ];
+
+  return (
+    <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 28) }]}>
+      {tabs.map(tab => {
+        const isActive = tab.key === activeTab;
+        return (
+          <Pressable key={tab.key} style={styles.navTab}>
+            <Feather
+              name={tab.icon as any}
+              size={24}
+              color={isActive ? Colors.text : '#78716C'}
+              style={{ opacity: isActive ? 1 : 0.4 }}
+            />
+            <ThemedText style={[styles.navLabel, isActive && styles.navLabelActive]}>
+              {tab.label}
+            </ThemedText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Empty State Component
 function EmptyState({ onAddAlarm }: { onAddAlarm: () => void }) {
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIcon}>
-        <Feather name="bell-off" size={64} color={Colors.textMuted} />
+        <Feather name="bell-off" size={48} color="#57534E" />
       </View>
-      <ThemedText style={styles.emptyTitle}>No alarms set</ThemedText>
+      <ThemedText style={styles.emptyTitle}>No alarms yet</ThemedText>
       <ThemedText style={styles.emptySubtitle}>
-        Create your first alarm to get started
+        Create your first alarm to start your accountability journey
       </ThemedText>
-      <Button onPress={onAddAlarm} style={styles.emptyButton}>
-        Create Your First Alarm
-      </Button>
+      <Pressable style={styles.emptyButton} onPress={onAddAlarm}>
+        <ThemedText style={styles.emptyButtonText}>Create Alarm</ThemedText>
+      </Pressable>
     </View>
   );
 }
@@ -159,6 +298,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const { alarms, loading, toggleAlarm, loadAlarms } = useAlarms();
+  const [activeTab] = useState('alarms');
 
   useFocusEffect(
     useCallback(() => {
@@ -182,18 +322,15 @@ export default function HomeScreen() {
     navigation.navigate('Settings');
   }, [navigation]);
 
-  const handleToggleAlarm = useCallback((id: string) => {
-    return () => toggleAlarm(id);
-  }, [toggleAlarm]);
-
-  const renderAlarmItem = useCallback(({ item }: { item: Alarm }) => (
-    <AlarmListItem
-      alarm={item}
-      onToggle={handleToggleAlarm(item.id)}
-    />
-  ), [handleToggleAlarm]);
-
-  const keyExtractor = useCallback((item: Alarm) => item.id, []);
+  const handleToggleAlarm = useCallback(
+    (id: string) => {
+      return () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        toggleAlarm(id);
+      };
+    },
+    [toggleAlarm]
+  );
 
   if (loading) {
     return (
@@ -203,35 +340,40 @@ export default function HomeScreen() {
     );
   }
 
-  const ListHeader = (
-    <>
-      <Header onSettingsPress={handleSettingsPress} />
-      {nextAlarm && <NextAlarmCard alarm={nextAlarm} />}
-      <StatsRow />
-      {alarms.length > 0 && (
-        <ThemedText style={styles.sectionTitle}>Your Alarms</ThemedText>
-      )}
-    </>
-  );
-
   return (
     <View style={styles.container}>
-      <FlatList
-        data={alarms}
-        keyExtractor={keyExtractor}
-        renderItem={renderAlarmItem}
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={[
-          styles.listContent,
-          {
-            paddingTop: insets.top + Spacing.lg,
-            paddingBottom: insets.bottom + 100,
-          },
-          alarms.length === 0 && styles.emptyList,
+          styles.scrollContent,
+          { paddingTop: insets.top + 20, paddingBottom: 100 },
         ]}
-        ListHeaderComponent={ListHeader}
-        ListEmptyComponent={<EmptyState onAddAlarm={handleAddAlarm} />}
         showsVerticalScrollIndicator={false}
-      />
+      >
+        <Header onSettingsPress={handleSettingsPress} />
+
+        {nextAlarm ? (
+          <>
+            <NextAlarmCard alarm={nextAlarm} />
+            <StatsRow />
+            <SectionHeader onAddPress={handleAddAlarm} />
+            {alarms.map(alarm => (
+              <AlarmListItem
+                key={alarm.id}
+                alarm={alarm}
+                onToggle={handleToggleAlarm(alarm.id)}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            <StatsRow />
+            <EmptyState onAddAlarm={handleAddAlarm} />
+          </>
+        )}
+      </ScrollView>
+
+      <BottomNav activeTab={activeTab} />
     </View>
   );
 }
@@ -239,17 +381,17 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: '#0C0A09',
   },
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  listContent: {
-    paddingHorizontal: Spacing['2xl'],
-  },
-  emptyList: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
   },
 
   // Header
@@ -257,179 +399,368 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing['2xl'],
+    marginBottom: 16,
   },
   greeting: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: '#78716C',
   },
   userName: {
     fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-    marginTop: Spacing.xs,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    marginTop: 4,
   },
   settingsButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: '#1C1917',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#292524',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
+  // Active Badge
+  activeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 100,
+  },
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
+  },
+  activeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#22C55E',
+  },
+
   // Next Alarm Card
   nextAlarmCard: {
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: '#1C1917',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing['2xl'],
-    marginBottom: Spacing.lg,
+    borderColor: '#292524',
+    padding: 24,
+    marginTop: 8,
   },
   nextAlarmHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: 12,
   },
   nextAlarmLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.textMuted,
+    color: '#78716C',
     letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  nextAlarmTimeRow: {
+  timeRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: Spacing.sm,
   },
   nextAlarmTime: {
     fontSize: 48,
     fontWeight: '700',
-    color: Colors.text,
+    color: '#FAFAF9',
   },
   nextAlarmPeriod: {
     fontSize: 20,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+    color: '#78716C',
+    marginLeft: 8,
   },
-  nextAlarmCountdown: {
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  alarmLabelText: {
+    fontSize: 14,
+    color: '#A8A29E',
+  },
+  subtitleDot: {
+    fontSize: 14,
+    color: '#A8A29E',
+  },
+  countdownText: {
+    fontSize: 14,
+    color: '#FB923C',
+  },
+  stakesRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  stakeBox: {
+    flex: 1,
+    backgroundColor: '#292524',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    gap: 4,
+  },
+  stakeLabel: {
+    fontSize: 11,
+    color: '#78716C',
+  },
+  stakePenalty: {
     fontSize: 16,
-    color: Colors.orange,
-    marginTop: Spacing.xs,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+  stakeValue: {
+    fontSize: 14,
+    color: '#A8A29E',
   },
 
   // Stats Row
   statsRow: {
     flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing['2xl'],
+    gap: 12,
+    marginTop: 16,
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: '#1C1917',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.lg,
+    borderColor: '#292524',
+    padding: 16,
     alignItems: 'center',
   },
-  statEmoji: {
-    fontSize: 24,
-    marginBottom: Spacing.sm,
+  statCardDashed: {
+    borderStyle: 'dashed',
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
+  statEmoji: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  statEmojiGray: {
+    fontSize: 20,
+    marginBottom: 4,
+    opacity: 0.5,
   },
   statLabel: {
     fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
+    color: '#78716C',
+  },
+  statValueGray: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#57534E',
+    marginTop: 4,
+  },
+  statSubLabel: {
+    fontSize: 12,
+    color: '#57534E',
+  },
+  addBuddyText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#78716C',
+    marginTop: 4,
   },
 
-  // Section Title
+  // Section Header
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 12,
+  },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '600',
-    color: Colors.textMuted,
-    marginBottom: Spacing.md,
+    color: '#FAFAF9',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#292524',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 100,
+  },
+  addButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#FAFAF9',
   },
 
   // Alarm Card
   alarmCard: {
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: '#1C1917',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.lg,
+    borderColor: '#292524',
+    padding: 16,
+    marginBottom: 12,
+  },
+  alarmContent: {},
+  alarmTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
+    alignItems: 'flex-start',
   },
-  alarmCardPressed: {
-    opacity: 0.8,
-  },
-  alarmInfo: {
-    flex: 1,
-  },
-  timeRow: {
+  alarmLeft: {},
+  alarmTimeRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: Spacing.xs,
   },
   alarmTime: {
     fontSize: 32,
-    fontWeight: '700',
-    color: Colors.text,
+    fontWeight: '600',
+    color: '#FAFAF9',
   },
   alarmPeriod: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: '#78716C',
+    marginLeft: 4,
+  },
+  alarmSubtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
   },
   alarmLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
+    fontSize: 13,
+    color: '#A8A29E',
   },
-  dayPillsContainer: {
-    marginTop: Spacing.md,
+  alarmDot: {
+    fontSize: 13,
+    color: '#A8A29E',
+  },
+  alarmPenalty: {
+    fontSize: 12,
+    color: '#EF4444',
+  },
+
+  // Toggle
+  toggle: {
+    width: 52,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+  },
+  toggleKnob: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FAFAF9',
+  },
+
+  // Day Pills
+  dayPillsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 12,
+  },
+  dayPill: {
+    width: 32,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayPillUnselected: {
+    backgroundColor: '#292524',
+  },
+  dayPillSelected: {
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 146, 60, 0.3)',
+  },
+  dayPillText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  dayPillTextUnselected: {
+    color: '#57534E',
+  },
+  dayPillTextSelected: {
+    color: '#FB923C',
+  },
+
+  // Bottom Nav
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(12, 10, 9, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: '#1C1917',
+    paddingTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  navTab: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  navLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#78716C',
+  },
+  navLabelActive: {
+    color: '#FAFAF9',
   },
 
   // Empty State
   emptyContainer: {
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing['3xl'],
+    paddingTop: 48,
+    paddingHorizontal: 24,
   },
   emptyIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.bgElevated,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#1C1917',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: Spacing.sm,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: '#78716C',
     textAlign: 'center',
-    marginBottom: Spacing['2xl'],
+    marginBottom: 24,
   },
   emptyButton: {
-    width: '100%',
+    backgroundColor: '#FB923C',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 14,
+    shadowColor: '#FB923C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  emptyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FAFAF9',
   },
 });
