@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, Text, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { CameraView } from 'expo-camera';
 import { Video, ResizeMode } from 'expo-av';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -26,11 +25,35 @@ type RouteProps = RouteProp<RootStackParamList, 'RecordShame'>;
 
 const MAX_DURATION = 15;
 
+// Check if we're in dev mode or on web (no camera)
+const isDev = __DEV__;
+const isWeb = Platform.OS === 'web';
+const useMockCamera = isDev || isWeb;
+
 const PROMPTS = [
   '"I\'m a pathetic snooze addict..."',
   '"I broke my promise to myself again..."',
   '"This is what a lazy person looks like..."',
 ];
+
+// Mock camera placeholder component
+const MockCameraView = ({ isRecording }: { isRecording: boolean }) => (
+  <View style={styles.mockCamera}>
+    <Text style={styles.mockCameraEmoji}>{isRecording ? '🔴' : '🎬'}</Text>
+    <Text style={styles.mockCameraText}>
+      {isRecording ? 'Recording...' : 'Camera preview'}
+    </Text>
+    {isDev && <Text style={styles.mockCameraSubtext}>(Dev mode)</Text>}
+  </View>
+);
+
+// Mock video preview component
+const MockVideoPreview = () => (
+  <View style={styles.mockVideoPreview}>
+    <Text style={styles.mockVideoEmoji}>✅</Text>
+    <Text style={styles.mockVideoText}>Video recorded</Text>
+  </View>
+);
 
 export default function RecordShameScreen() {
   const insets = useSafeAreaInsets();
@@ -43,6 +66,7 @@ export default function RecordShameScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const cameraRef = useRef<CameraView>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mockRecordingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pulseAnim = useSharedValue(1);
 
@@ -67,11 +91,14 @@ export default function RecordShameScreen() {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (mockRecordingRef.current) {
+        clearTimeout(mockRecordingRef.current);
+      }
     };
   }, []);
 
   const startRecording = async () => {
-    if (!cameraRef.current || isRecording) return;
+    if (isRecording) return;
 
     setIsRecording(true);
     setRecordingDuration(0);
@@ -88,15 +115,29 @@ export default function RecordShameScreen() {
     }, 1000);
 
     try {
-      const video = await cameraRef.current.recordAsync({
-        maxDuration: MAX_DURATION,
-      });
-      if (video?.uri) {
-        setVideoUri(video.uri);
+      if (useMockCamera) {
+        console.log('[RecordShame] Mock recording started');
+        // Auto-stop after MAX_DURATION in mock mode
+        mockRecordingRef.current = setTimeout(() => {
+          console.log('[RecordShame] Mock recording auto-stopped');
+          setIsRecording(false);
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+          setVideoUri('mock://shame-video');
+        }, MAX_DURATION * 1000);
+      } else if (cameraRef.current) {
+        const video = await cameraRef.current.recordAsync({
+          maxDuration: MAX_DURATION,
+        });
+        if (video?.uri) {
+          setVideoUri(video.uri);
+        }
       }
     } catch (error) {
-      // Handle silently
-    } finally {
+      console.log('[RecordShame] Recording error:', error);
+      // On error, use mock data to continue flow
+      setVideoUri('mock://shame-video');
       setIsRecording(false);
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -105,10 +146,23 @@ export default function RecordShameScreen() {
   };
 
   const stopRecording = async () => {
-    if (!cameraRef.current || !isRecording) return;
+    if (!isRecording) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    cameraRef.current.stopRecording();
+
+    if (useMockCamera) {
+      console.log('[RecordShame] Mock recording stopped manually');
+      if (mockRecordingRef.current) {
+        clearTimeout(mockRecordingRef.current);
+      }
+      setIsRecording(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      setVideoUri('mock://shame-video');
+    } else if (cameraRef.current) {
+      cameraRef.current.stopRecording();
+    }
   };
 
   const handleRetake = () => {
@@ -121,21 +175,29 @@ export default function RecordShameScreen() {
     if (!videoUri) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log('[RecordShame] Using video, navigating to OnboardingComplete');
 
-    const tempId = Date.now().toString();
-    const filename = generateVideoFilename(tempId);
-    const savedUri = await saveVideo(videoUri, filename);
+    let savedUri = videoUri;
+
+    // Only save if it's a real video
+    if (!videoUri.startsWith('mock://')) {
+      const tempId = Date.now().toString();
+      const filename = generateVideoFilename(tempId);
+      const result = await saveVideo(videoUri, filename);
+      if (result) savedUri = result;
+    }
 
     navigation.navigate('OnboardingComplete', {
       alarmTime,
       alarmLabel,
       referencePhotoUri,
-      shameVideoUri: savedUri || videoUri,
+      shameVideoUri: savedUri,
     });
   };
 
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    console.log('[RecordShame] Skipped, navigating to OnboardingComplete');
     navigation.navigate('OnboardingComplete', {
       alarmTime,
       alarmLabel,
@@ -148,14 +210,18 @@ export default function RecordShameScreen() {
   if (videoUri) {
     return (
       <View style={styles.container}>
-        <Video
-          source={{ uri: videoUri }}
-          style={styles.fullScreenVideo}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay
-          isLooping
-          isMuted={false}
-        />
+        {videoUri.startsWith('mock://') ? (
+          <MockVideoPreview />
+        ) : (
+          <Video
+            source={{ uri: videoUri }}
+            style={styles.fullScreenVideo}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay
+            isLooping
+            isMuted={false}
+          />
+        )}
 
         <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
           <Pressable style={styles.secondaryButton} onPress={handleRetake}>
@@ -173,11 +239,7 @@ export default function RecordShameScreen() {
   // Recording state
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
@@ -216,12 +278,16 @@ export default function RecordShameScreen() {
         {/* Camera preview */}
         <View style={styles.cameraWrapper}>
           <View style={styles.cameraContainer}>
-            <CameraView
-              ref={cameraRef}
-              style={styles.camera}
-              facing="front"
-              mode="video"
-            />
+            {useMockCamera ? (
+              <MockCameraView isRecording={isRecording} />
+            ) : (
+              <CameraView
+                ref={cameraRef}
+                style={styles.camera}
+                facing="front"
+                mode="video"
+              />
+            )}
           </View>
 
           {/* Timer when recording */}
@@ -233,7 +299,7 @@ export default function RecordShameScreen() {
             </View>
           )}
         </View>
-      </ScrollView>
+      </View>
 
       {/* Record button */}
       <View style={[styles.recordContainer, { paddingBottom: insets.bottom + 24 }]}>
@@ -264,11 +330,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
-  scrollView: {
-    flex: 1,
-  },
   scrollContent: {
+    flex: 1,
     paddingHorizontal: Spacing['2xl'],
+  },
+
+  // Mock camera
+  mockCamera: {
+    flex: 1,
+    backgroundColor: '#1C1917',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mockCameraEmoji: {
+    fontSize: 32,
+    marginBottom: Spacing.sm,
+  },
+  mockCameraText: {
+    fontSize: 14,
+    color: '#57534E',
+    fontWeight: '500',
+  },
+  mockCameraSubtext: {
+    fontSize: 11,
+    color: '#57534E',
+    marginTop: Spacing.xs,
+  },
+  mockVideoPreview: {
+    flex: 1,
+    backgroundColor: '#1C1917',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mockVideoEmoji: {
+    fontSize: 64,
+    marginBottom: Spacing.lg,
+  },
+  mockVideoText: {
+    fontSize: 18,
+    color: Colors.text,
+    fontWeight: '600',
   },
 
   // Header

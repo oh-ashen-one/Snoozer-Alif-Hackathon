@@ -1,20 +1,19 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withDelay,
   withSequence,
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Button } from '@/components/Button';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { setOnboardingComplete } from '@/utils/storage';
@@ -22,6 +21,13 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'OnboardingComplete'>;
+
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
 
 export default function OnboardingCompleteScreen() {
   const insets = useSafeAreaInsets();
@@ -40,7 +46,7 @@ export default function OnboardingCompleteScreen() {
     );
     opacity.value = withDelay(200, withSpring(1));
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, []);
+  }, [scale, opacity]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -71,25 +77,74 @@ export default function OnboardingCompleteScreen() {
     );
   };
 
+  const formattedTime = formatTime(alarmTime);
+  const hasReferencePhoto = referencePhotoUri && referencePhotoUri.length > 0;
+  const hasShameVideo = shameVideoUri && shameVideoUri.length > 0;
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + Spacing['5xl'], paddingBottom: insets.bottom + Spacing['3xl'] }]}>
+    <View style={[styles.container, { paddingBottom: insets.bottom + 48 }]}>
       <View style={styles.content}>
-        <Animated.View style={[styles.iconContainer, iconStyle]}>
-          <Feather name="check-circle" size={80} color={Colors.green} />
+        {/* Success icon */}
+        <Animated.View style={[styles.successIcon, iconStyle]}>
+          <Feather name="check" size={40} color={Colors.green} />
         </Animated.View>
 
         <Animated.View style={[styles.textContainer, contentStyle]}>
-          <ThemedText style={styles.title}>You're All Set</ThemedText>
+          {/* Title */}
+          <ThemedText style={styles.title}>You're all set!</ThemedText>
           <ThemedText style={styles.subtitle}>
-            Your alarm is active. Don't snooze.
+            Your accountability alarm is ready
           </ThemedText>
+
+          {/* Summary card */}
+          <View style={styles.summaryCard}>
+            {/* Alarm time row */}
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryLeft}>
+                <ThemedText style={styles.summaryEmoji}>⏰</ThemedText>
+                <ThemedText style={styles.summaryTime}>{formattedTime}</ThemedText>
+              </View>
+              <View style={styles.weekdaysPill}>
+                <ThemedText style={styles.weekdaysText}>Weekdays</ThemedText>
+              </View>
+            </View>
+
+            {/* Proof location row */}
+            <View style={styles.summaryRow}>
+              <ThemedText style={styles.summaryEmoji}>📍</ThemedText>
+              <ThemedText style={styles.summaryText}>
+                {hasReferencePhoto ? 'Proof location saved' : 'No proof location'}
+              </ThemedText>
+            </View>
+
+            {/* Shame video row */}
+            <View style={styles.summaryRow}>
+              <ThemedText style={styles.summaryEmoji}>🎬</ThemedText>
+              <ThemedText style={styles.summaryText}>
+                {hasShameVideo ? 'Shame video ready' : 'No shame video'}
+              </ThemedText>
+            </View>
+          </View>
+
+          {/* Motivation text */}
+          <View style={styles.motivationContainer}>
+            <ThemedText style={styles.motivationText}>
+              🔥 Day 1 starts tomorrow
+            </ThemedText>
+          </View>
         </Animated.View>
       </View>
 
-      <Animated.View style={[styles.buttonContainer, contentStyle]}>
-        <Button onPress={handleDone} style={styles.doneButton}>
-          Done
-        </Button>
+      {/* Bottom buttons */}
+      <Animated.View style={[styles.bottomContainer, contentStyle]}>
+        <Pressable style={styles.greenButton} onPress={handleDone}>
+          <ThemedText style={styles.greenButtonText}>Let's go</ThemedText>
+          <Feather name="arrow-right" size={20} color={Colors.text} />
+        </Pressable>
+
+        <Pressable style={styles.inviteLink}>
+          <ThemedText style={styles.inviteLinkText}>Invite a buddy</ThemedText>
+        </Pressable>
       </Animated.View>
     </View>
   );
@@ -99,41 +154,133 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bg,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing['2xl'],
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.bgCard,
+
+  // Success icon
+  successIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing['3xl'],
+    marginBottom: Spacing['2xl'],
   },
+
+  // Text
   textContainer: {
     alignItems: 'center',
+    width: '100%',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.text,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 15,
+    color: Colors.textMuted,
     textAlign: 'center',
+    marginBottom: Spacing['2xl'],
   },
-  buttonContainer: {
+
+  // Summary card
+  summaryCard: {
     width: '100%',
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.xl,
+    gap: Spacing.lg,
+    marginBottom: Spacing['2xl'],
   },
-  doneButton: {
-    backgroundColor: Colors.orange,
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  summaryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  summaryEmoji: {
+    fontSize: 18,
+    marginRight: Spacing.md,
+  },
+  summaryTime: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  summaryText: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+  },
+  weekdaysPill: {
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 100,
+  },
+  weekdaysText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.orange,
+  },
+
+  // Motivation
+  motivationContainer: {
+    marginBottom: Spacing.lg,
+  },
+  motivationText: {
+    fontSize: 14,
+    color: Colors.orange,
+    fontWeight: '500',
+  },
+
+  // Bottom
+  bottomContainer: {
+    width: '100%',
+    gap: Spacing.lg,
+  },
+  greenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    width: '100%',
+    paddingVertical: 18,
+    backgroundColor: Colors.green,
+    borderRadius: 14,
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  greenButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  inviteLink: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  inviteLinkText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textDecorationLine: 'underline',
   },
 });

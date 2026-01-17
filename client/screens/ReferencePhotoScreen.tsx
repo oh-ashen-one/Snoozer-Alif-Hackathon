@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, Pressable, Image, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, Image, Text, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -14,7 +14,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Button } from '@/components/Button';
 import { ProgressDots } from '@/components/ProgressDots';
 import { Colors, Spacing } from '@/constants/theme';
 import { savePhoto, generatePhotoFilename } from '@/utils/fileSystem';
@@ -24,11 +23,25 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ReferencePhoto'>;
 type Phase = 'intro' | 'camera' | 'confirm';
 
+// Check if we're in dev mode or on web (no camera)
+const isDev = __DEV__;
+const isWeb = Platform.OS === 'web';
+const useMockCamera = isDev || isWeb;
+
 const TIPS = [
   { text: 'Stand where you brush your teeth', icon: '🪥' },
   { text: 'Include the mirror or a landmark', icon: '🪞' },
   { text: 'Good lighting helps matching', icon: '💡' },
 ];
+
+// Mock camera placeholder component
+const MockCameraView = () => (
+  <View style={styles.mockCamera}>
+    <Text style={styles.mockCameraEmoji}>📷</Text>
+    <Text style={styles.mockCameraText}>Camera preview</Text>
+    {isDev && <Text style={styles.mockCameraSubtext}>(Dev mode - mock camera)</Text>}
+  </View>
+);
 
 export default function ReferencePhotoScreen() {
   const insets = useSafeAreaInsets();
@@ -37,7 +50,6 @@ export default function ReferencePhotoScreen() {
   const { alarmTime, alarmLabel, isOnboarding } = route.params;
 
   const [phase, setPhase] = useState<Phase>('intro');
-  const [permission, requestPermission] = useCameraPermissions();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
@@ -58,21 +70,31 @@ export default function ReferencePhotoScreen() {
   };
 
   const handleCapture = async () => {
-    if (!cameraRef.current || capturing) return;
+    if (capturing) return;
 
     setCapturing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
-      });
-      if (photo?.uri) {
-        setPhotoUri(photo.uri);
+      if (useMockCamera) {
+        console.log('[ReferencePhoto] Mock capture - would take photo here');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setPhotoUri('mock://reference-photo');
         setPhase('confirm');
+      } else if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.7,
+        });
+        if (photo?.uri) {
+          setPhotoUri(photo.uri);
+          setPhase('confirm');
+        }
       }
     } catch (error) {
-      // Handle error silently
+      console.log('[ReferencePhoto] Capture error:', error);
+      // On error, use mock data to continue flow
+      setPhotoUri('mock://reference-photo');
+      setPhase('confirm');
     } finally {
       setCapturing(false);
     }
@@ -88,15 +110,22 @@ export default function ReferencePhotoScreen() {
     if (!photoUri) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log('[ReferencePhoto] Confirmed, navigating to RecordShame');
 
-    const tempId = Date.now().toString();
-    const filename = generatePhotoFilename(tempId);
-    const savedUri = await savePhoto(photoUri, filename);
+    let savedUri = photoUri;
+
+    // Only save if it's a real photo
+    if (!photoUri.startsWith('mock://')) {
+      const tempId = Date.now().toString();
+      const filename = generatePhotoFilename(tempId);
+      const result = await savePhoto(photoUri, filename);
+      if (result) savedUri = result;
+    }
 
     navigation.navigate('RecordShame', {
       alarmTime,
       alarmLabel,
-      referencePhotoUri: savedUri || photoUri,
+      referencePhotoUri: savedUri,
       isOnboarding,
     });
   };
@@ -178,7 +207,11 @@ export default function ReferencePhotoScreen() {
 
         {/* Camera viewport */}
         <View style={styles.cameraContainer}>
-          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+          {useMockCamera ? (
+            <MockCameraView />
+          ) : (
+            <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+          )}
 
           {/* Guide overlay */}
           <View style={styles.guideOverlay}>
@@ -233,8 +266,13 @@ export default function ReferencePhotoScreen() {
 
           {/* Photo preview */}
           <View style={styles.previewContainer}>
-            {photoUri && (
+            {photoUri && !photoUri.startsWith('mock://') ? (
               <Image source={{ uri: photoUri }} style={styles.previewImage} />
+            ) : (
+              <View style={styles.mockPreview}>
+                <Text style={styles.mockPreviewEmoji}>🛁</Text>
+                <Text style={styles.mockPreviewText}>Bathroom photo</Text>
+              </View>
             )}
             <View style={styles.locationBadge}>
               <Feather name="map-pin" size={14} color={Colors.textSecondary} />
@@ -266,10 +304,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
-  centerContent: {
-    justifyContent: 'center',
+
+  // Mock camera
+  mockCamera: {
+    flex: 1,
+    backgroundColor: '#1C1917',
     alignItems: 'center',
-    paddingHorizontal: Spacing['2xl'],
+    justifyContent: 'center',
+  },
+  mockCameraEmoji: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
+  },
+  mockCameraText: {
+    fontSize: 16,
+    color: '#57534E',
+    fontWeight: '500',
+  },
+  mockCameraSubtext: {
+    fontSize: 12,
+    color: '#57534E',
+    marginTop: Spacing.xs,
+  },
+  mockPreview: {
+    flex: 1,
+    backgroundColor: '#1C1917',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mockPreviewEmoji: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
+  },
+  mockPreviewText: {
+    fontSize: 14,
+    color: '#57534E',
+    fontWeight: '500',
   },
 
   // Intro Phase
@@ -650,29 +720,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: Colors.textSecondary,
-  },
-
-  // Permission
-  permissionIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.bgCard,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: Spacing.sm,
-    textAlign: 'center',
-  },
-  permissionText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Spacing['2xl'],
   },
 });

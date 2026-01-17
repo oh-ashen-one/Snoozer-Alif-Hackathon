@@ -10,6 +10,9 @@ import * as Haptics from 'expo-haptics';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { getAlarmById } from '@/utils/storage';
+import { cancelAlarm } from '@/utils/notifications';
+import { saveProofPhoto } from '@/utils/fileSystem';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
@@ -32,7 +35,7 @@ export default function ProofCameraScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { referencePhotoUri } = route.params;
+  const { alarmId, referencePhotoUri } = route.params;
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
@@ -73,9 +76,22 @@ export default function ProofCameraScreen() {
     setPhotoUri(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     console.log('[ProofCamera] Confirmed - dismissing alarm');
+
+    try {
+      if (photoUri && !photoUri.startsWith('mock://')) {
+        await saveProofPhoto(photoUri);
+      }
+
+      const alarm = await getAlarmById(alarmId);
+      if (alarm?.notificationId) {
+        await cancelAlarm(alarm.notificationId);
+      }
+    } catch (error) {
+      console.log('[ProofCamera] Error during dismiss:', error);
+    }
 
     navigation.dispatch(
       CommonActions.reset({
