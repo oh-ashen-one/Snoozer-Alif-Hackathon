@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,12 +10,15 @@ import {
   Platform,
   ActionSheetIOS,
   Text,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -25,8 +28,12 @@ import Animated, {
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { clearAllData } from '@/utils/storage';
+import { clearAllData, setOnboardingComplete } from '@/utils/storage';
 import { useAlarms } from '@/hooks/useAlarms';
+
+const STORAGE_KEYS = {
+  VIBRATION_ENABLED: '@snoozer/vibration_enabled',
+};
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -130,6 +137,21 @@ export default function SettingsScreen() {
   const [defaultPunishment, setDefaultPunishment] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState('Venmo');
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
+
+  // Load vibration setting on mount
+  useEffect(() => {
+    const loadVibrationSetting = async () => {
+      try {
+        const value = await AsyncStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
+        if (value !== null) {
+          setVibrationEnabled(value === 'true');
+        }
+      } catch (error) {
+        // Default to true if error
+      }
+    };
+    loadVibrationSetting();
+  }, []);
 
   // Navigation handlers
   const handleBack = useCallback(() => {
@@ -245,33 +267,35 @@ export default function SettingsScreen() {
   }, []);
 
   // Notification handlers
-  const handleToggleVibration = useCallback(() => {
+  const handleToggleVibration = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setVibrationEnabled((prev) => !prev);
-  }, []);
+    const newValue = !vibrationEnabled;
+    setVibrationEnabled(newValue);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.VIBRATION_ENABLED, newValue.toString());
+    } catch (error) {
+      // Silently fail
+    }
+  }, [vibrationEnabled]);
 
   // Support handlers
   const handleHelp = useCallback(() => {
-    Linking.openURL('https://snoozer.app/help');
-  }, []);
+    navigation.navigate('Help');
+  }, [navigation]);
 
   const handleContact = useCallback(() => {
     Linking.openURL('mailto:support@snoozer.app?subject=Snoozer Support');
   }, []);
 
   const handleRateApp = useCallback(() => {
-    const storeUrl =
-      Platform.OS === 'ios'
-        ? 'https://apps.apple.com/app/snoozer/id123456'
-        : 'https://play.google.com/store/apps/details?id=com.snoozer';
-    Linking.openURL(storeUrl);
+    Alert.alert('Rating coming soon!', 'App store rating will be available when the app is published.');
   }, []);
 
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
-        message:
-          'Check out Snoozer - the alarm app that makes you pay if you snooze! Download it here: https://snoozer.app',
+        message: "I'm using Snoozer to stop hitting snooze! No more excuses. Download it: https://snoozer.app",
+        title: 'Snoozer',
       });
     } catch (error) {
       // Share cancelled or failed
@@ -280,36 +304,109 @@ export default function SettingsScreen() {
 
   // About handlers
   const handleTerms = useCallback(() => {
-    Linking.openURL('https://snoozer.app/terms');
-  }, []);
+    navigation.navigate('Legal', { type: 'terms' });
+  }, [navigation]);
 
   const handlePrivacy = useCallback(() => {
-    Linking.openURL('https://snoozer.app/privacy');
-  }, []);
+    navigation.navigate('Legal', { type: 'privacy' });
+  }, [navigation]);
 
   // Danger zone handlers
-  const handleSignOut = useCallback(() => {
+  const handleStartOver = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
-      'Sign Out?',
-      'This will reset the app and take you back to setup. All your alarms, photos, and videos will be deleted.',
+      'Start Over?',
+      'This will reset onboarding but keep your alarms. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: 'Start Over',
           style: 'destructive',
           onPress: async () => {
-            await clearAllData();
+            await setOnboardingComplete(false);
             navigation.dispatch(
               CommonActions.reset({
                 index: 0,
-                routes: [{ name: 'AddAlarm', params: { isOnboarding: true } }],
+                routes: [{ name: 'Onboarding' }],
               })
             );
           },
         },
       ]
     );
+  }, [navigation]);
+
+  const handleDeleteAllData = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Delete All Data',
+        'This will delete ALL data including alarms, photos, and videos. This cannot be undone.\n\nType "DELETE" to confirm:',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async (text) => {
+              if (text === 'DELETE') {
+                try {
+                  await AsyncStorage.clear();
+                  if (FileSystem.documentDirectory) {
+                    const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
+                    for (const file of files) {
+                      await FileSystem.deleteAsync(`${FileSystem.documentDirectory}${file}`, { idempotent: true });
+                    }
+                  }
+                  navigation.dispatch(
+                    CommonActions.reset({
+                      index: 0,
+                      routes: [{ name: 'Onboarding' }],
+                    })
+                  );
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to delete all data. Please try again.');
+                }
+              } else {
+                Alert.alert('Incorrect', 'You must type "DELETE" exactly to confirm.');
+              }
+            },
+          },
+        ],
+        'plain-text'
+      );
+    } else {
+      // Android fallback
+      Alert.alert(
+        'Delete All Data',
+        'This will delete ALL data including alarms, photos, and videos. This cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete Everything',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await AsyncStorage.clear();
+                if (FileSystem.documentDirectory) {
+                  const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
+                  for (const file of files) {
+                    await FileSystem.deleteAsync(`${FileSystem.documentDirectory}${file}`, { idempotent: true });
+                  }
+                }
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Onboarding' }],
+                  })
+                );
+              } catch (error) {
+                Alert.alert('Error', 'Failed to delete all data. Please try again.');
+              }
+            },
+          },
+        ]
+      );
+    }
   }, [navigation]);
 
   return (
@@ -473,10 +570,19 @@ export default function SettingsScreen() {
           <ThemedText style={styles.dangerLabel}>DANGER ZONE</ThemedText>
           <View style={styles.dangerCard}>
             <SettingsRow
-              emoji="🚪"
+              emoji="🔄"
               iconBg={ICON_COLORS.red}
-              label="Sign out"
-              onPress={handleSignOut}
+              label="Start over"
+              onPress={handleStartOver}
+              showChevron={false}
+              isDestructive
+            />
+            <View style={styles.rowDivider} />
+            <SettingsRow
+              emoji="🗑️"
+              iconBg={ICON_COLORS.red}
+              label="Delete all data"
+              onPress={handleDeleteAllData}
               showChevron={false}
               isDestructive
             />
