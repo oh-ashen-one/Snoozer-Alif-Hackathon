@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { StyleSheet, Platform } from "react-native";
 import { NavigationContainer, NavigationContainerRef } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,9 +16,15 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { addNotificationResponseListener } from "@/utils/notifications";
 import { ensureDirectories } from "@/utils/fileSystem";
 
+SplashScreen.preventAutoHideAsync();
+
 export default function App() {
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
   const notificationResponseListener = useRef<Notifications.EventSubscription>();
+
+  const onNavigationReady = useCallback(() => {
+    SplashScreen.hideAsync();
+  }, []);
 
   useEffect(() => {
     ensureDirectories();
@@ -67,7 +74,7 @@ export default function App() {
         <SafeAreaProvider>
           <GestureHandlerRootView style={styles.root}>
             <KeyboardProvider>
-              <NavigationContainer ref={navigationRef}>
+              <NavigationContainer ref={navigationRef} onReady={onNavigationReady}>
                 <RootStackNavigator />
               </NavigationContainer>
               <StatusBar style="light" />

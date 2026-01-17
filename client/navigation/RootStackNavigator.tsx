@@ -70,8 +70,13 @@ export default function RootStackNavigator() {
 
   useEffect(() => {
     const checkOnboarding = async () => {
-      // Always start at Home for now - onboarding can be triggered from there
-      setInitialRoute('Home');
+      try {
+        const hasOnboarded = await getOnboardingComplete();
+        setInitialRoute(hasOnboarded ? 'Home' : 'Onboarding');
+      } catch (error) {
+        // If there's an error, default to onboarding
+        setInitialRoute('Onboarding');
+      }
     };
     checkOnboarding();
   }, []);

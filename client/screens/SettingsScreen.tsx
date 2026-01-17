@@ -475,17 +475,8 @@ export default function SettingsScreen() {
             <SettingsRow
               emoji="🚪"
               iconBg={ICON_COLORS.red}
-              label="Start over"
-              onPress={handleStartOver}
-              showChevron={false}
-              isDestructive
-            />
-            <View style={styles.rowDivider} />
-            <SettingsRow
-              emoji="🗑️"
-              iconBg={ICON_COLORS.red}
-              label="Delete all data"
-              onPress={handleDeleteAllData}
+              label="Sign out"
+              onPress={handleSignOut}
               showChevron={false}
               isDestructive
             />
