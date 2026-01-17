@@ -14,12 +14,14 @@ import AlarmRingingScreen from '@/screens/AlarmRingingScreen';
 import ProofCameraScreen from '@/screens/ProofCameraScreen';
 import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import OnboardingScreen from '@/screens/OnboardingScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { getOnboardingComplete } from '@/utils/storage';
 import { Colors } from '@/constants/theme';
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   Home: undefined;
   Settings: undefined;
   AddAlarm: { isOnboarding: boolean };
@@ -81,13 +83,20 @@ export default function RootStackNavigator() {
   }
 
   return (
-    <Stack.Navigator 
+    <Stack.Navigator
       initialRouteName={initialRoute}
       screenOptions={{
         ...screenOptions,
         contentStyle: { backgroundColor: Colors.bg },
       }}
     >
+      <Stack.Screen
+        name="Onboarding"
+        component={OnboardingScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
       <Stack.Screen
         name="Home"
         component={HomeScreen}

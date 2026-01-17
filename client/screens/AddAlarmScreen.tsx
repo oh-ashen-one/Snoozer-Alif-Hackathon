@@ -380,7 +380,7 @@ export default function AddAlarmScreen() {
         </View>
 
         {/* Continue Button */}
-        <Pressable style={styles.continueButton} onPress={handleContinue}>
+        <Pressable testID="button-continue" style={styles.continueButton} onPress={handleContinue}>
           <Text style={styles.continueText}>Continue</Text>
           <ArrowIcon />
         </Pressable>
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   timePickerCard: {
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
     marginBottom: Spacing.xl,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
   },
   chevronButton: {
     width: 48,
-    height: 36,
+    height: 44,
     backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.sm,
     alignItems: 'center',
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   dayPill: {
     flex: 1,
     paddingVertical: 14,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.sm,
     alignItems: 'center',
     borderWidth: 1,
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   punishmentButton: {
     flex: 1,
     paddingVertical: Spacing.lg,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     borderWidth: 2,
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     padding: 14,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: 'transparent',
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   showMoreButton: {
     marginTop: Spacing.md,
     padding: Spacing.md,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   summaryCard: {
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: 14,
     padding: Spacing.lg,
     marginBottom: Spacing.lg,

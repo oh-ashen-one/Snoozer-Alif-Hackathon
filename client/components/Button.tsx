@@ -1,5 +1,13 @@
-import React, { ReactNode } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp, Platform } from "react-native";
+import React from "react";
+import {
+  StyleSheet,
+  Pressable,
+  ViewStyle,
+  StyleProp,
+  Platform,
+  ActivityIndicator,
+  View,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,16 +16,18 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Colors, BorderRadius, Spacing } from "@/constants/theme";
+import { Colors, BorderRadius } from "@/constants/theme";
 
-type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger';
+type ButtonVariant = "primary" | "secondary" | "danger" | "success";
 
 interface ButtonProps {
-  onPress?: () => void;
-  children: ReactNode;
-  style?: StyleProp<ViewStyle>;
-  disabled?: boolean;
+  title: string;
+  onPress: () => void;
   variant?: ButtonVariant;
+  disabled?: boolean;
+  icon?: React.ReactNode;
+  loading?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 const springConfig: WithSpringConfig = {
@@ -30,98 +40,115 @@ const springConfig: WithSpringConfig = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const getVariantStyles = (variant: ButtonVariant) => {
-  switch (variant) {
-    case 'success':
-      return {
-        backgroundColor: Colors.green,
-        shadowColor: Colors.green,
-      };
-    case 'danger':
-      return {
-        backgroundColor: Colors.red,
-        shadowColor: Colors.red,
-      };
-    case 'secondary':
-      return {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: Colors.border,
-        shadowColor: 'transparent',
-      };
-    case 'primary':
-    default:
-      return {
-        backgroundColor: Colors.orange,
-        shadowColor: Colors.orange,
-      };
-  }
-};
+const VARIANT_STYLES = {
+  primary: {
+    backgroundColor: Colors.orange,
+    shadowColor: Colors.orange,
+    textColor: Colors.text,
+    hasShadow: true,
+  },
+  secondary: {
+    backgroundColor: "transparent",
+    shadowColor: "transparent",
+    textColor: Colors.textSecondary,
+    hasShadow: false,
+  },
+  danger: {
+    backgroundColor: Colors.red,
+    shadowColor: Colors.red,
+    textColor: Colors.text,
+    hasShadow: true,
+  },
+  success: {
+    backgroundColor: Colors.green,
+    shadowColor: Colors.green,
+    textColor: Colors.text,
+    hasShadow: true,
+  },
+} as const;
 
 export function Button({
+  title,
   onPress,
-  children,
-  style,
+  variant = "primary",
   disabled = false,
-  variant = 'primary',
+  icon,
+  loading = false,
+  style,
 }: ButtonProps) {
   const scale = useSharedValue(1);
-  const variantStyles = getVariantStyles(variant);
+  const opacity = useSharedValue(1);
+
+  const variantConfig = VARIANT_STYLES[variant];
+  const isDisabled = disabled || loading;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    opacity: opacity.value,
   }));
 
   const handlePressIn = () => {
-    if (!disabled) {
-      scale.value = withSpring(0.97, springConfig);
+    if (!isDisabled) {
+      scale.value = withSpring(0.98, springConfig);
+      opacity.value = withSpring(0.9, springConfig);
     }
   };
 
   const handlePressOut = () => {
-    if (!disabled) {
+    if (!isDisabled) {
       scale.value = withSpring(1, springConfig);
+      opacity.value = withSpring(1, springConfig);
     }
   };
 
-  const isSecondary = variant === 'secondary';
+  const buttonStyles = [
+    styles.button,
+    {
+      backgroundColor: variantConfig.backgroundColor,
+      shadowColor: variantConfig.shadowColor,
+    },
+    variant === "secondary" && styles.secondaryBorder,
+    variantConfig.hasShadow && styles.shadow,
+    isDisabled && styles.disabled,
+    style,
+  ];
 
   return (
     <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
+      onPress={isDisabled ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      disabled={disabled}
-      style={[
-        styles.button,
-        variantStyles,
-        !isSecondary && styles.buttonShadow,
-        {
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-        animatedStyle,
-      ]}
+      disabled={isDisabled}
+      style={[buttonStyles, animatedStyle]}
     >
-      <ThemedText style={[
-        styles.buttonText,
-        isSecondary && styles.secondaryText,
-      ]}>
-        {children}
-      </ThemedText>
+      {loading ? (
+        <ActivityIndicator color={variantConfig.textColor} size="small" />
+      ) : (
+        <View style={styles.content}>
+          {icon && <View style={styles.iconContainer}>{icon}</View>}
+          <ThemedText style={[styles.text, { color: variantConfig.textColor }]}>
+            {title}
+          </ThemedText>
+        </View>
+      )}
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    height: 56,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing["2xl"],
+    flexDirection: "row",
   },
-  buttonShadow: {
+  secondaryBorder: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  shadow: {
     ...Platform.select({
       ios: {
         shadowOffset: { width: 0, height: 4 },
@@ -138,12 +165,20 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  buttonText: {
+  disabled: {
+    opacity: 0.4,
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  iconContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  text: {
     fontWeight: "600",
     fontSize: 16,
-    color: Colors.bgCard,
-  },
-  secondaryText: {
-    color: Colors.text,
   },
 });

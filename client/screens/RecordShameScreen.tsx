@@ -224,11 +224,11 @@ export default function RecordShameScreen() {
         )}
 
         <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
-          <Pressable style={styles.secondaryButton} onPress={handleRetake}>
+          <Pressable testID="button-record-again" style={styles.secondaryButton} onPress={handleRetake}>
             <ThemedText style={styles.secondaryButtonText}>Record again</ThemedText>
           </Pressable>
 
-          <Pressable style={styles.redButton} onPress={handleUseVideo}>
+          <Pressable testID="button-use-video" style={styles.redButton} onPress={handleUseVideo}>
             <ThemedText style={styles.redButtonText}>Use this video</ThemedText>
           </Pressable>
         </View>
@@ -304,6 +304,9 @@ export default function RecordShameScreen() {
       {/* Record button */}
       <View style={[styles.recordContainer, { paddingBottom: insets.bottom + 24 }]}>
         <Pressable
+          testID="button-record"
+          accessibilityRole="button"
+          accessibilityLabel={isRecording ? "Stop recording" : "Start recording"}
           onPress={isRecording ? stopRecording : startRecording}
           style={styles.recordButton}
         >
@@ -332,7 +335,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
-    paddingHorizontal: Spacing['2xl'],
+    paddingHorizontal: Spacing.xl,
   },
 
   // Mock camera
@@ -440,7 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing['2xl'],
   },
   promptCard: {
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: 12,
     padding: Spacing.md,
   },

@@ -183,7 +183,7 @@ export default function ReferencePhotoScreen() {
 
         {/* Bottom CTA */}
         <View style={[styles.bottomCTA, { paddingBottom: insets.bottom + 24 }]}>
-          <Pressable style={styles.greenButton} onPress={handleTakePhoto}>
+          <Pressable testID="button-take-photo" style={styles.greenButton} onPress={handleTakePhoto}>
             <Feather name="camera" size={20} color={Colors.text} />
             <ThemedText style={styles.greenButtonText}>Take reference photo</ThemedText>
           </Pressable>
@@ -238,6 +238,9 @@ export default function ReferencePhotoScreen() {
         {/* Capture button */}
         <View style={[styles.captureContainer, { paddingBottom: insets.bottom + 24 }]}>
           <Pressable
+            testID="button-capture"
+            accessibilityRole="button"
+            accessibilityLabel="Capture photo"
             onPress={handleCapture}
             disabled={capturing}
             style={[styles.captureButton, capturing && styles.captureButtonDisabled]}
@@ -283,11 +286,11 @@ export default function ReferencePhotoScreen() {
 
         {/* Bottom buttons */}
         <View style={[styles.confirmButtons, { paddingBottom: insets.bottom + 24 }]}>
-          <Pressable style={styles.secondaryButton} onPress={handleRetake}>
+          <Pressable testID="button-retake" style={styles.secondaryButton} onPress={handleRetake}>
             <ThemedText style={styles.secondaryButtonText}>Retake photo</ThemedText>
           </Pressable>
 
-          <Pressable style={styles.greenButton} onPress={handleConfirm}>
+          <Pressable testID="button-confirm" style={styles.greenButton} onPress={handleConfirm}>
             <ThemedText style={styles.greenButtonText}>Looks good, continue</ThemedText>
             <Feather name="arrow-right" size={20} color={Colors.text} />
           </Pressable>
@@ -392,7 +395,7 @@ const styles = StyleSheet.create({
   illustrationCard: {
     width: 200,
     height: 260,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: 24,
     borderWidth: 2,
     borderColor: Colors.border,
@@ -467,7 +470,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     padding: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
     borderRadius: 12,
   },
   tipIcon: {
@@ -518,6 +521,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: 100,
     minWidth: 60,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   backButtonText: {
     fontSize: 14,
