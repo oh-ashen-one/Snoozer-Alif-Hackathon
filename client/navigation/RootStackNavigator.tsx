@@ -96,6 +96,13 @@ export default function RootStackNavigator() {
         }}
       />
       <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="AddAlarm"
         component={AddAlarmScreen}
         options={({ route }) => ({
