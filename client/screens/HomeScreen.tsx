@@ -204,7 +204,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
           <Feather name="zap" size={18} color="#FB923C" />
         </View>
         <ThemedText style={styles.statLabel}>Streak</ThemedText>
-        <ThemedText style={styles.statValueGray} numberOfLines={1} adjustsFontSizeToFit>0</ThemedText>
+        <ThemedText style={styles.statValueGray}>0</ThemedText>
         <ThemedText style={styles.statSubLabel}>days</ThemedText>
       </View>
 
@@ -627,8 +627,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#57534E',
     marginTop: 4,
-    minWidth: 50,
-    textAlign: 'center',
   },
   statSubLabel: {
     fontSize: 12,

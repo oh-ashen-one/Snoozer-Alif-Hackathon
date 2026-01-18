@@ -252,7 +252,7 @@ export default function StatsScreen() {
               <Feather name="zap" size={32} color="#FB923C" />
             </View>
             <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
-            <ThemedText style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit>{stats.currentStreak} days</ThemedText>
+            <ThemedText style={styles.heroValue}>{stats.currentStreak} days</ThemedText>
             <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
           </View>
         </FadeInView>
@@ -264,7 +264,7 @@ export default function StatsScreen() {
                 <Feather name="dollar-sign" size={18} color="#22C55E" />
               </View>
               <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
-              <ThemedText style={styles.statValueGreen} numberOfLines={1} adjustsFontSizeToFit>${stats.moneySaved}</ThemedText>
+              <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
               <ThemedText style={styles.statSubtext}>this month</ThemedText>
             </View>
             <View style={styles.statCard}>
@@ -272,7 +272,7 @@ export default function StatsScreen() {
                 <Feather name="trending-down" size={18} color="#EF4444" />
               </View>
               <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
-              <ThemedText style={styles.statValueRed} numberOfLines={1} adjustsFontSizeToFit>${stats.moneyLost}</ThemedText>
+              <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
               <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
             </View>
           </View>
@@ -401,7 +401,6 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '700',
     color: Colors.orange,
-    flexShrink: 1,
   },
   heroBest: {
     fontSize: 13,
@@ -441,13 +440,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: Colors.green,
-    flexShrink: 1,
   },
   statValueRed: {
     fontSize: 32,
     fontWeight: '700',
     color: Colors.red,
-    flexShrink: 1,
   },
   statSubtext: {
     fontSize: 12,
