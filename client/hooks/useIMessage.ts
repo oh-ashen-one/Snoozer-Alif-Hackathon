@@ -14,6 +14,8 @@ import * as SMS from 'expo-sms';
 import * as Linking from 'expo-linking';
 import { Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMyInviteCode, getInviteMessage } from '@/utils/invites';
+import { getInviteLink } from '@/utils/linking';
 
 const APP_LINK = 'https://snoozer.app/invite';
 
@@ -80,14 +82,15 @@ export function useIMessage() {
       throw new Error('SMS not available on this device');
     }
 
-    const message = `${userName} invited you to Snoozer! 😴💰\n\nIf they snooze, YOU get paid. Hold them accountable.\n\nDownload: ${APP_LINK}?ref=${encodeURIComponent(phoneNumber)}`;
+    const inviteCode = await getMyInviteCode(userName);
+    const inviteLink = getInviteLink(inviteCode);
+    const message = `${userName} invited you to Snoozer!\n\nIf they snooze, YOU get paid. Hold them accountable.\n\nTap to accept: ${inviteLink}`;
 
     const { result } = await SMS.sendSMSAsync([phoneNumber], message);
 
-    // Save buddy info if sent
     if (result === 'sent' || result === 'unknown') {
       const buddyInfo: BuddyInfo = {
-        name: '', // Will be set later via confirmBuddyJoined
+        name: '',
         phone: phoneNumber,
         invitedAt: Date.now(),
         hasApp: false,
