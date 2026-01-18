@@ -444,7 +444,7 @@ export default function ProofCameraScreen() {
           <View style={styles.guidePill}>
             <ThemedText style={styles.guidePillText}>
               {activityName
-                ? `Take a photo of yourself doing this activity.. ${gesturePrompt}`
+                ? `Take a photo of yourself doing this activity ${gesturePrompt}`
                 : `Align with reference ${gesturePrompt}`}
             </ThemedText>
           </View>

@@ -11,6 +11,7 @@ import {
   View,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';

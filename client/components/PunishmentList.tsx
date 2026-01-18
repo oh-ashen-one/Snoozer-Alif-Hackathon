@@ -43,7 +43,7 @@ export const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444', configurable: true },
   { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899', configurable: true },
   { id: 'twitter', label: 'Tweet something bad', description: '"I overslept again lol"', icon: '🐦', color: '#1DA1F2' },
-  { id: 'text_ex', label: 'Text friend something embarrassing', description: 'Random cringe message sent', icon: '😳', color: '#EF4444', configurable: true },
+  { id: 'text_ex', label: 'Text your ex you miss her', description: '"imysm"', icon: '💔', color: '#EF4444', configurable: true },
   { id: 'email_boss', label: 'Email your boss', description: '"Running late again, sorry"', icon: '📧', color: '#EA4335', configurable: true },
   { id: 'grandma_call', label: 'Auto-call your grandma', description: 'She WILL answer at 6am', icon: '👵', color: '#EC4899', configurable: true },
   { id: 'tinder_bio', label: 'Update Tinder bio', description: '"Can\'t even wake up on time"', icon: '🔥', color: '#FE3C72', comingSoon: true },
@@ -371,7 +371,7 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
 
       {expanded && punishment.id === 'text_ex' && (
         <View style={styles.configSection}>
-          <ThemedText style={styles.configLabel}>Enter your friend's number</ThemedText>
+          <ThemedText style={styles.configLabel}>Enter your ex's number</ThemedText>
           <TextInput
             style={styles.configInput}
             placeholder="+1 555 123 4567"
