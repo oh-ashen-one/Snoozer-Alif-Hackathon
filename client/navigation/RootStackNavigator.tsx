@@ -21,6 +21,7 @@ import InviteScreen from '@/screens/InviteScreen';
 import WaitingForBuddyScreen from '@/screens/WaitingForBuddyScreen';
 import BuddyJoinedScreen from '@/screens/BuddyJoinedScreen';
 import HelpScreen from '@/screens/HelpScreen';
+import NotificationSetupScreen from '@/screens/NotificationSetupScreen';
 import LegalScreen from '@/screens/LegalScreen';
 import WakeUpSuccessScreen from '@/screens/WakeUpSuccessScreen';
 import PaymentMethodScreen from '@/screens/PaymentMethodScreen';
