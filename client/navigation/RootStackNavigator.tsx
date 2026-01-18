@@ -5,6 +5,7 @@ import IntroScreen from '@/screens/IntroScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import AddAlarmScreen from '@/screens/AddAlarmScreen';
 import ReferencePhotoScreen from '@/screens/ReferencePhotoScreen';
+import ProofSetupScreen from '@/screens/ProofSetupScreen';
 import RecordShameScreen from '@/screens/RecordShameScreen';
 import OnboardingCompleteScreen from '@/screens/OnboardingCompleteScreen';
 import AlarmRingingScreen from '@/screens/AlarmRingingScreen';
@@ -55,6 +56,14 @@ export type RootStackParamList = {
   };
   AddAlarm: { isOnboarding: boolean };
   ReferencePhoto: {
+    alarmTime: string;
+    alarmLabel: string;
+    isOnboarding: boolean;
+    punishment?: number;
+    extraPunishments?: string[];
+    days?: number[];
+  };
+  ProofSetup: {
     alarmTime: string;
     alarmLabel: string;
     isOnboarding: boolean;
@@ -209,6 +218,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="ReferencePhoto"
         component={ReferencePhotoScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="ProofSetup"
+        component={ProofSetupScreen}
         options={{
           headerShown: false,
         }}
