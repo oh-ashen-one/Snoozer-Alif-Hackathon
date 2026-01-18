@@ -53,7 +53,8 @@
       "Bash(eas build:list:*)",
       "Bash(eas build:view:*)",
       "WebFetch(domain:expo.dev)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(bun remove:*)"
     ]
   }
 }
