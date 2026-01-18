@@ -1,37 +1,21 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 // AlarmKit is only available on iOS 26+ with native build (not Expo Go)
 const ALARMKIT_MIN_VERSION = 26;
 
+// Check if running in Expo Go (where native modules crash)
+function isExpoGo(): boolean {
+  return Constants.appOwnership === 'expo';
+}
+
 // Check if AlarmKit is available
 export function isAlarmKitAvailable(): boolean {
+  // Never available in Expo Go
+  if (isExpoGo()) return false;
   if (Platform.OS !== 'ios') return false;
   const version = parseInt(Platform.Version as string, 10);
   return version >= ALARMKIT_MIN_VERSION;
-}
-
-// Dynamically import to avoid crashes on unsupported platforms
-let AlarmKit: typeof import('@raphckrman/react-native-alarm-kit') | null = null;
-
-async function getAlarmKit() {
-  if (!isAlarmKitAvailable()) {
-    return null;
-  }
-
-  if (!AlarmKit) {
-    try {
-      AlarmKit = await import('@raphckrman/react-native-alarm-kit');
-    } catch (error) {
-      if (__DEV__) console.log('[AlarmKit] Not available in Expo Go');
-      return null;
-    }
-  }
-  return AlarmKit;
-}
-
-// Check if a function exists and is callable
-function isFunctionAvailable(obj: any, funcName: string): boolean {
-  return obj && typeof obj[funcName] === 'function';
 }
 
 export type AlarmKitPermissionStatus = 'granted' | 'denied' | 'undetermined';
@@ -40,29 +24,22 @@ export type AlarmKitPermissionStatus = 'granted' | 'denied' | 'undetermined';
  * Get the current AlarmKit permission status without prompting.
  */
 export async function getAlarmKitPermissionStatus(): Promise<AlarmKitPermissionStatus> {
-  const kit = await getAlarmKit();
-  if (!kit) return 'undetermined';
+  // Skip entirely in Expo Go to prevent NitroModules crash
+  if (isExpoGo() || !isAlarmKitAvailable()) {
+    return 'undetermined';
+  }
 
   try {
-    // Check if getAuthorizationStatus exists
-    if (isFunctionAvailable(kit, 'getAuthorizationStatus')) {
-      const status = await (kit as any).getAuthorizationStatus();
-      if (status === 'authorized' || status === true) return 'granted';
-      if (status === 'denied' || status === false) return 'denied';
-      return 'undetermined';
-    }
-
-    // Check if requestAlarmPermission exists
-    if (isFunctionAvailable(kit, 'requestAlarmPermission')) {
+    const kit = await import('@raphckrman/react-native-alarm-kit');
+    
+    if (typeof kit.requestAlarmPermission === 'function') {
       const granted = await kit.requestAlarmPermission();
       return granted ? 'granted' : 'undetermined';
     }
-
-    // Functions not available (Expo Go)
-    if (__DEV__) console.log('[AlarmKit] Permission functions not available');
+    
     return 'undetermined';
   } catch (error) {
-    if (__DEV__) console.log('[AlarmKit] Not supported in this environment');
+    if (__DEV__) console.log('[AlarmKit] Not available');
     return 'undetermined';
   }
 }
@@ -72,12 +49,15 @@ export async function getAlarmKitPermissionStatus(): Promise<AlarmKitPermissionS
  * Shows the system prompt: "Allow [App] to schedule alarms and timers?"
  */
 export async function requestAlarmKitPermission(): Promise<boolean> {
-  const kit = await getAlarmKit();
-  if (!kit) return false;
+  // Skip entirely in Expo Go to prevent NitroModules crash
+  if (isExpoGo() || !isAlarmKitAvailable()) {
+    return false;
+  }
 
   try {
-    if (!isFunctionAvailable(kit, 'requestAlarmPermission')) {
-      if (__DEV__) console.log('[AlarmKit] requestAlarmPermission not available');
+    const kit = await import('@raphckrman/react-native-alarm-kit');
+    
+    if (typeof kit.requestAlarmPermission !== 'function') {
       return false;
     }
 
@@ -111,16 +91,16 @@ function dayToWeekday(day: number): AlarmWeekday {
  * Provides native-level alarm with full-screen UI on lock screen.
  */
 export async function scheduleAlarmKitAlarm(params: ScheduleAlarmParams): Promise<boolean> {
-  const kit = await getAlarmKit();
-  if (!kit) {
+  // Skip entirely in Expo Go to prevent NitroModules crash
+  if (isExpoGo() || !isAlarmKitAvailable()) {
     if (__DEV__) console.log('[AlarmKit] Not available, falling back to notifications');
     return false;
   }
 
   try {
-    // Check if required functions are available
-    if (!isFunctionAvailable(kit, 'createAlarmButton') || !isFunctionAvailable(kit, 'scheduleRelativeAlarm')) {
-      if (__DEV__) console.log('[AlarmKit] Schedule functions not available');
+    const kit = await import('@raphckrman/react-native-alarm-kit');
+    
+    if (typeof kit.createAlarmButton !== 'function' || typeof kit.scheduleRelativeAlarm !== 'function') {
       return false;
     }
 
@@ -194,11 +174,15 @@ export type AlarmEventCallback = (event: {
 export async function addAlarmKitListener(
   callback: AlarmEventCallback
 ): Promise<(() => void) | null> {
-  const kit = await getAlarmKit();
-  if (!kit) return null;
+  // Skip entirely in Expo Go to prevent NitroModules crash
+  if (isExpoGo() || !isAlarmKitAvailable()) {
+    return null;
+  }
 
   try {
-    if (isFunctionAvailable(kit, 'addAlarmListener')) {
+    const kit = await import('@raphckrman/react-native-alarm-kit');
+    
+    if (typeof (kit as any).addAlarmListener === 'function') {
       const subscription = (kit as any).addAlarmListener(callback);
       return () => subscription?.remove?.();
     }
