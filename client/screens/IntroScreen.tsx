@@ -516,6 +516,23 @@ export default function IntroScreen() {
           <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
           <Text style={styles.termsLink}>Privacy Policy</Text>
         </Text>
+
+        {/* Skip for testing */}
+        {__DEV__ && (
+          <Pressable
+            style={styles.skipButton}
+            onPress={async () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const hasOnboarded = await getOnboardingComplete();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: hasOnboarded ? 'Home' : 'Onboarding' }],
+              });
+            }}
+          >
+            <Text style={styles.skipButtonText}>Skip (Dev Only)</Text>
+          </Pressable>
+        )}
       </Animated.View>
     </ScrollView>
   );
@@ -697,5 +714,18 @@ const styles = StyleSheet.create({
   termsLink: {
     color: Colors.textSecondary,
     textDecorationLine: 'underline',
+  },
+  skipButton: {
+    marginTop: Spacing.xl,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.sm,
+    borderStyle: 'dashed',
+  },
+  skipButtonText: {
+    fontSize: 13,
+    color: Colors.textMuted,
   },
 });

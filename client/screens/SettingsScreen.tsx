@@ -27,8 +27,9 @@ import { BottomNav } from '@/components/BottomNav';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { clearAllData, setOnboardingComplete } from '@/utils/storage';
+import { setOnboardingComplete } from '@/utils/storage';
 import { useAlarms } from '@/hooks/useAlarms';
+import { useAuth } from '@/contexts/AuthContext';
 
 const STORAGE_KEYS = {
   VIBRATION_ENABLED: '@snoozer/vibration_enabled',
@@ -132,6 +133,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const { alarms } = useAlarms();
+  const { signOut } = useAuth();
 
   // State
   const [userName, setUserName] = useState('Alex');
@@ -317,7 +319,7 @@ export default function SettingsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
       'Start Over?',
-      'This will reset onboarding but keep your alarms. Continue?',
+      'This will reset the app and bring you back to the first screen. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -325,78 +327,19 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await setOnboardingComplete(false);
+            // Try to sign out but don't block on it
+            signOut().catch(() => {});
             navigation.dispatch(
               CommonActions.reset({
                 index: 0,
-                routes: [{ name: 'Onboarding' }],
+                routes: [{ name: 'Intro' }],
               })
             );
           },
         },
       ]
     );
-  }, [navigation]);
-
-  const handleDeleteAllData = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    if (Platform.OS === 'ios') {
-      Alert.prompt(
-        'Delete All Data',
-        'This will delete ALL data including alarms, photos, and videos. This cannot be undone.\n\nType "DELETE" to confirm:',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async (text: string | undefined) => {
-              if (text === 'DELETE') {
-                try {
-                  await clearAllData();
-                  navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [{ name: 'Onboarding' }],
-                    })
-                  );
-                } catch (error) {
-                  Alert.alert('Error', 'Failed to delete all data. Please try again.');
-                }
-              } else {
-                Alert.alert('Incorrect', 'You must type "DELETE" exactly to confirm.');
-              }
-            },
-          },
-        ],
-        'plain-text'
-      );
-    } else {
-      // Android fallback
-      Alert.alert(
-        'Delete All Data',
-        'This will delete ALL data including alarms, photos, and videos. This cannot be undone.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete Everything',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await clearAllData();
-                navigation.dispatch(
-                  CommonActions.reset({
-                    index: 0,
-                    routes: [{ name: 'Onboarding' }],
-                  })
-                );
-              } catch (error) {
-                Alert.alert('Error', 'Failed to delete all data. Please try again.');
-              }
-            },
-          },
-        ]
-      );
-    }
-  }, [navigation]);
+  }, [navigation, signOut]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -575,16 +518,6 @@ export default function SettingsScreen() {
               iconBg={ICON_COLORS.red}
               label="Start over"
               onPress={handleStartOver}
-              showChevron={false}
-              isDestructive
-            />
-            <View style={styles.rowDivider} />
-            <SettingsRow
-              icon="trash-2"
-              iconColor="#EF4444"
-              iconBg={ICON_COLORS.red}
-              label="Delete all data"
-              onPress={handleDeleteAllData}
               showChevron={false}
               isDestructive
             />
