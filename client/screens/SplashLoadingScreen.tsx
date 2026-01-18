@@ -12,7 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getOnboardingComplete } from '@/utils/storage';
+import { getOnboardingComplete, getAlarms, setOnboardingComplete } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -40,8 +40,16 @@ export default function SplashLoadingScreen() {
 
     try {
       const hasOnboarded = await getOnboardingComplete();
-      if (hasOnboarded) {
+      // Also check if user has alarms - if so, they've completed onboarding
+      const alarms = await getAlarms();
+      const hasAlarms = alarms.length > 0;
+
+      if (hasOnboarded || hasAlarms) {
         targetRoute = 'Home';
+        // Fix the flag if it was missing
+        if (!hasOnboarded && hasAlarms) {
+          await setOnboardingComplete(true);
+        }
       }
     } catch {
       // On error, start fresh with Intro (sign-in)

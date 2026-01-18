@@ -74,17 +74,9 @@ const PROOF_ACTIVITIES = [
     ctaText: () => 'Type Phrase',
     defaultActivity: 'Type to wake up',
   },
-  {
-    id: 'stretch',
-    name: 'Stretch',
-    description: 'Take a photo of yourself stretching',
-    emoji: '🧘',
-    ctaText: () => 'Stretch Photo',
-    defaultActivity: 'Stretch',
-  },
 ];
 
-const ACTIVITY_SUGGESTIONS = ['Brush teeth', 'Make coffee', 'At gym', 'Outside'];
+const ACTIVITY_SUGGESTIONS = ['Brush teeth', 'Make coffee', 'At gym', 'Outside', 'Stretch'];
 
 const ChevronUp = ({ color = '#78716C' }: { color?: string }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
