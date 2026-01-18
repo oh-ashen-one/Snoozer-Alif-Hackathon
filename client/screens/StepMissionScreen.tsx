@@ -188,7 +188,7 @@ export default function StepMissionScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <BackgroundGlow color="orange" />
+      <BackgroundGlow color="orange" animated={false} />
       <View style={styles.content}>
         <View style={styles.missionIcon}>
           <Text style={{ fontSize: 48 }}>🧭</Text>

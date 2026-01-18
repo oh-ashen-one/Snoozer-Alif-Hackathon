@@ -24,6 +24,9 @@ export function BackgroundGlow({ color = 'orange', animated = true }: Background
   const activeColor = colors[color];
 
   useEffect(() => {
+    // Skip animations if animated prop is false
+    if (!animated) return;
+
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -59,7 +62,7 @@ export function BackgroundGlow({ color = 'orange', animated = true }: Background
     startRing(ring3Anim, 1400);
     startRing(ring4Anim, 2100);
     startRing(ring5Anim, 2800);
-  }, []);
+  }, [animated]);
 
   const pulseScale = pulseAnim.interpolate({
     inputRange: [0, 1],
@@ -99,18 +102,22 @@ export function BackgroundGlow({ color = 'orange', animated = true }: Background
             transform: [
               { translateX: -150 },
               { translateY: -150 },
-              { scale: pulseScale },
+              { scale: animated ? pulseScale : 1 },
             ],
-            opacity: pulseOpacity,
+            opacity: animated ? pulseOpacity : 0.4,
           },
         ]}
       />
 
-      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring1Anim)]} />
-      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring2Anim)]} />
-      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring3Anim)]} />
-      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring4Anim)]} />
-      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring5Anim)]} />
+      {animated && (
+        <>
+          <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring1Anim)]} />
+          <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring2Anim)]} />
+          <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring3Anim)]} />
+          <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring4Anim)]} />
+          <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring5Anim)]} />
+        </>
+      )}
     </View>
   );
 }

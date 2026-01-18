@@ -119,21 +119,28 @@ interface PunishmentCardProps {
   enabled: boolean;
   onToggle: () => void;
   children?: React.ReactNode;
+  comingSoon?: boolean;
 }
 
-function PunishmentCard({ emoji, title, enabled, onToggle, children }: PunishmentCardProps) {
+function PunishmentCard({ emoji, title, enabled, onToggle, children, comingSoon }: PunishmentCardProps) {
   return (
-    <View style={styles.punishmentCard}>
+    <View style={[styles.punishmentCard, comingSoon && styles.punishmentCardDisabled]}>
       <View style={styles.punishmentHeader}>
-        <View style={styles.punishmentIconContainer}>
+        <View style={[styles.punishmentIconContainer, comingSoon && { opacity: 0.5 }]}>
           <Text style={{ fontSize: 20 }}>{emoji}</Text>
         </View>
         <View style={styles.punishmentInfo}>
-          <Text style={styles.punishmentTitle}>{title}</Text>
+          <Text style={[styles.punishmentTitle, comingSoon && { color: Colors.textMuted }]}>{title}</Text>
         </View>
-        <Toggle value={enabled} onToggle={onToggle} />
+        {comingSoon ? (
+          <View style={styles.comingSoonBadge}>
+            <Text style={styles.comingSoonText}>Coming Soon</Text>
+          </View>
+        ) : (
+          <Toggle value={enabled} onToggle={onToggle} />
+        )}
       </View>
-      {enabled && children ? (
+      {!comingSoon && enabled && children ? (
         <View style={styles.punishmentExpanded}>{children}</View>
       ) : null}
     </View>
@@ -277,9 +284,8 @@ export default function AddAlarmScreen() {
 
     const extraPunishments: string[] = [];
     if (shameVideo) extraPunishments.push('shame_video');
-    if (buddyNotify) extraPunishments.push('buddy_call');
     if (socialShame) extraPunishments.push('group_chat');
-    if (antiCharity) extraPunishments.push('donate_enemy');
+    // buddyNotify and antiCharity are "Coming Soon" - not included
 
     try {
       if (isEditing && editAlarmId) {
@@ -340,7 +346,7 @@ export default function AddAlarmScreen() {
     }
   };
 
-  const punishmentCount = [moneyEnabled, shameVideo, buddyNotify, socialShame, antiCharity].filter(Boolean).length;
+  const punishmentCount = [moneyEnabled, shameVideo, socialShame].filter(Boolean).length;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -570,11 +576,9 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="💬"
               title="Buddy Notification"
-              enabled={buddyNotify}
-              onToggle={() => {
-                buttonPress('secondary');
-                setBuddyNotify(!buddyNotify);
-              }}
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
             >
               <View style={styles.messagePreview}>
                 <Text style={styles.messagePreviewLabel}>They'll receive:</Text>
@@ -605,11 +609,9 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="😈"
               title="Anti-Charity"
-              enabled={antiCharity}
-              onToggle={() => {
-                buttonPress('secondary');
-                setAntiCharity(!antiCharity);
-              }}
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
             >
               <Pressable style={styles.selectCharityBtn}>
                 <Text style={styles.selectCharityBtnText}>Choose organization...</Text>
@@ -685,9 +687,7 @@ export default function AddAlarmScreen() {
                 {[
                   moneyEnabled && `$${amount}`,
                   shameVideo && 'Video',
-                  buddyNotify && 'Text',
                   socialShame && 'Social',
-                  antiCharity && 'Charity',
                 ].filter(Boolean).join(' + ') || 'None'}
               </Text>
             </View>
@@ -976,6 +976,20 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.sm,
     overflow: 'hidden',
+  },
+  punishmentCardDisabled: {
+    opacity: 0.6,
+  },
+  comingSoonBadge: {
+    backgroundColor: 'rgba(120, 113, 108, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
+  },
+  comingSoonText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: Colors.textMuted,
   },
   punishmentHeader: {
     flexDirection: 'row',
