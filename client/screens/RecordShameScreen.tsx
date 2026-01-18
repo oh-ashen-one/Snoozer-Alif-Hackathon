@@ -281,6 +281,13 @@ export default function RecordShameScreen() {
       return;
     }
 
+    // If returning to onboarding punishment setup (skip = no video)
+    if (returnTo === 'Onboarding') {
+      console.log('[RecordShame] Skipped, returning to Onboarding without video');
+      navigation.navigate('Onboarding', { shameVideoUri: '' });
+      return;
+    }
+
     console.log('[RecordShame] Skipped, navigating to OnboardingComplete');
     navigation.navigate('OnboardingComplete', {
       alarmTime,
