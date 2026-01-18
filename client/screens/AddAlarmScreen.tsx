@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -27,6 +27,7 @@ import {
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { useAlarms } from '@/hooks/useAlarms';
+import { getAlarmById } from '@/utils/storage';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 
@@ -135,12 +136,19 @@ export default function AddAlarmScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const isOnboarding = route.params?.isOnboarding ?? true;
-  const { addAlarm } = useAlarms();
+  const editAlarmId = route.params?.editAlarmId;
+  const isEditing = !!editAlarmId;
+  const { addAlarm, updateAlarm } = useAlarms();
 
   const [hour, setHour] = useState(6);
   const [minute, setMinute] = useState(0);
   const [isPM, setIsPM] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [existingAlarmData, setExistingAlarmData] = useState<{
+    referencePhotoUri: string | null;
+    shameVideoUri: string | null;
+    enabled: boolean;
+  } | null>(null);
 
   const [selectedProof, setSelectedProof] = useState('photo_activity');
   const [activityName, setActivityName] = useState('Brush teeth');
@@ -157,6 +165,52 @@ export default function AddAlarmScreen() {
   const [wakeRecheck, setWakeRecheck] = useState(true);
 
   const buddy = { name: 'Jake', phone: '+1 (555) 123-4567' };
+
+  // Load alarm data when editing
+  useEffect(() => {
+    if (!editAlarmId) return;
+
+    const loadAlarm = async () => {
+      const alarm = await getAlarmById(editAlarmId);
+      if (!alarm) return;
+
+      // Parse time from HH:MM format
+      const [hours24, mins] = alarm.time.split(':').map(Number);
+      const isPMValue = hours24 >= 12;
+      const hour12 = hours24 % 12 || 12;
+
+      setHour(hour12);
+      setMinute(mins);
+      setIsPM(isPMValue);
+      setSelectedDays(alarm.days ?? [1, 2, 3, 4, 5]);
+      setActivityName(alarm.label || 'Brush teeth');
+      setAmount(alarm.punishment ?? 5);
+      setMoneyEnabled((alarm.punishment ?? 0) > 0);
+
+      // Parse extra punishments
+      const extras = alarm.extraPunishments ?? [];
+      setShameVideo(extras.includes('shame_video'));
+      setBuddyNotify(extras.includes('buddy_call'));
+      setSocialShame(extras.includes('group_chat'));
+      setAntiCharity(extras.includes('donate_enemy'));
+
+      // Parse proof activity type
+      if (alarm.proofActivityType) {
+        setSelectedProof(alarm.proofActivityType);
+      }
+
+      // Store existing data we want to preserve
+      setExistingAlarmData({
+        referencePhotoUri: alarm.referencePhotoUri,
+        shameVideoUri: alarm.shameVideoUri,
+        enabled: alarm.enabled,
+      });
+
+      if (__DEV__) console.log('[AddAlarm] Loaded alarm for editing:', alarm.id);
+    };
+
+    loadAlarm();
+  }, [editAlarmId]);
 
   const toggleDay = useCallback((index: number) => {
     buttonPress('secondary');

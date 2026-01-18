@@ -11,6 +11,7 @@ import OnboardingCompleteScreen from '@/screens/OnboardingCompleteScreen';
 import AlarmRingingScreen from '@/screens/AlarmRingingScreen';
 import ProofCameraScreen from '@/screens/ProofCameraScreen';
 import StepMissionScreen from '@/screens/StepMissionScreen';
+import MathProofScreen from '@/screens/MathProofScreen';
 import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
@@ -72,7 +73,7 @@ export type RootStackParamList = {
     wakeTime: string;
     targetTime: string;
   };
-  AddAlarm: { isOnboarding: boolean };
+  AddAlarm: { isOnboarding: boolean; editAlarmId?: string };
   ReferencePhoto: {
     alarmTime: string;
     alarmLabel: string;
@@ -154,6 +155,9 @@ export type RootStackParamList = {
     referencePhotoUri: string;
     onComplete: 'ProofCamera' | 'Home';
     stepGoal?: number;
+  };
+  MathProof: {
+    alarmId: string;
   };
   ShamePlayback: {
     alarmId: string;
@@ -368,6 +372,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="StepMission"
         component={StepMissionScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="MathProof"
+        component={MathProofScreen}
         options={{
           headerShown: false,
           gestureEnabled: false,

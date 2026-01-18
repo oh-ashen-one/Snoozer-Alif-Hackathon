@@ -473,23 +473,11 @@ export default function AlarmRingingScreen() {
           activityName: proofActivity?.activity || 'Take your proof photo',
         });
         break;
-      case 'scan':
       case 'math':
-      case 'shake':
-        // TODO: Implement these proof types
-        // For now, mark as complete and go home
-        if (__DEV__) console.log('[AlarmRinging] Proof type not yet implemented:', proofActivityType);
-        try {
-          await logWakeUp(alarmData.alarmId, new Date(), false, 0);
-        } catch (error) {
-          if (__DEV__) console.log('[AlarmRinging] Error logging wake-up:', error);
-        }
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'Home' }],
-          })
-        );
+        // Math problems - go to math proof screen
+        navigation.navigate('MathProof', {
+          alarmId: alarmData.alarmId,
+        });
         break;
       default:
         // Fallback to photo proof (no forced steps)
