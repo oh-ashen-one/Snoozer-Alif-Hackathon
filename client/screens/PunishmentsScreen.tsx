@@ -36,23 +36,30 @@ import {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const PUNISHMENT_OPTIONS = [
+interface PunishmentOption {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  color: string;
+  comingSoon?: boolean;
+}
+
+const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'shame_video', label: 'Shame video plays', description: 'At max volume', icon: '🎬', color: '#EF4444' },
   { id: 'buddy_call', label: 'Auto-call your buddy', description: 'Jake gets woken up too', icon: '📞', color: '#FB923C' },
   { id: 'group_chat', label: 'Text the group chat', description: '"The boys" on iMessage', icon: '💬', color: '#7C3AED' },
   { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444' },
   { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899' },
-  { id: 'linkedin', label: 'Post on LinkedIn', description: '"I overslept again. Hiring?"', icon: '💼', color: '#0A66C2' },
+  { id: 'twitter', label: 'Tweet something bad', description: '"I overslept again lol"', icon: '🐦', color: '#1DA1F2' },
   { id: 'text_ex', label: 'Text your ex "I miss u"', description: 'From your actual number', icon: '💔', color: '#EF4444' },
   { id: 'like_ex_photo', label: "Like your ex's old photo", description: "From 2019. They'll know.", icon: '📸', color: '#E4405F' },
-  { id: 'donate_enemy', label: 'Donate to a party you hate', description: 'Opposite of your politics', icon: '🗳️', color: '#EF4444' },
   { id: 'email_boss', label: 'Email your boss', description: '"Running late again, sorry"', icon: '📧', color: '#EA4335' },
   { id: 'venmo_ex', label: 'Venmo your ex $1', description: 'With memo: "thinking of u"', icon: '💸', color: '#008CFF' },
-  { id: 'slack_company', label: 'Post in #general', description: '"I couldn\'t wake up today"', icon: '🏢', color: '#4A154B' },
   { id: 'grandma_call', label: 'Auto-call your grandma', description: 'She WILL answer at 6am', icon: '👵', color: '#EC4899' },
   { id: 'tinder_bio', label: 'Update Tinder bio', description: '"Can\'t even wake up on time"', icon: '🔥', color: '#FE3C72' },
-  { id: 'thermostat', label: 'Drop thermostat to 55°F', description: 'Smart home integration', icon: '🥶', color: '#22C55E' },
-  { id: 'book_dentist', label: 'Book a dentist appointment', description: 'For next week. Auto-confirmed.', icon: '🦷', color: '#78716C' },
+  { id: 'donate_enemy', label: 'Donate to a party you hate', description: 'Opposite of your politics', icon: '🗳️', color: '#EF4444', comingSoon: true },
+  { id: 'thermostat', label: 'Drop thermostat to 55°F', description: 'Smart home integration', icon: '🥶', color: '#22C55E', comingSoon: true },
 ];
 
 // Toggle Component
@@ -79,7 +86,7 @@ function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () =>
 
 // Punishment Row Component
 interface PunishmentRowProps {
-  punishment: typeof PUNISHMENT_OPTIONS[0];
+  punishment: PunishmentOption;
   enabled: boolean;
   onToggle: () => void;
   isLast: boolean;
@@ -87,22 +94,36 @@ interface PunishmentRowProps {
 
 function PunishmentRow({ punishment, enabled, onToggle, isLast }: PunishmentRowProps) {
   const handleToggle = useCallback(() => {
+    if (punishment.comingSoon) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onToggle();
-  }, [onToggle]);
+  }, [onToggle, punishment.comingSoon]);
+
+  const content = (
+    <View style={styles.punishmentLeft}>
+      <ThemedText style={[styles.punishmentIcon, punishment.comingSoon && styles.comingSoonIcon]}>{punishment.icon}</ThemedText>
+      <View style={styles.punishmentInfo}>
+        <ThemedText style={[styles.punishmentLabel, punishment.comingSoon && styles.comingSoonLabel]}>{punishment.label}</ThemedText>
+        <ThemedText style={styles.punishmentDescription}>{punishment.description}</ThemedText>
+      </View>
+    </View>
+  );
 
   return (
     <>
-      <Pressable style={styles.punishmentRow} onPress={handleToggle}>
-        <View style={styles.punishmentLeft}>
-          <ThemedText style={styles.punishmentIcon}>{punishment.icon}</ThemedText>
-          <View style={styles.punishmentInfo}>
-            <ThemedText style={styles.punishmentLabel}>{punishment.label}</ThemedText>
-            <ThemedText style={styles.punishmentDescription}>{punishment.description}</ThemedText>
+      {punishment.comingSoon ? (
+        <View style={styles.punishmentRow}>
+          {content}
+          <View style={styles.comingSoonBadge}>
+            <ThemedText style={styles.comingSoonText}>Coming Soon</ThemedText>
           </View>
         </View>
-        <Toggle value={enabled} onValueChange={handleToggle} />
-      </Pressable>
+      ) : (
+        <Pressable style={styles.punishmentRow} onPress={handleToggle}>
+          {content}
+          <Toggle value={enabled} onValueChange={handleToggle} />
+        </Pressable>
+      )}
       {!isLast && <View style={styles.divider} />}
     </>
   );
@@ -304,5 +325,24 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     backgroundColor: Colors.text,
+  },
+
+  // Coming Soon
+  comingSoonBadge: {
+    backgroundColor: 'rgba(120, 113, 108, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
+  },
+  comingSoonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.textMuted,
+  },
+  comingSoonIcon: {
+    opacity: 0.5,
+  },
+  comingSoonLabel: {
+    color: Colors.textMuted,
   },
 });

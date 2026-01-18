@@ -177,8 +177,8 @@ export default function AddAlarmScreen() {
   const [socialShame, setSocialShame] = useState(false);
   const [antiCharity, setAntiCharity] = useState(false);
 
-  const [escalatingVolume, setEscalatingVolume] = useState(false);
-  const [wakeRecheck, setWakeRecheck] = useState(false);
+  const [escalatingVolume, setEscalatingVolume] = useState(true);
+  const [wakeRecheck, setWakeRecheck] = useState(true);
 
   const buddy = { name: 'Jake', phone: '+1 (555) 123-4567' };
 
@@ -574,6 +574,22 @@ export default function AddAlarmScreen() {
             </PunishmentCard>
 
             <PunishmentCard
+              emoji="👥"
+              title="Social Shame"
+              enabled={socialShame}
+              onToggle={() => {
+                buttonPress('secondary');
+                setSocialShame(!socialShame);
+              }}
+            >
+              <Pressable style={styles.selectGroupBtn}>
+                <Text style={{ fontSize: 18 }}>💬</Text>
+                <Text style={styles.selectGroupBtnText}>Select Group Chat</Text>
+                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
+              </Pressable>
+            </PunishmentCard>
+
+            <PunishmentCard
               emoji="💬"
               title="Buddy Notification"
               enabled={false}
@@ -588,22 +604,6 @@ export default function AddAlarmScreen() {
                   </Text>
                 </View>
               </View>
-            </PunishmentCard>
-
-            <PunishmentCard
-              emoji="👥"
-              title="Social Shame"
-              enabled={socialShame}
-              onToggle={() => {
-                buttonPress('secondary');
-                setSocialShame(!socialShame);
-              }}
-            >
-              <Pressable style={styles.selectGroupBtn}>
-                <Text style={{ fontSize: 18 }}>💬</Text>
-                <Text style={styles.selectGroupBtnText}>Select Group Chat</Text>
-                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
-              </Pressable>
             </PunishmentCard>
 
             <PunishmentCard
