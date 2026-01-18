@@ -65,7 +65,14 @@ export default function IntroScreen() {
   const card2Opacity = useRef(new Animated.Value(0)).current;
   const card2TranslateX = useRef(new Animated.Value(-20)).current;
   const ctaOpacity = useRef(new Animated.Value(0)).current;
-  const glowOpacity = useRef(new Animated.Value(0)).current;
+
+  // Pulsating glow animation (behind emoji)
+  const orbScale = useRef(new Animated.Value(0.9)).current;
+  const orbOpacity = useRef(new Animated.Value(0)).current;
+  const ring1Scale = useRef(new Animated.Value(0.3)).current;
+  const ring1Opacity = useRef(new Animated.Value(0)).current;
+  const ring2Scale = useRef(new Animated.Value(0.3)).current;
+  const ring2Opacity = useRef(new Animated.Value(0)).current;
 
   // Shake animation
   const shakeRotation = useRef(new Animated.Value(0)).current;
@@ -181,11 +188,48 @@ export default function IntroScreen() {
     }
 
     if (phase >= 2) {
-      Animated.timing(glowOpacity, {
-        toValue: 1,
-        duration: 300,
+      // Fade in the orb first
+      Animated.timing(orbOpacity, {
+        toValue: 0.3,
+        duration: 500,
         useNativeDriver: true,
       }).start();
+
+      // Start pulsing orb animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(orbScale, { toValue: 1.1, duration: 2000, useNativeDriver: true }),
+          Animated.timing(orbScale, { toValue: 0.9, duration: 2000, useNativeDriver: true }),
+        ])
+      ).start();
+
+      // Pulse orb opacity
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(orbOpacity, { toValue: 0.5, duration: 2000, useNativeDriver: true }),
+          Animated.timing(orbOpacity, { toValue: 0.3, duration: 2000, useNativeDriver: true }),
+        ])
+      ).start();
+
+      // Ring 1 - expanding outward continuously
+      ring1Opacity.setValue(0.4);
+      Animated.loop(
+        Animated.parallel([
+          Animated.timing(ring1Scale, { toValue: 2.5, duration: 4000, useNativeDriver: true }),
+          Animated.timing(ring1Opacity, { toValue: 0, duration: 4000, useNativeDriver: true }),
+        ])
+      ).start();
+
+      // Ring 2 - delayed expanding
+      setTimeout(() => {
+        ring2Opacity.setValue(0.4);
+        Animated.loop(
+          Animated.parallel([
+            Animated.timing(ring2Scale, { toValue: 2.5, duration: 4000, useNativeDriver: true }),
+            Animated.timing(ring2Opacity, { toValue: 0, duration: 4000, useNativeDriver: true }),
+          ])
+        ).start();
+      }, 1500);
     }
 
     if (phase >= 3) {
@@ -292,7 +336,12 @@ export default function IntroScreen() {
     card2Opacity,
     card2TranslateX,
     ctaOpacity,
-    glowOpacity,
+    orbScale,
+    orbOpacity,
+    ring1Scale,
+    ring1Opacity,
+    ring2Scale,
+    ring2Opacity,
   ]);
 
   const handleAppleSignIn = useCallback(async () => {
@@ -337,15 +386,36 @@ export default function IntroScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Red glow background */}
-      <Animated.View
-        style={[
-          styles.glow,
-          {
-            opacity: glowOpacity,
-          },
-        ]}
-      />
+      {/* Pulsating glow behind emoji */}
+      <View style={styles.glowContainer}>
+        <Animated.View
+          style={[
+            styles.orb,
+            {
+              opacity: orbOpacity,
+              transform: [{ scale: orbScale }],
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.ring,
+            {
+              opacity: ring1Opacity,
+              transform: [{ scale: ring1Scale }],
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.ring,
+            {
+              opacity: ring2Opacity,
+              transform: [{ scale: ring2Scale }],
+            },
+          ]}
+        />
+      </View>
 
       {/* Main content */}
       <View style={styles.mainContent}>
@@ -535,15 +605,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     minHeight: '100%',
   },
-  glow: {
+  glowContainer: {
     position: 'absolute',
-    top: '10%',
-    left: '50%',
-    width: 400,
-    height: 400,
-    marginLeft: -200,
-    borderRadius: 200,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 350,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+    overflow: 'hidden',
+    pointerEvents: 'none',
+  },
+  orb: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  ring: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    backgroundColor: 'transparent',
   },
   mainContent: {
     alignItems: 'center',

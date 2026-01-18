@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, Pressable, Image, Text, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Image, Text, Platform, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { CameraView } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -50,12 +50,23 @@ export default function ReferencePhotoScreen() {
   const { alarmTime, alarmLabel, isOnboarding, punishment, extraPunishments, days } = route.params;
   const { alarms, updateAlarm } = useAlarms();
 
+  const [permission, requestPermission] = useCameraPermissions();
   const [phase, setPhase] = useState<Phase>('intro');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   const fadeIn = useSharedValue(0);
+
+  const handleOpenSettings = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        await Linking.openSettings();
+      }
+    } catch (error) {
+      console.log('[ReferencePhoto] Failed to open settings:', error);
+    }
+  };
 
   useEffect(() => {
     fadeIn.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
@@ -216,6 +227,53 @@ export default function ReferencePhotoScreen() {
 
   // CAMERA PHASE
   if (phase === 'camera') {
+    // Permission loading state
+    if (!isWeb && !permission) {
+      return (
+        <View style={[styles.container, styles.permissionContainer]}>
+          <BackgroundGlow color="green" />
+          <Text style={styles.permissionLoadingText}>Loading camera...</Text>
+        </View>
+      );
+    }
+
+    // Permission denied state
+    if (!isWeb && permission && !permission.granted) {
+      return (
+        <View style={[styles.container, styles.permissionContainer]}>
+          <BackgroundGlow color="green" />
+          <View style={styles.permissionContent}>
+            <Text style={styles.permissionEmoji}>📷</Text>
+            <ThemedText style={styles.permissionTitle}>Camera Access Needed</ThemedText>
+            <ThemedText style={styles.permissionText}>
+              We need camera access to take your reference photo.
+            </ThemedText>
+            
+            {permission.canAskAgain ? (
+              <Pressable style={styles.permissionButton} onPress={requestPermission}>
+                <ThemedText style={styles.permissionButtonText}>Enable Camera</ThemedText>
+              </Pressable>
+            ) : (
+              <>
+                <ThemedText style={styles.permissionDeniedText}>
+                  Camera permission was denied. Please enable it in Settings.
+                </ThemedText>
+                {Platform.OS !== 'web' && (
+                  <Pressable style={styles.permissionButton} onPress={handleOpenSettings}>
+                    <ThemedText style={styles.permissionButtonText}>Open Settings</ThemedText>
+                  </Pressable>
+                )}
+              </>
+            )}
+            
+            <Pressable style={styles.backButtonSmall} onPress={() => setPhase('intro')}>
+              <ThemedText style={styles.backButtonSmallText}>Go Back</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.container}>
         <BackgroundGlow color="green" />
@@ -749,5 +807,63 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: Colors.textSecondary,
+  },
+
+  // Permission states
+  permissionContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permissionContent: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing['2xl'],
+  },
+  permissionEmoji: {
+    fontSize: 64,
+    marginBottom: Spacing.xl,
+  },
+  permissionLoadingText: {
+    fontSize: 16,
+    color: Colors.textMuted,
+  },
+  permissionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: Spacing.md,
+    textAlign: 'center',
+  },
+  permissionText: {
+    fontSize: 15,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    lineHeight: 22,
+  },
+  permissionDeniedText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  permissionButton: {
+    backgroundColor: Colors.green,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing['3xl'],
+    borderRadius: 14,
+    marginBottom: Spacing.md,
+  },
+  permissionButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  backButtonSmall: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+  },
+  backButtonSmallText: {
+    fontSize: 14,
+    color: Colors.textMuted,
   },
 });
