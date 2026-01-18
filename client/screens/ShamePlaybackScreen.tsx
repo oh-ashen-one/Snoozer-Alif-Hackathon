@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { shameTriggerPattern, hapticFeedback } from '@/utils/haptics';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -60,8 +61,8 @@ export default function ShamePlaybackScreen() {
   useEffect(() => {
     if (__DEV__) console.log('ALARM: Shame video playing');
     
-    // Intense haptic feedback - you snoozed!
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    // Intense haptic feedback pattern - you snoozed!
+    shameTriggerPattern();
 
     // Pulsing text animation (opacity)
     textPulse.value = withRepeat(

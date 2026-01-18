@@ -6,6 +6,7 @@ import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-naviga
 import { CameraView } from 'expo-camera';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { successDismissPattern, buttonPress } from '@/utils/haptics';
 
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
@@ -47,7 +48,7 @@ export default function ProofCameraScreen() {
     if (capturing) return;
 
     setCapturing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    buttonPress('primary');
     if (__DEV__) console.log('[ProofCamera] Capture started');
 
     try {
@@ -78,12 +79,12 @@ export default function ProofCameraScreen() {
   };
 
   const handleRetake = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    buttonPress('secondary');
     setPhotoUri(null);
   };
 
   const handleConfirm = async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    successDismissPattern();
     if (__DEV__) console.log('ALARM: Alarm dismissed');
 
     let targetTime = '6:00 AM';

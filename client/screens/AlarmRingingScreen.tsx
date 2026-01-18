@@ -15,6 +15,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import {
+  alarmRingingPattern,
+  snoozeWarningPattern,
+  shameTriggerPattern,
+  successDismissPattern,
+  buttonPress,
+  continuousAlarmPulse,
+} from '@/utils/haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -173,7 +181,7 @@ export default function AlarmRingingScreen() {
     };
 
     startAlarm();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    alarmRingingPattern();
 
     const interval = setInterval(() => {
       setCurrentTime(new Date());
@@ -202,7 +210,7 @@ export default function AlarmRingingScreen() {
   };
 
   const handleDismiss = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    buttonPress('primary');
     await stopAlarm();
     navigation.navigate('ProofCamera', {
       alarmId: alarmData.alarmId,
@@ -211,17 +219,17 @@ export default function AlarmRingingScreen() {
   };
 
   const handleSnoozePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    snoozeWarningPattern();
     setSnoozeStep(1);
   };
 
   const handleAreYouSure = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    snoozeWarningPattern();
     setSnoozeStep(2);
   };
 
   const handleNevermind = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    buttonPress('secondary');
     setSnoozeStep(0);
     setSnoozeText('');
   };
@@ -229,7 +237,7 @@ export default function AlarmRingingScreen() {
   const handleSnoozeConfirm = async () => {
     if (snoozeText.toUpperCase() === SNOOZE_CONFIRMATION) {
       if (__DEV__) console.log('ALARM: User chose snooze');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      shameTriggerPattern();
       await stopAlarm();
       
       try {
