@@ -191,8 +191,6 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
         <View style={styles.proofBadge}>
           <ThemedText style={styles.proofBadgeText}>{proofLabel}</ThemedText>
         </View>
-        <ThemedText style={styles.alarmLabelText}>{alarm.label || 'Wake up'}</ThemedText>
-        <ThemedText style={styles.subtitleDot}> · </ThemedText>
         <ThemedText style={styles.countdownText}>{timeUntil}</ThemedText>
       </View>
 
@@ -332,8 +330,6 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
                 <View style={styles.proofBadge}>
                   <ThemedText style={styles.proofBadgeText}>{proofLabel}</ThemedText>
                 </View>
-                <ThemedText style={styles.alarmLabel}>{alarm.label || 'Wake up'}</ThemedText>
-                <ThemedText style={styles.alarmDot}> · </ThemedText>
                 <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
               </View>
             </GHTouchableOpacity>
