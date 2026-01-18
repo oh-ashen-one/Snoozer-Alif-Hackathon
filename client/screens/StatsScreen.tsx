@@ -260,7 +260,7 @@ export default function StatsScreen() {
                   <Text style={{ fontSize: 32 }}>⚡</Text>
                 </View>
                 <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
-                <ThemedText style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{stats.currentStreak} days</ThemedText>
+                <ThemedText style={styles.heroValue}>{stats.currentStreak} days</ThemedText>
                 <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
               </View>
             </FadeInView>
@@ -412,17 +412,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textMuted,
     marginBottom: 4,
+    lineHeight: 18,
   },
   heroValue: {
     fontSize: 48,
     fontWeight: '700',
     color: Colors.orange,
     letterSpacing: 1,
+    lineHeight: 56,
   },
   heroBest: {
     fontSize: 13,
     color: Colors.textMuted,
     marginTop: 8,
+    lineHeight: 18,
   },
 
   // Two Column Stats
@@ -452,23 +455,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textMuted,
     marginBottom: 4,
+    lineHeight: 18,
   },
   statValueGreen: {
     fontSize: 28,
     fontWeight: '700',
     color: Colors.green,
     letterSpacing: 0.5,
+    lineHeight: 34,
   },
   statValueRed: {
     fontSize: 28,
     fontWeight: '700',
     color: Colors.red,
     letterSpacing: 0.5,
+    lineHeight: 34,
   },
   statSubtext: {
     fontSize: 12,
     color: Colors.textMuted,
     marginTop: 4,
+    lineHeight: 16,
   },
 
   // Wake Up Rate Card

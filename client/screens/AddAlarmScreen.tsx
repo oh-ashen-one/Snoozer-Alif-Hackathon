@@ -201,6 +201,8 @@ export default function AddAlarmScreen() {
       if (alarm.emailBossEnabled) enabled.push('email_boss');
       if (alarm.tweetBadEnabled) enabled.push('twitter');
       if (alarm.textExEnabled) enabled.push('text_ex');
+      if (alarm.momEnabled) enabled.push('mom');
+      if (alarm.grandmaEnabled) enabled.push('grandma_call');
       setEnabledPunishments(enabled);
 
       if (alarm.proofActivityType) {
@@ -320,6 +322,8 @@ export default function AddAlarmScreen() {
           callBuddyEnabled: enabledPunishments.includes('buddy_call'),
           textWifesDadEnabled: enabledPunishments.includes('wife_dad'),
           textExEnabled: enabledPunishments.includes('text_ex'),
+          momEnabled: enabledPunishments.includes('mom'),
+          grandmaEnabled: enabledPunishments.includes('grandma_call'),
           referencePhotoUri: existingAlarmData?.referencePhotoUri ?? null,
           shameVideoUri: existingAlarmData?.shameVideoUri ?? null,
           enabled: existingAlarmData?.enabled ?? true,
@@ -348,6 +352,8 @@ export default function AddAlarmScreen() {
           callBuddyEnabled: enabledPunishments.includes('buddy_call'),
           textWifesDadEnabled: enabledPunishments.includes('wife_dad'),
           textExEnabled: enabledPunishments.includes('text_ex'),
+          momEnabled: enabledPunishments.includes('mom'),
+          grandmaEnabled: enabledPunishments.includes('grandma_call'),
         });
         if (__DEV__) console.log('[AddAlarm] Alarm created with proofType:', selectedProof);
       }

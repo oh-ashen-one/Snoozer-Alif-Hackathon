@@ -34,8 +34,8 @@ const PUNISHMENT_MESSAGES: Record<string, { title: string; subtitle: string; ico
   call_mom: { title: 'Called your mom', subtitle: 'At 6am. She\'s worried now.', icon: '👩' },
   call_grandma: { title: 'Called your grandma', subtitle: 'At 6am. She probably thought someone died.', icon: '👵' },
   call_buddy: { title: 'Called your buddy', subtitle: 'They\'re awake now too. Thanks.', icon: '📞' },
-  text_wife_dad: { title: 'Texted your wife\'s dad', subtitle: '"Hey Robert, quick question..."', icon: '👴' },
-  text_ex: { title: 'Texted your ex', subtitle: '"I miss you" — yikes.', icon: '💔' },
+  text_wife_dad: { title: 'Texted your wife\'s dad', subtitle: 'Something deeply embarrassing. Check your phone.', icon: '👴' },
+  text_ex: { title: 'Texted your ex', subtitle: 'Something deeply embarrassing. Check your phone.', icon: '💔' },
   social_shame: { title: 'Group chat knows', subtitle: 'Everyone saw your failure.', icon: '💬' },
   anti_charity: { title: 'Donated money', subtitle: 'To a cause you hate. Congrats.', icon: '🗳️' },
 };
@@ -146,7 +146,7 @@ export default function ShameSentScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }
+          { paddingTop: insets.top + 80, paddingBottom: insets.bottom + 40 }
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -332,12 +332,14 @@ const styles = StyleSheet.create({
     color: Colors.red,
     textAlign: 'center',
     marginBottom: 8,
+    lineHeight: 56,
   },
   subtitle: {
     fontSize: 18,
     color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
+    lineHeight: 24,
   },
 
   statsCard: {
@@ -468,6 +470,7 @@ const styles = StyleSheet.create({
 
   finalSection: {
     alignItems: 'center',
+    marginTop: 24,
     marginBottom: 32,
   },
   finalText: {
@@ -475,6 +478,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.text,
     marginBottom: 8,
+    lineHeight: 34,
   },
   finalSubtext: {
     fontSize: 16,

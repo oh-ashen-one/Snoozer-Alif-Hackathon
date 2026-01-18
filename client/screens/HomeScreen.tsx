@@ -313,6 +313,8 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
     alarmAny.callBuddyEnabled ||
     alarmAny.textWifesDadEnabled ||
     alarmAny.textExEnabled ||
+    alarmAny.momEnabled ||
+    alarmAny.grandmaEnabled ||
     extras.includes('shame_video') ||
     extras.includes('buddy_call') ||
     extras.includes('group_chat');
@@ -733,11 +735,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '700',
     color: '#FAFAF9',
+    lineHeight: 56,
   },
   nextAlarmPeriod: {
     fontSize: 20,
     color: '#78716C',
     marginLeft: 8,
+    lineHeight: 24,
   },
   subtitleRow: {
     flexDirection: 'row',
@@ -809,10 +813,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingVertical: 10,
+    paddingVertical: 14,
     paddingHorizontal: 14,
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   statCardDashed: {
     borderStyle: 'dashed',
@@ -834,11 +838,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#57534E',
     letterSpacing: 0.5,
+    lineHeight: 28,
   },
   statSubLabel: {
     fontSize: 12,
     color: '#57534E',
     marginTop: 2,
+    lineHeight: 16,
   },
   addBuddyText: {
     fontSize: 14,
