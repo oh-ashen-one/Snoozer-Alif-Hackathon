@@ -303,7 +303,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
 
   return (
     <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-      <View style={styles.alarmCard}>
+      <Pressable style={styles.alarmCard} onPress={onEdit}>
         <View style={styles.alarmContent}>
           <View style={styles.alarmTopRow}>
             <View style={styles.alarmLeft}>
@@ -319,19 +319,14 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
             </View>
             <View style={styles.alarmRight}>
               <Toggle value={alarm.enabled} onValueChange={onToggle} />
-              <View style={styles.alarmButtonsRow}>
-                <Pressable style={styles.editButton} onPress={onEdit}>
-                  <ThemedText style={styles.editButtonText}>Edit</ThemedText>
-                </Pressable>
-                <Pressable style={styles.testButton} onPress={onTest}>
-                  <ThemedText style={styles.testButtonText}>Test</ThemedText>
-                </Pressable>
-              </View>
+              <Pressable style={styles.testButton} onPress={onTest}>
+                <ThemedText style={styles.testButtonText}>Test</ThemedText>
+              </Pressable>
             </View>
           </View>
           <DayPills selectedDays={selectedDays} />
         </View>
-      </View>
+      </Pressable>
     </Swipeable>
   );
 }
@@ -846,27 +841,6 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     backgroundColor: Colors.text,
-  },
-
-  // Alarm action buttons row
-  alarmButtonsRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-
-  // Edit Button (per alarm)
-  editButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(168, 162, 158, 0.12)',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(168, 162, 158, 0.2)',
-  },
-  editButtonText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#A8A29E',
   },
 
   // Test Button (per alarm)

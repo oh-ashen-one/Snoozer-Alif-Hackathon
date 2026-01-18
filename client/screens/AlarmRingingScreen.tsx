@@ -859,32 +859,34 @@ export default function AlarmRingingScreen() {
         )}
       </ScrollView>
 
-      {/* FOOTER BUTTONS */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 28 }]}>
-        <Pressable
-          style={styles.wakeUpButton}
-          onPress={handleDismiss}
-          testID="button-dismiss-alarm"
-        >
-          <ThemedText style={styles.wakeUpButtonText}>
-            {getProofButtonText(proofActivityType)}
-          </ThemedText>
-        </Pressable>
-
-        {snoozeStep === 0 && (
+      {/* FOOTER BUTTONS - hide when type phrase proof is showing */}
+      {!showTypePhraseProof && (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 28 }]}>
           <Pressable
-            style={styles.snoozeButton}
-            onPress={handleSnoozePress}
-            testID="button-snooze"
+            style={styles.wakeUpButton}
+            onPress={handleDismiss}
+            testID="button-dismiss-alarm"
           >
-            <ThemedText style={styles.snoozeButtonText}>
-              snooze{moneyEnabled && penaltyAmount > 0 ? (
-                <Text style={styles.snoozeCost}> (lose ${penaltyAmount})</Text>
-              ) : null}
+            <ThemedText style={styles.wakeUpButtonText}>
+              {getProofButtonText(proofActivityType)}
             </ThemedText>
           </Pressable>
-        )}
-      </View>
+
+          {snoozeStep === 0 && (
+            <Pressable
+              style={styles.snoozeButton}
+              onPress={handleSnoozePress}
+              testID="button-snooze"
+            >
+              <ThemedText style={styles.snoozeButtonText}>
+                snooze{moneyEnabled && penaltyAmount > 0 ? (
+                  <Text style={styles.snoozeCost}> (lose ${penaltyAmount})</Text>
+                ) : null}
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+      )}
 
       <CheatWarningModal
         visible={cheatModalVisible}
@@ -1304,6 +1306,86 @@ const styles = StyleSheet.create({
   },
   confirmSnoozeButtonTextActive: {
     color: '#ffffff',
+  },
+
+  // TYPE PHRASE PROOF
+  typePhraseCard: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 8,
+  },
+  typePhraseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  typePhraseTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.green,
+  },
+  typePhraseLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  phraseBox: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  phraseText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 24,
+  },
+  typePhraseInput: {
+    backgroundColor: Colors.border,
+    borderWidth: 1,
+    borderColor: '#3F3A36',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  typePhraseButton: {
+    width: '100%',
+    backgroundColor: Colors.border,
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  typePhraseButtonActive: {
+    backgroundColor: Colors.green,
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  typePhraseButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#57534E',
+  },
+  typePhraseButtonTextActive: {
+    color: Colors.text,
   },
 
   // FOOTER
