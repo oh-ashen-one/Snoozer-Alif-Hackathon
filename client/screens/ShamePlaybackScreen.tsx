@@ -24,6 +24,7 @@ import { getAlarmById, getBuddyInfo } from '@/utils/storage';
 import { getCurrentStreak } from '@/utils/tracking';
 import { getShameVideo } from '@/utils/fileSystem';
 import { useIMessage } from '@/hooks/useIMessage';
+import { setCurrentScreen } from '@/utils/soundKiller';
 
 // Check if we're in dev mode or on web (no video)
 const isDev = __DEV__;
@@ -70,6 +71,9 @@ export default function ShamePlaybackScreen() {
   const borderPulse = useSharedValue(1);
 
   useEffect(() => {
+    // Set current screen to allow audio
+    setCurrentScreen('ShamePlayback');
+    
     if (__DEV__) console.log('ALARM: Shame video playing');
     
     // Intense haptic feedback pattern - you snoozed!

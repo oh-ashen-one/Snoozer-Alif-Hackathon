@@ -56,6 +56,7 @@ import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import ShameMessageSent from '@/components/ShameMessageSent';
 import { notifyBuddySnoozed } from '@/utils/buddyNotifications';
+import { setCurrentScreen } from '@/utils/soundKiller';
 
 const CALENDAR_CONNECTED_KEY = '@snoozer/calendar_connected';
 
@@ -352,10 +353,13 @@ export default function AlarmRingingScreen() {
     }
   };
 
-  // HARD STOP: When screen loses focus, stop all sounds immediately
+  // HARD STOP: When screen gains or loses focus, manage sounds
   useFocusEffect(
     useCallback(() => {
-      // Screen focused - alarm should play (handled elsewhere)
+      // Screen focused - set current screen to allow sounds
+      setCurrentScreen('AlarmRinging');
+      if (__DEV__) console.log('[AlarmRinging] Screen focused - sounds enabled');
+      
       return () => {
         // Screen losing focus - KILL ALL SOUNDS
         if (__DEV__) console.log('[AlarmRinging] Screen lost focus - stopping all sounds');

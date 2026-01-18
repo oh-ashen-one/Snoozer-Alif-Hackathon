@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Audio } from 'expo-av';
+import { canPlaySoundNow, getCurrentScreen } from '@/utils/soundKiller';
 
 const START_VOLUME = 0.5;
 const MAX_VOLUME = 1.0;
@@ -14,6 +15,12 @@ export function useEscalatingVolume(alarmSoundSource: any) {
   const currentVolumeRef = useRef(START_VOLUME);
 
   const loadSound = useCallback(async () => {
+    // HARD CHECK: Only load sound on allowed screens
+    if (!canPlaySoundNow()) {
+      if (__DEV__) console.log('[EscalatingVolume] BLOCKED - cannot load sound on screen:', getCurrentScreen());
+      return;
+    }
+    
     if (__DEV__) console.log('[EscalatingVolume] loadSound called, source:', alarmSoundSource ? 'exists' : 'null');
     
     if (!alarmSoundSource) {
@@ -54,6 +61,12 @@ export function useEscalatingVolume(alarmSoundSource: any) {
   }, [alarmSoundSource]);
 
   const startAlarm = useCallback(async () => {
+    // HARD CHECK: Only start alarm on allowed screens
+    if (!canPlaySoundNow()) {
+      if (__DEV__) console.log('[EscalatingVolume] BLOCKED - cannot start alarm on screen:', getCurrentScreen());
+      return;
+    }
+    
     if (__DEV__) console.log('[EscalatingVolume] startAlarm called');
     
     if (!soundRef.current) {

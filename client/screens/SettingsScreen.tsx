@@ -29,6 +29,7 @@ import { AnimatedToggle } from '@/components/AnimatedToggle';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { setOnboardingComplete, getUserName, saveUserName } from '@/utils/storage';
+import { setCurrentScreen } from '@/utils/soundKiller';
 import { useAlarms } from '@/hooks/useAlarms';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
@@ -197,6 +198,9 @@ export default function SettingsScreen() {
   // Load settings on mount and when returning to screen
   useFocusEffect(
     useCallback(() => {
+      // Set current screen to allow sound testing
+      setCurrentScreen('Settings');
+      
       const loadSettings = async () => {
         try {
           const name = await getUserName();
