@@ -55,11 +55,17 @@ export async function startAlarmCountdown(
       timerType: 'digital' as const,
     };
 
+    // Check if startActivity exists (not available in Expo Go)
+    if (!LA.startActivity || typeof LA.startActivity !== 'function') {
+      if (__DEV__) console.log('[LiveActivity] Not available in Expo Go');
+      return undefined;
+    }
+    
     const activityId = LA.startActivity(state, config);
     if (__DEV__) console.log('[LiveActivity] Started countdown:', activityId);
     return activityId || undefined;
   } catch (error) {
-    if (__DEV__) console.error('[LiveActivity] Failed to start:', error);
+    if (__DEV__) console.log('[LiveActivity] Not supported:', error);
     return undefined;
   }
 }
@@ -75,6 +81,10 @@ export async function updateAlarmCountdown(
   if (!LA || !activityId) return;
 
   try {
+    if (!LA.updateActivity || typeof LA.updateActivity !== 'function') {
+      return;
+    }
+    
     const timeString = params.alarmTime.toLocaleTimeString([], {
       hour: 'numeric',
       minute: '2-digit',
@@ -89,7 +99,7 @@ export async function updateAlarmCountdown(
     });
     if (__DEV__) console.log('[LiveActivity] Updated:', activityId);
   } catch (error) {
-    if (__DEV__) console.error('[LiveActivity] Failed to update:', error);
+    if (__DEV__) console.log('[LiveActivity] Update not supported:', error);
   }
 }
 
@@ -101,12 +111,16 @@ export async function stopAlarmCountdown(activityId: string): Promise<void> {
   if (!LA || !activityId) return;
 
   try {
+    if (!LA.stopActivity || typeof LA.stopActivity !== 'function') {
+      return;
+    }
+    
     await LA.stopActivity(activityId, {
       title: 'Alarm Complete',
       progressBar: { progress: 1 },
     });
     if (__DEV__) console.log('[LiveActivity] Stopped:', activityId);
   } catch (error) {
-    if (__DEV__) console.error('[LiveActivity] Failed to stop:', error);
+    if (__DEV__) console.log('[LiveActivity] Stop not supported:', error);
   }
 }
