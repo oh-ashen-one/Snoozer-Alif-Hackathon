@@ -405,6 +405,12 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
                 <ThemedText style={styles.chipStakeText}>{stakeText}</ThemedText>
               </View>
             ) : null}
+            {/* Punishment chips */}
+            {punishmentParts.map((p, i) => (
+              <View key={i} style={styles.chipPunishment}>
+                <ThemedText style={styles.chipPunishmentText}>{p}</ThemedText>
+              </View>
+            ))}
           </>
         ) : (
           <>
@@ -950,6 +956,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#EF4444',
+  },
+  chipPunishment: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderRadius: 8,
+  },
+  chipPunishmentText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.red,
   },
   chipProof: {
     paddingVertical: 6,

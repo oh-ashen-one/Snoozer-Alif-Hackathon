@@ -21,7 +21,10 @@
       "WebFetch(domain:nilcoalescing.com)",
       "Bash(npm run check:types:*)",
       "Bash(node -e:*)",
-      "Bash(npx expo start:*)"
+      "Bash(npx expo start:*)",
+      "Bash(for file in /home/runner/workspace/client/screens/*.tsx)",
+      "Bash(__NEW_LINE_12eb16a2070346fb__ grep -E \"\\(import.*Header|<Header|styles\\\\.header|handleBack\\)\" \"$file\")",
+      "Bash(__NEW_LINE_12eb16a2070346fb__ done)"
     ]
   }
 }
