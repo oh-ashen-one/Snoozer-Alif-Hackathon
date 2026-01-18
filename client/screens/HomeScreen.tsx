@@ -18,6 +18,7 @@ import { FadeInView } from '@/components/FadeInView';
 import { AnimatedCard } from '@/components/AnimatedCard';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import Header, { getGreeting } from '@/components/Header';
+import { DynamicIsland } from '@/components/DynamicIsland';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm, getUserName } from '@/utils/storage';
@@ -600,6 +601,21 @@ export default function HomeScreen() {
           />
         </View>
 
+        {nextAlarm && (
+          <FadeInView delay={50} direction="up">
+            <View style={styles.dynamicIslandContainer}>
+              <DynamicIsland
+                state="sleeping"
+                alarmTime={(() => {
+                  const { time, period } = formatTime(nextAlarm.time);
+                  return `${time} ${period}`;
+                })()}
+                stakeAmount={nextAlarm.punishment || 0}
+              />
+            </View>
+          </FadeInView>
+        )}
+
         {nextAlarm ? (
           <>
             <FadeInView delay={100} direction="up">
@@ -666,6 +682,10 @@ const styles = StyleSheet.create({
   // Header
   headerContainer: {
     marginBottom: 16,
+  },
+  dynamicIslandContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
   },
   greeting: {
     fontSize: 14,

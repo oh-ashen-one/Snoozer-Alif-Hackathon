@@ -484,7 +484,7 @@ Respond with ONLY a JSON object in this exact format:
   // GET /api/shame-video/:deviceId - Get shame video for device
   app.get("/api/shame-video/:deviceId", async (req: Request, res: Response) => {
     try {
-      const { deviceId } = req.params;
+      const deviceId = req.params.deviceId as string;
 
       const [video] = await db
         .select()
@@ -511,7 +511,7 @@ Respond with ONLY a JSON object in this exact format:
   // DELETE /api/shame-video/:deviceId - Delete shame video for device
   app.delete("/api/shame-video/:deviceId", async (req: Request, res: Response) => {
     try {
-      const { deviceId } = req.params;
+      const deviceId = req.params.deviceId as string;
 
       await db
         .delete(shameVideos)
@@ -528,7 +528,7 @@ Respond with ONLY a JSON object in this exact format:
   // GET /api/shame-video/exists/:deviceId - Quick check if video exists
   app.get("/api/shame-video/exists/:deviceId", async (req: Request, res: Response) => {
     try {
-      const { deviceId } = req.params;
+      const deviceId = req.params.deviceId as string;
 
       const [video] = await db
         .select({ id: shameVideos.id, updatedAt: shameVideos.updatedAt })

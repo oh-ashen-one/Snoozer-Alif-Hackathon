@@ -1,5 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { getApiUrl } from '../lib/query-client';
 
 const PHOTOS_DIR = `${FileSystem.documentDirectory}photos/`;
 const VIDEOS_DIR = `${FileSystem.documentDirectory}videos/`;
@@ -7,7 +9,25 @@ const VIDEOS_DIR = `${FileSystem.documentDirectory}videos/`;
 const STORAGE_KEYS = {
   REFERENCE_PHOTO: '@snoozer/reference_photo',
   SHAME_VIDEO: '@snoozer/shame_video',
+  DEVICE_ID: '@snoozer/device_id',
 };
+
+// Get or create a unique device ID
+async function getDeviceId(): Promise<string> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.DEVICE_ID);
+    if (stored) {
+      return stored;
+    }
+    // Generate a new device ID
+    const newDeviceId = Constants.installationId ?? `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_ID, newDeviceId);
+    return newDeviceId;
+  } catch (error) {
+    console.error('Error getting device ID:', error);
+    return `fallback-${Date.now()}`;
+  }
+}
 
 export async function ensureDirectories(): Promise<void> {
   try {
@@ -46,17 +66,39 @@ export async function saveReferencePhoto(uri: string): Promise<string | null> {
 
 export async function saveShameVideo(uri: string): Promise<string | null> {
   try {
-    await ensureDirectories();
-    const destination = `${VIDEOS_DIR}shame.mp4`;
+    console.log('[FileSystem] Saving shame video to server...');
     
-    const existingInfo = await FileSystem.getInfoAsync(destination);
-    if (existingInfo.exists) {
-      await FileSystem.deleteAsync(destination);
+    // Read the video as base64
+    const videoBase64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    
+    const deviceId = await getDeviceId();
+    const baseUrl = getApiUrl();
+    
+    // Upload to server
+    const response = await fetch(`${baseUrl}api/shame-video`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        deviceId,
+        videoData: videoBase64,
+        mimeType: 'video/mp4',
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}`);
     }
     
-    await FileSystem.copyAsync({ from: uri, to: destination });
-    await AsyncStorage.setItem(STORAGE_KEYS.SHAME_VIDEO, destination);
-    return destination;
+    // Store a marker in AsyncStorage indicating we have a video on server
+    const serverVideoUri = `server://${deviceId}/shame.mp4`;
+    await AsyncStorage.setItem(STORAGE_KEYS.SHAME_VIDEO, serverVideoUri);
+    
+    console.log('[FileSystem] Shame video saved to server successfully');
+    return serverVideoUri;
   } catch (error) {
     console.error('Error saving shame video:', error);
     return null;
@@ -90,12 +132,44 @@ export async function getReferencePhoto(): Promise<string | null> {
 
 export async function getShameVideo(): Promise<string | null> {
   try {
-    const path = await AsyncStorage.getItem(STORAGE_KEYS.SHAME_VIDEO);
-    if (!path) return null;
+    const storedPath = await AsyncStorage.getItem(STORAGE_KEYS.SHAME_VIDEO);
+    if (!storedPath) return null;
     
-    const info = await FileSystem.getInfoAsync(path);
+    // Check if it's a server-stored video
+    if (storedPath.startsWith('server://')) {
+      console.log('[FileSystem] Fetching shame video from server...');
+      
+      const deviceId = await getDeviceId();
+      const baseUrl = getApiUrl();
+      
+      const response = await fetch(`${baseUrl}api/shame-video/${deviceId}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          await AsyncStorage.removeItem(STORAGE_KEYS.SHAME_VIDEO);
+          return null;
+        }
+        throw new Error(`Server returned ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Save to local cache for playback
+      await ensureDirectories();
+      const localPath = `${VIDEOS_DIR}shame_cache.mp4`;
+      
+      await FileSystem.writeAsStringAsync(localPath, data.videoData, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      console.log('[FileSystem] Shame video cached locally for playback');
+      return localPath;
+    }
+    
+    // Legacy: check local file
+    const info = await FileSystem.getInfoAsync(storedPath);
     if (info.exists) {
-      return path;
+      return storedPath;
     }
     
     await AsyncStorage.removeItem(STORAGE_KEYS.SHAME_VIDEO);
@@ -103,6 +177,32 @@ export async function getShameVideo(): Promise<string | null> {
   } catch (error) {
     console.error('Error getting shame video:', error);
     return null;
+  }
+}
+
+// Check if shame video exists (quick check without downloading)
+export async function hasShameVideo(): Promise<boolean> {
+  try {
+    const storedPath = await AsyncStorage.getItem(STORAGE_KEYS.SHAME_VIDEO);
+    if (!storedPath) return false;
+    
+    if (storedPath.startsWith('server://')) {
+      const deviceId = await getDeviceId();
+      const baseUrl = getApiUrl();
+      
+      const response = await fetch(`${baseUrl}api/shame-video/exists/${deviceId}`);
+      if (!response.ok) return false;
+      
+      const data = await response.json();
+      return data.exists;
+    }
+    
+    // Legacy: check local file
+    const info = await FileSystem.getInfoAsync(storedPath);
+    return info.exists;
+  } catch (error) {
+    console.error('Error checking shame video:', error);
+    return false;
   }
 }
 

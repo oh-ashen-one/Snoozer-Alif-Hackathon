@@ -31,6 +31,9 @@ const MAX_DURATION = 15;
 const isWeb = Platform.OS === 'web';
 const useMockCamera = isWeb;
 
+// Video ref type
+type VideoRef = Video | null;
+
 const PROMPTS = [
   '"im such a fat chud"',
   '"I broke my promise to myself again..."',
@@ -87,6 +90,7 @@ export default function RecordShameScreen() {
   const cameraRef = useRef<CameraView>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mockRecordingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<VideoRef>(null);
 
   const pulseAnim = useSharedValue(1);
 
@@ -113,6 +117,10 @@ export default function RecordShameScreen() {
       }
       if (mockRecordingRef.current) {
         clearTimeout(mockRecordingRef.current);
+      }
+      // Stop video playback when leaving screen
+      if (videoRef.current) {
+        videoRef.current.pauseAsync().catch(() => {});
       }
     };
   }, []);
@@ -185,7 +193,11 @@ export default function RecordShameScreen() {
     }
   };
 
-  const handleRetake = () => {
+  const handleRetake = async () => {
+    // Stop video playback before retaking
+    if (videoRef.current) {
+      await videoRef.current.pauseAsync().catch(() => {});
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setVideoUri(null);
     setRecordingDuration(0);
@@ -195,6 +207,11 @@ export default function RecordShameScreen() {
     if (!videoUri) return;
 
     try {
+      // Stop video playback before navigating
+      if (videoRef.current) {
+        await videoRef.current.pauseAsync().catch(() => {});
+      }
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       let savedUri = videoUri;
@@ -323,11 +340,12 @@ export default function RecordShameScreen() {
           <MockVideoPreview />
         ) : (
           <Video
+            ref={videoRef}
             source={{ uri: videoUri }}
             style={styles.fullScreenVideo}
             resizeMode={ResizeMode.COVER}
             shouldPlay
-            isLooping
+            isLooping={false}
             isMuted={false}
           />
         )}

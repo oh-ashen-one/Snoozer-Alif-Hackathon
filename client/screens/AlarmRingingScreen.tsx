@@ -56,6 +56,7 @@ import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import ShameMessageSent from '@/components/ShameMessageSent';
+import { DynamicIsland } from '@/components/DynamicIsland';
 import { notifyBuddySnoozed } from '@/utils/buddyNotifications';
 import { setCurrentScreen } from '@/utils/soundKiller';
 import { useIMessage } from '@/hooks/useIMessage';
