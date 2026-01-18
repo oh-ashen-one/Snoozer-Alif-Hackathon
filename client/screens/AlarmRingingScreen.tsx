@@ -40,6 +40,9 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarms } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 
+// Import local alarm sound
+const nuclearAlarmSound = require('@/assets/sounds/nuclear-alarm.wav');
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
 
@@ -163,7 +166,7 @@ export default function AlarmRingingScreen() {
         });
 
         const { sound } = await Audio.Sound.createAsync(
-          { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
+          nuclearAlarmSound,
           {
             isLooping: true,
             volume: 1.0,

@@ -260,35 +260,35 @@ export default function BuddyScreen() {
             </View>
           </View>
         </FadeInView>
-      </ScrollView>
 
-      {/* Bottom CTA */}
-      <View style={[styles.bottomCta, { paddingBottom: insets.bottom + 16 }]}>
-        <Pressable
-          style={[
-            styles.primaryButton,
-            {
-              backgroundColor: selectedMode ? selectedModeData?.color : '#292524',
-              shadowColor: selectedMode ? selectedModeData?.color : 'transparent',
-              shadowOpacity: selectedMode ? 0.4 : 0,
-            },
-          ]}
-          onPress={handleSetup}
-          disabled={!selectedMode}
-        >
-          <ThemedText
-            style={[styles.primaryButtonText, { color: selectedMode ? '#FAFAF9' : '#57534E' }]}
+        {/* CTA Buttons */}
+        <View style={styles.ctaSection}>
+          <Pressable
+            style={[
+              styles.primaryButton,
+              {
+                backgroundColor: selectedMode ? selectedModeData?.color : '#292524',
+                shadowColor: selectedMode ? selectedModeData?.color : 'transparent',
+                shadowOpacity: selectedMode ? 0.4 : 0,
+              },
+            ]}
+            onPress={handleSetup}
+            disabled={!selectedMode}
           >
-            {selectedMode ? `Set up ${selectedModeData?.title}` : 'Select a mode to continue'}
-          </ThemedText>
-          {selectedMode && <Feather name="arrow-right" size={20} color="#FAFAF9" />}
-        </Pressable>
+            <ThemedText
+              style={[styles.primaryButtonText, { color: selectedMode ? '#FAFAF9' : '#57534E' }]}
+            >
+              {selectedMode ? `Set up ${selectedModeData?.title}` : 'Select a mode to continue'}
+            </ThemedText>
+            {selectedMode && <Feather name="arrow-right" size={20} color="#FAFAF9" />}
+          </Pressable>
 
-        <Pressable style={styles.enterCodeButton} onPress={handleEnterCode}>
-          <ThemedText style={styles.enterCodeText}>Already have an invite? </ThemedText>
-          <ThemedText style={styles.enterCodeLink}>Enter code</ThemedText>
-        </Pressable>
-      </View>
+          <Pressable style={styles.enterCodeButton} onPress={handleEnterCode}>
+            <ThemedText style={styles.enterCodeText}>Already have an invite? </ThemedText>
+            <ThemedText style={styles.enterCodeLink}>Enter code</ThemedText>
+          </Pressable>
+        </View>
+      </ScrollView>
 
       <BottomNav activeTab="buddy" />
     </View>
@@ -505,16 +505,8 @@ const styles = StyleSheet.create({
   },
 
   // Bottom CTA
-  bottomCta: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: 16,
-    backgroundColor: 'rgba(12, 10, 9, 0.95)',
-    borderTopWidth: 1,
-    borderTopColor: Colors.bgElevated,
+  ctaSection: {
+    marginTop: Spacing.xl,
   },
   primaryButton: {
     flexDirection: 'row',
