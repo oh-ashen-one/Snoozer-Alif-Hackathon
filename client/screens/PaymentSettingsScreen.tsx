@@ -131,17 +131,7 @@ export default function PaymentSettingsScreen() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [buddy, setBuddy] = useState<BuddyInfo | null>(null);
 
-  // Test flow state
-  const [testFlowStep, setTestFlowStep] = useState<0 | 1 | 2 | 3>(0);
-  const [testSnoozeText, setTestSnoozeText] = useState('');
-  const [testInsult] = useState(() => {
-    const SNOOZE_INSULTS = [
-      'im lazy',
-      'i have no self control',
-      'im a fat chud',
-    ];
-    return SNOOZE_INSULTS[Math.floor(Math.random() * SNOOZE_INSULTS.length)];
-  });
+  const { sendAppleCash } = useIMessage();
 
   // Load data on mount
   useEffect(() => {

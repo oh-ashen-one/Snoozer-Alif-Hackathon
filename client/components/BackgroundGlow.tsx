@@ -110,7 +110,7 @@ function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount
 
   const opacity = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.4, 0.7],
+    outputRange: [0.15, 0.3],
   });
 
   return (
@@ -132,7 +132,7 @@ function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount
           style={[
             styles.orbInner,
             {
-              backgroundColor: `rgba(${color}, 0.55)`,
+              backgroundColor: `rgba(${color}, 0.25)`,
               shadowColor: `rgb(${color})`,
               shadowRadius: blur,
             },
@@ -178,7 +178,7 @@ function PulseRing({ top, left, color, duration, delay }: PulseRingProps) {
 
   const opacity = ringAnim.interpolate({
     inputRange: [0, 0.7, 1],
-    outputRange: [0.5, 0.2, 0],
+    outputRange: [0.7, 0.4, 0],
   });
 
   return (
@@ -188,7 +188,7 @@ function PulseRing({ top, left, color, duration, delay }: PulseRingProps) {
         {
           top,
           left,
-          borderColor: `rgba(${color}, 0.35)`,
+          borderColor: `rgba(${color}, 0.5)`,
           transform: [{ translateX: -100 }, { translateY: -100 }, { scale }],
           opacity,
         },
@@ -217,6 +217,6 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    borderWidth: 2,
+    borderWidth: 3,
   },
 });
