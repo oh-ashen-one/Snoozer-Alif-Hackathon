@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
+import { BottomNav } from '@/components/BottomNav';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm } from '@/utils/storage';
@@ -268,39 +269,6 @@ function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void
   );
 }
 
-// Bottom Nav Component
-function BottomNav({ activeTab, onStatsPress, onBuddyPress, onSettingsPress }: { activeTab: string; onStatsPress: () => void; onBuddyPress: () => void; onSettingsPress: () => void }) {
-  const insets = useSafeAreaInsets();
-
-  const tabs = [
-    { key: 'alarms', icon: 'clock', label: 'Alarms', onPress: undefined },
-    { key: 'stats', icon: 'bar-chart-2', label: 'Stats', onPress: onStatsPress },
-    { key: 'buddy', icon: 'users', label: 'Buddy', onPress: onBuddyPress },
-    { key: 'settings', icon: 'sliders', label: 'Settings', onPress: onSettingsPress },
-  ];
-
-  return (
-    <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 28) }]}>
-      {tabs.map(tab => {
-        const isActive = tab.key === activeTab;
-        return (
-          <Pressable key={tab.key} style={styles.navTab} onPress={tab.onPress}>
-            <Feather
-              name={tab.icon as any}
-              size={24}
-              color={isActive ? Colors.text : '#78716C'}
-              style={{ opacity: isActive ? 1 : 0.4 }}
-            />
-            <ThemedText style={[styles.navLabel, isActive && styles.navLabelActive]}>
-              {tab.label}
-            </ThemedText>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 // Empty State Component
 function EmptyState({ onAddAlarm }: { onAddAlarm: () => void }) {
   return (
@@ -323,7 +291,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const { alarms, loading, toggleAlarm, loadAlarms } = useAlarms();
-  const [activeTab] = useState('alarms');
   const [debugMode, setDebugMode] = useState(false);
 
   useFocusEffect(
@@ -365,16 +332,6 @@ export default function HomeScreen() {
   const handleAddAlarm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate('AddAlarm', { isOnboarding: false });
-  }, [navigation]);
-
-  const handleSettingsPress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('Settings');
-  }, [navigation]);
-
-  const handleStatsPress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('Stats');
   }, [navigation]);
 
   const handleBuddyPress = useCallback(() => {
@@ -444,7 +401,7 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      <BottomNav activeTab={activeTab} onStatsPress={handleStatsPress} onBuddyPress={handleBuddyPress} onSettingsPress={handleSettingsPress} />
+      <BottomNav activeTab="alarms" />
     </View>
   );
 }

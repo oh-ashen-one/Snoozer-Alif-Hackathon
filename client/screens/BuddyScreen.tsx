@@ -16,6 +16,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
+import { BottomNav } from '@/components/BottomNav';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -279,6 +280,8 @@ export default function BuddyScreen() {
           <ThemedText style={styles.enterCodeLink}>Enter code</ThemedText>
         </Pressable>
       </View>
+
+      <BottomNav activeTab="buddy" />
     </View>
   );
 }

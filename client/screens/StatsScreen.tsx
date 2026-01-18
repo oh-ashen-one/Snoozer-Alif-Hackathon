@@ -7,6 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
+import { BottomNav } from '@/components/BottomNav';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -135,27 +136,19 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation<NavigationProp>();
-
-  const handleBack = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.goBack();
-  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
-        </Pressable>
-        <ThemedText style={styles.headerTitle}>Your Stats</ThemedText>
+        <View style={styles.headerSpacer} />
+        <ThemedText style={styles.headerTitle}>Stats</ThemedText>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Streak Card */}
@@ -223,6 +216,8 @@ export default function StatsScreen() {
           ))}
         </View>
       </ScrollView>
+
+      <BottomNav activeTab="stats" />
     </View>
   );
 }

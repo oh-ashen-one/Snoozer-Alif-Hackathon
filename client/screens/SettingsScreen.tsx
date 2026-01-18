@@ -23,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
+import { BottomNav } from '@/components/BottomNav';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { clearAllData, setOnboardingComplete } from '@/utils/storage';
@@ -400,16 +401,14 @@ export default function SettingsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
-        </Pressable>
+        <View style={styles.headerSpacer} />
         <ThemedText style={styles.headerTitle}>Settings</ThemedText>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Account Section */}
@@ -590,12 +589,14 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <ThemedText style={styles.versionText}>Snoozer v1.0</ThemedText>
+        </View>
       </ScrollView>
 
-      {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <ThemedText style={styles.versionText}>Snoozer v1.0</ThemedText>
-      </View>
+      <BottomNav activeTab="settings" />
     </View>
   );
 }
