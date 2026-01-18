@@ -11,7 +11,7 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Alert,
+  Text,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -42,6 +42,7 @@ export default function PunishmentsScreen() {
   const [enabledPunishments, setEnabledPunishments] = useState<string[]>(['shame_video']);
   const [punishmentConfig, setPunishmentConfig] = useState<PunishmentConfig>({});
   const [expandedPunishment, setExpandedPunishment] = useState<string | null>(null);
+  const [showMaxLimitCard, setShowMaxLimitCard] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -67,31 +68,28 @@ export default function PunishmentsScreen() {
   const handleTogglePunishment = useCallback((id: string) => {
     const MAX_PUNISHMENTS = 4;
 
-    setEnabledPunishments(prev => {
-      const isCurrentlyEnabled = prev.includes(id);
+    const isCurrentlyEnabled = enabledPunishments.includes(id);
 
-      // If disabling, always allow
-      if (isCurrentlyEnabled) {
-        const newPunishments = prev.filter(p => p !== id);
-        saveDefaultPunishments(newPunishments);
-        return newPunishments;
-      }
-
-      // Check max limit when enabling
-      if (prev.length >= MAX_PUNISHMENTS) {
-        Alert.alert(
-          'Maximum Reached',
-          'You can only enable up to 4 punishments. Disable one to add another.',
-          [{ text: 'OK' }]
-        );
-        return prev;
-      }
-
-      const newPunishments = [...prev, id];
+    // If disabling, always allow
+    if (isCurrentlyEnabled) {
+      const newPunishments = enabledPunishments.filter(p => p !== id);
+      setEnabledPunishments(newPunishments);
       saveDefaultPunishments(newPunishments);
-      return newPunishments;
-    });
-  }, []);
+      setShowMaxLimitCard(false);
+      return;
+    }
+
+    // Check max limit when enabling
+    if (enabledPunishments.length >= MAX_PUNISHMENTS) {
+      setShowMaxLimitCard(true);
+      return;
+    }
+
+    setShowMaxLimitCard(false);
+    const newPunishments = [...enabledPunishments, id];
+    setEnabledPunishments(newPunishments);
+    saveDefaultPunishments(newPunishments);
+  }, [enabledPunishments]);
 
   const handleSaveConfig = useCallback(async (config: PunishmentConfig) => {
     setPunishmentConfig(config);
@@ -129,6 +127,14 @@ export default function PunishmentsScreen() {
               expandedPunishment={expandedPunishment}
               onExpandPunishment={setExpandedPunishment}
             />
+            {showMaxLimitCard && (
+              <View style={styles.maxLimitCard}>
+                <Text style={{ fontSize: 18 }}>⚠️</Text>
+                <Text style={styles.maxLimitText}>
+                  Maximum 4 punishments. Disable one to add another.
+                </Text>
+              </View>
+            )}
           </View>
         </FadeInView>
       </ScrollView>
@@ -162,5 +168,20 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginBottom: Spacing.md,
     lineHeight: 18,
+  },
+  maxLimitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderRadius: 12,
+    padding: Spacing.lg,
+    marginTop: Spacing.md,
+  },
+  maxLimitText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.red,
+    lineHeight: 20,
   },
 });

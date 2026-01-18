@@ -6,7 +6,6 @@ import {
   Pressable,
   Text,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -148,6 +147,7 @@ export default function AddAlarmScreen() {
   const [enabledPunishments, setEnabledPunishments] = useState<string[]>(['shame_video']);
   const [punishmentConfig, setPunishmentConfig] = useState<PunishmentConfig>({});
   const [expandedPunishment, setExpandedPunishment] = useState<string | null>(null);
+  const [showMaxLimitCard, setShowMaxLimitCard] = useState(false);
 
   useEffect(() => {
     if (editAlarmId) return;
@@ -273,19 +273,17 @@ export default function AddAlarmScreen() {
     // If disabling, always allow
     if (enabledPunishments.includes(id)) {
       setEnabledPunishments(prev => prev.filter(p => p !== id));
+      setShowMaxLimitCard(false);
       return;
     }
 
     // Check max limit when enabling
     if (enabledPunishments.length >= MAX_PUNISHMENTS) {
-      Alert.alert(
-        'Maximum Reached',
-        'You can only enable up to 4 punishments. Disable one to add another.',
-        [{ text: 'OK' }]
-      );
+      setShowMaxLimitCard(true);
       return;
     }
 
+    setShowMaxLimitCard(false);
     setEnabledPunishments(prev => [...prev, id]);
   }, [enabledPunishments]);
 
@@ -562,16 +560,12 @@ export default function AddAlarmScreen() {
                   <Text style={styles.moneyTitle}>Money Stakes</Text>
                 </View>
                 <Toggle value={moneyEnabled} onToggle={() => {
-                  // Money is exclusive - cannot enable if other punishments exist
-                  if (!moneyEnabled && enabledPunishments.length > 0) {
-                    Alert.alert(
-                      'Money is exclusive',
-                      'Disable other punishments first to use money punishment.',
-                      [{ text: 'OK' }]
-                    );
-                    return;
-                  }
                   hapticForPunishment(getPunishmentLevel(amount, enabledPunishments.includes('shame_video')));
+                  if (!moneyEnabled) {
+                    // Enabling money - clear all other punishments
+                    setEnabledPunishments([]);
+                    setShowMaxLimitCard(false);
+                  }
                   setMoneyEnabled(!moneyEnabled);
                 }} />
               </View>
@@ -620,6 +614,15 @@ export default function AddAlarmScreen() {
                 onExpandPunishment={setExpandedPunishment}
               />
             </View>
+
+            {showMaxLimitCard && (
+              <View style={styles.maxLimitCard}>
+                <Text style={{ fontSize: 18 }}>⚠️</Text>
+                <Text style={styles.maxLimitText}>
+                  Maximum 4 punishments. Disable one to add another.
+                </Text>
+              </View>
+            )}
 
             <View style={styles.stakesHint}>
               <Text style={{ fontSize: 16 }}>💡</Text>
@@ -1065,6 +1068,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.red,
     lineHeight: 18,
+  },
+  maxLimitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    marginTop: Spacing.md,
+  },
+  maxLimitText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.red,
+    lineHeight: 20,
   },
   toggleRow: {
     flexDirection: 'row',
