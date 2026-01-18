@@ -17,8 +17,8 @@ interface NotificationTemplate {
 
 const NOTIFICATION_TEMPLATES: Record<BuddyNotificationType, NotificationTemplate> = {
   BUDDY_SNOOZED: {
-    title: "{name} snoozed!",
-    body: "They owe you ${amount}. Don't let them off the hook.",
+    title: "YOU FAILED!",
+    body: "You snoozed and owe ${amount}. Time to pay up.",
     action: "open_buddy_dashboard",
   },
   BUDDY_WOKE: {
