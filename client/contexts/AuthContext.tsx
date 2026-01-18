@@ -7,51 +7,20 @@ import React, {
   ReactNode,
 } from 'react';
 import { Platform } from 'react-native';
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithCredential,
-  signOut as firebaseSignOut,
-  OAuthProvider,
-  GoogleAuthProvider,
-  User,
-  Auth,
-} from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as AuthSession from 'expo-auth-session';
-import * as Crypto from 'expo-crypto';
 
-// TODO: Replace with your Firebase config from Firebase Console
-// Go to Firebase Console > Project Settings > Your Apps > Web App
-const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-  appId: 'YOUR_APP_ID',
-};
+const USER_STORAGE_KEY = '@snoozer/user';
 
-// TODO: Replace with your Google OAuth client IDs from Google Cloud Console
-const GOOGLE_WEB_CLIENT_ID = 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
-const GOOGLE_IOS_CLIENT_ID = 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com';
-const GOOGLE_ANDROID_CLIENT_ID = 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com';
-
-// Initialize Firebase
-let app: FirebaseApp;
-let auth: Auth;
-
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-} else {
-  app = getApps()[0];
-  auth = getAuth(app);
+// Local user type (no Firebase dependency)
+interface LocalUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: LocalUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   signInWithApple: () => Promise<void>;
@@ -66,82 +35,60 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<LocalUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Listen to auth state changes
+  // Load user from storage on mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  // Sync user to backend when authenticated
-  useEffect(() => {
-    const syncUser = async () => {
-      if (!user) return;
-
+    const loadUser = async () => {
       try {
-        const baseUrl = process.env.EXPO_PUBLIC_DOMAIN
-          ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
-          : '';
-
-        if (!baseUrl) return;
-
-        await fetch(`${baseUrl}/api/users/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': user.uid,
-          },
-          body: JSON.stringify({
-            email: user.email,
-            displayName: user.displayName,
-          }),
-        });
+        const stored = await AsyncStorage.getItem(USER_STORAGE_KEY);
+        if (stored) {
+          setUser(JSON.parse(stored));
+        }
       } catch (error) {
-        // Silently fail - user sync is not critical for app function
+        if (__DEV__) console.error('[Auth] Error loading user:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
+    loadUser();
+  }, []);
 
-    syncUser();
-  }, [user]);
-
-  // Apple Sign-In
+  // Apple Sign-In - store locally
   const signInWithApple = useCallback(async () => {
     if (Platform.OS !== 'ios') {
       throw new Error('Apple Sign-In is only available on iOS');
     }
 
     try {
-      // Generate nonce for security
-      const nonce = Math.random().toString(36).substring(2, 10);
-      const hashedNonce = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        nonce
-      );
-
       // Request Apple credentials
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
-        nonce: hashedNonce,
       });
 
-      // Create Firebase credential
-      const provider = new OAuthProvider('apple.com');
-      const oAuthCredential = provider.credential({
-        idToken: credential.identityToken!,
-        rawNonce: nonce,
-      });
+      // Build display name from full name if available
+      let displayName: string | null = null;
+      if (credential.fullName) {
+        const { givenName, familyName } = credential.fullName;
+        displayName = [givenName, familyName].filter(Boolean).join(' ') || null;
+      }
 
-      // Sign in to Firebase
-      await signInWithCredential(auth, oAuthCredential);
+      // Create local user
+      const localUser: LocalUser = {
+        uid: credential.user,
+        email: credential.email,
+        displayName,
+      };
+
+      // Store in AsyncStorage
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(localUser));
+      setUser(localUser);
+
+      if (__DEV__) console.log('[Auth] Apple Sign-In successful:', localUser.uid);
     } catch (error: unknown) {
       if (
         error &&
@@ -150,63 +97,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error.code === 'ERR_REQUEST_CANCELED'
       ) {
         // User canceled the sign-in
+        if (__DEV__) console.log('[Auth] Apple Sign-In canceled by user');
         return;
       }
+      if (__DEV__) console.error('[Auth] Apple Sign-In error:', error);
       throw error;
     }
   }, []);
 
-  // Google Sign-In using expo-auth-session
+  // Google Sign-In - not implemented for local auth
   const signInWithGoogle = useCallback(async () => {
-    try {
-      // Get the appropriate client ID for the platform
-      const clientId = Platform.select({
-        ios: GOOGLE_IOS_CLIENT_ID,
-        android: GOOGLE_ANDROID_CLIENT_ID,
-        default: GOOGLE_WEB_CLIENT_ID,
-      });
-
-      // Create the auth request
-      const redirectUri = AuthSession.makeRedirectUri({
-        scheme: 'snoozer',
-      });
-
-      const discovery = {
-        authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-        tokenEndpoint: 'https://oauth2.googleapis.com/token',
-      };
-
-      const request = new AuthSession.AuthRequest({
-        clientId,
-        redirectUri,
-        scopes: ['openid', 'profile', 'email'],
-        responseType: AuthSession.ResponseType.IdToken,
-      });
-
-      const result = await request.promptAsync(discovery);
-
-      if (result.type === 'success' && result.params.id_token) {
-        // Create Firebase credential
-        const credential = GoogleAuthProvider.credential(result.params.id_token);
-
-        // Sign in to Firebase
-        await signInWithCredential(auth, credential);
-      }
-    } catch (error) {
-      console.error('Google Sign-In error:', error);
-      throw error;
-    }
+    // For local auth, Google Sign-In would need expo-auth-session
+    // For now, just show an alert that it's not available
+    throw new Error('Google Sign-In is not available in local auth mode');
   }, []);
 
-  // Sign out
+  // Sign out - clear local storage
   const signOut = useCallback(async () => {
-    // Clear user state immediately so navigation can proceed
-    setUser(null);
     try {
-      await firebaseSignOut(auth);
+      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      setUser(null);
+      if (__DEV__) console.log('[Auth] Signed out');
     } catch (error) {
-      console.error('Sign out error:', error);
-      // Don't throw - we already cleared local state
+      if (__DEV__) console.error('[Auth] Sign out error:', error);
+      // Still clear user state even if storage fails
+      setUser(null);
     }
   }, []);
 
