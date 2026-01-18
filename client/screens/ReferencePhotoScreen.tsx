@@ -48,7 +48,7 @@ export default function ReferencePhotoScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmTime, alarmLabel, isOnboarding } = route.params;
+  const { alarmTime, alarmLabel, isOnboarding, punishment, extraPunishments, days } = route.params;
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -126,6 +126,9 @@ export default function ReferencePhotoScreen() {
       alarmLabel,
       referencePhotoUri: savedUri,
       isOnboarding,
+      punishment,
+      extraPunishments,
+      days,
     });
   };
 

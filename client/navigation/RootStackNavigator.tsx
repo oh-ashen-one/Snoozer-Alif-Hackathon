@@ -26,6 +26,7 @@ import WaitingForBuddyScreen from '@/screens/WaitingForBuddyScreen';
 import BuddyJoinedScreen from '@/screens/BuddyJoinedScreen';
 import HelpScreen from '@/screens/HelpScreen';
 import LegalScreen from '@/screens/LegalScreen';
+import WakeUpSuccessScreen from '@/screens/WakeUpSuccessScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
@@ -43,23 +44,33 @@ export type RootStackParamList = {
   BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
+  WakeUpSuccess: undefined;
   AddAlarm: { isOnboarding: boolean };
   ReferencePhoto: {
     alarmTime: string;
     alarmLabel: string;
     isOnboarding: boolean;
+    punishment?: number;
+    extraPunishments?: string[];
+    days?: number[];
   };
   RecordShame: {
     alarmTime: string;
     alarmLabel: string;
     referencePhotoUri: string;
     isOnboarding: boolean;
+    punishment?: number;
+    extraPunishments?: string[];
+    days?: number[];
   };
   OnboardingComplete: {
     alarmTime: string;
     alarmLabel: string;
     referencePhotoUri: string;
     shameVideoUri: string;
+    punishment?: number;
+    extraPunishments?: string[];
+    days?: number[];
   };
   AlarmRinging: {
     alarmId: string;
@@ -242,6 +253,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="ShamePlayback"
         component={ShamePlaybackScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="WakeUpSuccess"
+        component={WakeUpSuccessScreen}
         options={{
           headerShown: false,
           gestureEnabled: false,

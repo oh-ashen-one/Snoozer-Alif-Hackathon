@@ -17,6 +17,9 @@ export interface Alarm {
   shameVideoUri: string | null;
   createdAt: number;
   notificationId?: string | null;
+  punishment?: number;
+  extraPunishments?: string[];
+  days?: number[];
 }
 
 export async function getAlarms(): Promise<Alarm[]> {

@@ -252,7 +252,33 @@ function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
 // Alarm List Item Component
 function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void }) {
   const { time, period } = formatTime(alarm.time);
-  const selectedDays = [1, 2, 3, 4, 5]; // Default to weekdays
+  const selectedDays = alarm.days ?? [1, 2, 3, 4, 5]; // Use stored days or default to weekdays
+
+  // Build punishment display
+  const getPunishmentText = () => {
+    const parts: string[] = [];
+    
+    // Add money punishment
+    const money = alarm.punishment ?? 2;
+    if (money > 0) {
+      parts.push(`$${money}`);
+    }
+    
+    // Add extra punishments
+    const extras = alarm.extraPunishments ?? [];
+    if (extras.includes('shame_video')) {
+      parts.push('Shame video');
+    }
+    if (extras.includes('buddy_call')) {
+      parts.push('Buddy call');
+    }
+    
+    if (parts.length === 0) {
+      return 'No stakes';
+    }
+    
+    return parts.join(' + ');
+  };
 
   return (
     <View style={styles.alarmCard}>
@@ -266,7 +292,7 @@ function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void
             <View style={styles.alarmSubtitleRow}>
               <ThemedText style={styles.alarmLabel}>{alarm.label || 'Wake up'}</ThemedText>
               <ThemedText style={styles.alarmDot}> · </ThemedText>
-              <ThemedText style={styles.alarmPenalty}>-$2 if snooze</ThemedText>
+              <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
             </View>
           </View>
           <Toggle value={alarm.enabled} onValueChange={onToggle} />

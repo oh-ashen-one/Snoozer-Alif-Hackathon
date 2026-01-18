@@ -60,7 +60,7 @@ export default function RecordShameScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmTime, alarmLabel, referencePhotoUri, isOnboarding } = route.params;
+  const { alarmTime, alarmLabel, referencePhotoUri, isOnboarding, punishment, extraPunishments, days } = route.params;
 
   const [isRecording, setIsRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
@@ -193,6 +193,9 @@ export default function RecordShameScreen() {
       alarmLabel,
       referencePhotoUri,
       shameVideoUri: savedUri,
+      punishment,
+      extraPunishments,
+      days,
     });
   };
 
@@ -204,6 +207,9 @@ export default function RecordShameScreen() {
       alarmLabel,
       referencePhotoUri,
       shameVideoUri: '',
+      punishment,
+      extraPunishments,
+      days,
     });
   };
 

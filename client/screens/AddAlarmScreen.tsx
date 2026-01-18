@@ -157,11 +157,15 @@ export default function AddAlarmScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const hour24 = period === 'PM' ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
     const timeString = `${hour24.toString().padStart(2, '0')}:${formatMinute(minute)}`;
+    const dayIndices = selectedDays.map(day => DAYS.indexOf(day));
 
     navigation.navigate('ReferencePhoto', {
       alarmTime: timeString,
       alarmLabel: 'Wake up',
       isOnboarding,
+      punishment,
+      extraPunishments,
+      days: dayIndices,
     });
   };
 

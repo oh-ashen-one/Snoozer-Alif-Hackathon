@@ -34,7 +34,7 @@ export default function OnboardingCompleteScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmTime, alarmLabel, referencePhotoUri, shameVideoUri } = route.params;
+  const { alarmTime, alarmLabel, referencePhotoUri, shameVideoUri, punishment, extraPunishments, days } = route.params;
   const { addAlarm } = useAlarms();
 
   const scale = useSharedValue(0);
@@ -66,6 +66,9 @@ export default function OnboardingCompleteScreen() {
       enabled: true,
       referencePhotoUri,
       shameVideoUri,
+      punishment,
+      extraPunishments,
+      days,
     });
 
     await setOnboardingComplete(true);
