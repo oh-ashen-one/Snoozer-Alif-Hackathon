@@ -55,6 +55,7 @@ import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import ShameMessageSent from '@/components/ShameMessageSent';
+import { notifyBuddySnoozed } from '@/utils/buddyNotifications';
 
 const CALENDAR_CONNECTED_KEY = '@snoozer/calendar_connected';
 
@@ -505,6 +506,11 @@ export default function AlarmRingingScreen() {
       try {
         await logWakeUp(alarmData.alarmId, new Date(), true, 1);
         if (__DEV__) console.log('[AlarmRinging] Logged snooze');
+        
+        if (buddyInfo) {
+          await notifyBuddySnoozed('You', penaltyAmount);
+          if (__DEV__) console.log('[AlarmRinging] Sent snooze notification to buddy');
+        }
       } catch (error) {
         if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
       }

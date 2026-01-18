@@ -18,6 +18,8 @@ import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
 import { validateProofPhoto } from '@/utils/imageComparison';
 import { CheatWarningModal } from '@/components/CheatWarningModal';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
+import { getBuddyInfo } from '@/utils/storage';
+import { notifyBuddyWoke } from '@/utils/buddyNotifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
@@ -177,6 +179,19 @@ export default function ProofCameraScreen() {
 
       await logWakeUp(alarmId, new Date(), false);
       if (__DEV__) console.log('[ProofCamera] Logged successful wake up');
+      
+      const buddyInfo = await getBuddyInfo();
+      if (buddyInfo) {
+        const streak = await getCurrentStreak();
+        const now = new Date();
+        const wakeHours = now.getHours();
+        const wakeMinutes = now.getMinutes();
+        const wakePeriod = wakeHours >= 12 ? 'PM' : 'AM';
+        const wakeDisplayHours = wakeHours % 12 || 12;
+        const wakeTimeStr = `${wakeDisplayHours}:${wakeMinutes.toString().padStart(2, '0')} ${wakePeriod}`;
+        await notifyBuddyWoke('You', wakeTimeStr, streak);
+        if (__DEV__) console.log('[ProofCamera] Sent wake notification to buddy');
+      }
     } catch (error) {
       if (__DEV__) console.log('[ProofCamera] Error during dismiss:', error);
     }
