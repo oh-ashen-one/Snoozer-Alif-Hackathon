@@ -19,6 +19,7 @@ import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { saveReferencePhoto } from '@/utils/fileSystem';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { useAlarms } from '@/hooks/useAlarms';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ReferencePhoto'>;
@@ -49,6 +50,7 @@ export default function ReferencePhotoScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { alarmTime, alarmLabel, isOnboarding, punishment, extraPunishments, days } = route.params;
+  const { alarms, updateAlarm } = useAlarms();
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -110,26 +112,45 @@ export default function ReferencePhotoScreen() {
   const handleConfirm = async () => {
     if (!photoUri) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    console.log('[ReferencePhoto] Confirmed, navigating to RecordShame');
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    let savedUri = photoUri;
+      let savedUri = photoUri;
 
-    // Only save if it's a real photo
-    if (!photoUri.startsWith('mock://')) {
-      const result = await saveReferencePhoto(photoUri);
-      if (result) savedUri = result;
+      // Only save if it's a real photo
+      if (!photoUri.startsWith('mock://')) {
+        const result = await saveReferencePhoto(photoUri);
+        if (result) savedUri = result;
+      }
+
+      // If coming from settings, update alarm and go back to settings
+      if (isOnboarding === false) {
+        console.log('[ReferencePhoto] Updating proof activity from settings');
+        const firstAlarm = alarms[0];
+        if (firstAlarm) {
+          await updateAlarm(firstAlarm.id, { referencePhotoUri: savedUri });
+        }
+        navigation.navigate('Settings');
+        return;
+      }
+
+      // Onboarding flow - continue to shame video
+      console.log('[ReferencePhoto] Confirmed, navigating to RecordShame');
+      navigation.navigate('RecordShame', {
+        alarmTime,
+        alarmLabel,
+        referencePhotoUri: savedUri,
+        isOnboarding,
+        punishment,
+        extraPunishments,
+        days,
+      });
+    } catch (error) {
+      console.error('[ReferencePhoto] Error confirming photo:', error);
+      if (isOnboarding === false) {
+        navigation.navigate('Settings');
+      }
     }
-
-    navigation.navigate('RecordShame', {
-      alarmTime,
-      alarmLabel,
-      referencePhotoUri: savedUri,
-      isOnboarding,
-      punishment,
-      extraPunishments,
-      days,
-    });
   };
 
   // INTRO PHASE
