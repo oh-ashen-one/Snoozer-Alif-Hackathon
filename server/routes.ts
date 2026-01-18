@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .from(invites)
         .leftJoin(appUsers, eq(invites.guestUserId, appUsers.id))
-        .where(eq(invites.code, code.toUpperCase()))
+        .where(eq(invites.code, String(code).toUpperCase()))
         .limit(1);
 
       if (!result) {
@@ -208,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(invites)
         .where(
           and(
-            eq(invites.code, code.toUpperCase()),
+            eq(invites.code, String(code).toUpperCase()),
             eq(invites.status, "pending"),
             gt(invites.expiresAt, now)
           )
@@ -273,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set({ status: "cancelled" })
         .where(
           and(
-            eq(invites.code, code.toUpperCase()),
+            eq(invites.code, String(code).toUpperCase()),
             eq(invites.hostUserId, userId),
             eq(invites.status, "pending")
           )
