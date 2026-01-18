@@ -156,11 +156,13 @@ export async function saveProofActivity(activity: ProofActivity): Promise<void> 
 export interface BuddyInfo {
   id?: string;
   name: string;
-  phone: string;
+  phone?: string;
   avatar?: string;
-  invitedAt: number;
-  hasApp: boolean;
+  invitedAt?: number;
+  hasApp?: boolean;
   joinedAt?: number;
+  linkedAt?: number;
+  inviteCode?: string;
   status: 'none' | 'pending_sent' | 'pending_received' | 'linked';
 }
 

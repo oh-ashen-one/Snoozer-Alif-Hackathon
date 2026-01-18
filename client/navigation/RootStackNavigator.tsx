@@ -33,6 +33,7 @@ import AlarmSoundScreen from '@/screens/AlarmSoundScreen';
 import JoinCodeScreen from '@/screens/JoinCodeScreen';
 import InviteBuddyScreen from '@/screens/InviteBuddyScreen';
 import PunishmentsScreen from '@/screens/PunishmentsScreen';
+import AcceptInviteScreen from '@/screens/AcceptInviteScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
@@ -52,6 +53,7 @@ export type RootStackParamList = {
   BuddyDashboard: undefined;
   BuddyLeaderboard: undefined;
   BuddySettings: undefined;
+  AcceptInvite: { code: string };
   JoinCode: undefined;
   InviteBuddyiMessage: {
     returnTo?: string;
@@ -274,6 +276,13 @@ export default function RootStackNavigator() {
         component={BuddySettingsScreen}
         options={{
           headerTitle: () => <HeaderTitle title="Buddy Settings" />,
+        }}
+      />
+      <Stack.Screen
+        name="AcceptInvite"
+        component={AcceptInviteScreen}
+        options={{
+          headerShown: false,
         }}
       />
       <Stack.Screen
