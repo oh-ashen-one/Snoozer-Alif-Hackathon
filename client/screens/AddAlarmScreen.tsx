@@ -268,22 +268,26 @@ export default function AddAlarmScreen() {
   const formatMinute = (m: number) => m.toString().padStart(2, '0');
 
   const handleTogglePunishment = useCallback((id: string) => {
-    // Money is exclusive - cannot add other punishments if money is enabled
-    if (moneyEnabled && !enabledPunishments.includes(id)) {
+    const MAX_PUNISHMENTS = 4;
+
+    // If disabling, always allow
+    if (enabledPunishments.includes(id)) {
+      setEnabledPunishments(prev => prev.filter(p => p !== id));
+      return;
+    }
+
+    // Check max limit when enabling
+    if (enabledPunishments.length >= MAX_PUNISHMENTS) {
       Alert.alert(
-        'Money is exclusive',
-        'Disable money punishment to add other punishments.',
+        'Maximum Reached',
+        'You can only enable up to 4 punishments. Disable one to add another.',
         [{ text: 'OK' }]
       );
       return;
     }
-    setEnabledPunishments(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(p => p !== id);
-      }
-      return [...prev, id];
-    });
-  }, [moneyEnabled, enabledPunishments]);
+
+    setEnabledPunishments(prev => [...prev, id]);
+  }, [enabledPunishments]);
 
   const handleSaveConfig = useCallback(async (config: PunishmentConfig) => {
     setPunishmentConfig(config);

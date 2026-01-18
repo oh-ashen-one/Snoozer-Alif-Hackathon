@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import { Pedometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -18,7 +18,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { logWakeUp } from '@/utils/tracking';
+import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'StepMission'>;
@@ -113,12 +113,37 @@ export default function StepMissionScreen() {
         referencePhotoUri,
       });
     } else {
-      // Step-only activity complete - log and go straight to stats
+      // Step-only activity complete - log wake-up and go to success screen
       try {
         await logWakeUp(alarmId, new Date(), false, 0);
-        navigation.navigate('Stats');
+
+        // Get stats for success screen
+        const streak = await getCurrentStreak();
+        const monthStats = await getMonthStats();
+        const wakeUpRate = monthStats.wakeUps + monthStats.snoozes > 0
+          ? Math.round((monthStats.wakeUps / (monthStats.wakeUps + monthStats.snoozes)) * 100)
+          : 100;
+
+        const now = new Date();
+        const wakeTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{
+              name: 'WakeUpSuccess',
+              params: {
+                streak,
+                moneySaved: monthStats.savedMoney,
+                wakeUpRate,
+                wakeTime,
+                targetTime: wakeTime,
+              },
+            }],
+          })
+        );
       } catch (error) {
-        console.error('[StepMission] Error logging wake up:', error);
+        console.error('[StepMission] Error:', error);
         navigation.navigate('Home' as any);
       }
     }

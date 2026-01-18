@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system';
 import { successDismissPattern, buttonPress } from '@/utils/haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -20,6 +21,7 @@ import { CheatWarningModal } from '@/components/CheatWarningModal';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 import { getBuddyInfo, getUserName } from '@/utils/storage';
 import { notifyBuddyWoke } from '@/utils/buddyNotifications';
+import { apiRequest } from '@/lib/query-client';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
@@ -65,6 +67,8 @@ export default function ProofCameraScreen() {
   const [capturing, setCapturing] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'passed' | 'failed'>('idle');
+  const [verificationReason, setVerificationReason] = useState<string | null>(null);
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
   const [userName, setUserName] = useState('You');
@@ -139,32 +143,100 @@ export default function ProofCameraScreen() {
     setPhotoTimestamp(null);
     setVerificationError(null);
     setVerifying(false);
+    setVerificationStatus('idle');
+    setVerificationReason(null);
   };
 
   const handleConfirm = async () => {
     if (verifying) return;
     setVerifying(true);
     setVerificationError(null);
+    setVerificationStatus('verifying');
 
     // Validate photo freshness (anti-cheat)
     if (photoTimestamp && !validatePhotoFreshness(photoTimestamp)) {
       setVerifying(false);
+      setVerificationStatus('idle');
       return;
     }
 
     try {
-      if (photoUri && !photoUri.startsWith('mock://') && referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
+      // AI-powered verification for activity proof
+      if (photoUri && !photoUri.startsWith('mock://') && activityName) {
+        if (__DEV__) console.log('[ProofCamera] Starting AI verification for activity:', activityName);
+        
+        try {
+          // Convert proof photo to base64
+          const imageBase64 = await FileSystem.readAsStringAsync(photoUri, {
+            encoding: 'base64' as const,
+          });
+          
+          // Prepare reference image if available
+          let referenceImageBase64: string | undefined;
+          if (referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
+            referenceImageBase64 = await FileSystem.readAsStringAsync(referencePhotoUri, {
+              encoding: 'base64' as const,
+            });
+          }
+          
+          // Call AI verification API
+          const response = await apiRequest('POST', '/api/verify-proof', {
+            imageBase64: `data:image/jpeg;base64,${imageBase64}`,
+            activityDescription: activityName,
+            referenceImageBase64: referenceImageBase64 ? `data:image/jpeg;base64,${referenceImageBase64}` : undefined,
+          });
+          
+          const result = await response.json();
+          if (__DEV__) console.log('[ProofCamera] AI verification result:', result);
+          
+          if (!result.verified) {
+            setVerificationStatus('failed');
+            setVerificationReason(result.reason || "Couldn't verify the activity in your photo");
+            setVerificationError(result.reason || "Photo doesn't match the required activity. Please try again.");
+            setVerifying(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            return;
+          }
+          
+          setVerificationStatus('passed');
+          setVerificationReason(result.reason);
+          if (__DEV__) console.log('[ProofCamera] AI verification passed:', result.reason);
+        } catch (aiError) {
+          // If AI verification fails due to network/API issues, fall back to local validation
+          if (__DEV__) console.log('[ProofCamera] AI verification failed, falling back to local:', aiError);
+          
+          // Try local validation as fallback
+          if (referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
+            const localResult = await validateProofPhoto(referencePhotoUri, photoUri);
+            if (!localResult.isMatch) {
+              setVerificationError(localResult.message);
+              setVerifying(false);
+              setVerificationStatus('failed');
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              return;
+            }
+          }
+          setVerificationStatus('passed');
+        }
+      } else if (photoUri && !photoUri.startsWith('mock://') && referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
+        // Fallback to local validation if no activity name
         const result = await validateProofPhoto(referencePhotoUri, photoUri);
         if (!result.isMatch) {
           setVerificationError(result.message);
           setVerifying(false);
+          setVerificationStatus('failed');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           return;
         }
+        setVerificationStatus('passed');
         if (__DEV__) console.log('[ProofCamera] Image match:', result.similarity.toFixed(2));
+      } else {
+        // Mock/web mode - skip verification
+        setVerificationStatus('passed');
       }
     } catch (error) {
       if (__DEV__) console.log('[ProofCamera] Verification error:', error);
+      setVerificationStatus('passed'); // Allow through on errors to not block user
     }
 
     successDismissPattern();
@@ -303,6 +375,17 @@ export default function ProofCameraScreen() {
           <Image source={{ uri: photoUri }} style={styles.fullScreenImage} />
         )}
 
+        {/* Verification status overlay */}
+        {verificationStatus === 'verifying' ? (
+          <View style={styles.verifyingOverlay}>
+            <View style={styles.verifyingCard}>
+              <ActivityIndicator size="large" color={Colors.green} />
+              <ThemedText style={styles.verifyingTitle}>Verifying your photo...</ThemedText>
+              <ThemedText style={styles.verifyingSubtext}>AI is checking that you completed the activity</ThemedText>
+            </View>
+          </View>
+        ) : null}
+
         <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
           {verificationError ? (
             <View style={styles.errorContainer}>
@@ -322,7 +405,10 @@ export default function ProofCameraScreen() {
             disabled={verifying}
           >
             {verifying ? (
-              <ActivityIndicator size="small" color={Colors.text} />
+              <View style={styles.verifyingButton}>
+                <ActivityIndicator size="small" color={Colors.text} />
+                <ThemedText style={styles.greenButtonText}>Verifying...</ThemedText>
+              </View>
             ) : (
               <ThemedText style={styles.greenButtonText}>Looks good!</ThemedText>
             )}
@@ -653,6 +739,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.red,
     flex: 1,
+  },
+
+  // Verification overlay
+  verifyingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 10, 9, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyingCard: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 20,
+    padding: Spacing['2xl'],
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    width: '80%',
+    maxWidth: 300,
+    gap: Spacing.md,
+  },
+  verifyingTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  verifyingSubtext: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  verifyingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
 
   // Permission states

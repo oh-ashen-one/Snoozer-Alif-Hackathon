@@ -64,12 +64,29 @@ export default function PunishmentsScreen() {
   }, [navigation]);
 
   const handleTogglePunishment = useCallback((id: string) => {
+    const MAX_PUNISHMENTS = 4;
+
     setEnabledPunishments(prev => {
       const isCurrentlyEnabled = prev.includes(id);
-      const newPunishments = isCurrentlyEnabled
-        ? prev.filter(p => p !== id)
-        : [...prev, id];
 
+      // If disabling, always allow
+      if (isCurrentlyEnabled) {
+        const newPunishments = prev.filter(p => p !== id);
+        saveDefaultPunishments(newPunishments);
+        return newPunishments;
+      }
+
+      // Check max limit when enabling
+      if (prev.length >= MAX_PUNISHMENTS) {
+        Alert.alert(
+          'Maximum Reached',
+          'You can only enable up to 4 punishments. Disable one to add another.',
+          [{ text: 'OK' }]
+        );
+        return prev;
+      }
+
+      const newPunishments = [...prev, id];
       saveDefaultPunishments(newPunishments);
       return newPunishments;
     });
