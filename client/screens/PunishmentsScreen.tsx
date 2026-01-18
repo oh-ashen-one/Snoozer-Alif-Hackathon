@@ -272,12 +272,19 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
 
       {/* Show saved phone number when configured and not expanded */}
       {enabled && punishment.id === 'text_ex' && config.text_ex?.exPhoneNumber && !expanded && (
-        <Pressable style={styles.savedConfigRow} onPress={onExpand}>
+        <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigText}>
             📱 {config.text_ex.exPhoneNumber}
           </ThemedText>
-          <ThemedText style={styles.editText}>Edit</ThemedText>
-        </Pressable>
+          <View style={styles.savedConfigButtons}>
+            <Pressable onPress={handleTestTextEx}>
+              <ThemedText style={styles.testLinkText}>Test</ThemedText>
+            </Pressable>
+            <Pressable onPress={onExpand}>
+              <ThemedText style={styles.editText}>Edit</ThemedText>
+            </Pressable>
+          </View>
+        </View>
       )}
 
       {/* Text Ex Configuration */}
