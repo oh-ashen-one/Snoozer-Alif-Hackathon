@@ -375,7 +375,7 @@ export default function HomeScreen() {
 
   const handleAddAlarm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('AddAlarm', { isOnboarding: false });
+    navigation.navigate('AddAlarm', { isOnboarding: true });
   }, [navigation]);
 
   const handleBuddyPress = useCallback(() => {
