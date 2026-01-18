@@ -42,7 +42,6 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
@@ -123,16 +122,14 @@ const MOTIVATIONAL_QUOTES = [
 ];
 
 // Helper functions for proof activity UI
-type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
-
-const getProofIcon = (proofType: string): FeatherIconName => {
+const getProofEmoji = (proofType: string): string => {
   switch (proofType) {
-    case 'steps': return 'navigation';
-    case 'photo_activity': return 'camera';
-    case 'scan': return 'maximize';
-    case 'math': return 'hash';
-    case 'shake': return 'smartphone';
-    default: return 'camera';
+    case 'steps': return '\u{1F9ED}'; // compass/navigation emoji
+    case 'photo_activity': return '\u{1F4F7}'; // camera emoji
+    case 'scan': return '\u{1F50D}'; // magnifying glass
+    case 'math': return '\u{0023}\u{FE0F}\u{20E3}'; // hash emoji
+    case 'shake': return '\u{1F4F1}'; // smartphone emoji
+    default: return '\u{1F4F7}'; // camera emoji
   }
 };
 
@@ -567,14 +564,14 @@ export default function AlarmRingingScreen() {
         {streak > 0 && (
           <View style={styles.streakBanner}>
             <Animated.View style={fireAnimatedStyle}>
-              <Feather name="zap" size={28} color={Colors.orange} />
+              <Text style={{ fontSize: 28 }}>{'\u26A1'}</Text>
             </Animated.View>
             <View style={styles.streakInfo}>
               <ThemedText style={styles.streakNumber}>{streak} DAY STREAK</ThemedText>
               <ThemedText style={styles.streakSub}>Don't break it now</ThemedText>
             </View>
             <Animated.View style={fireAnimatedStyle}>
-              <Feather name="zap" size={28} color={Colors.orange} />
+              <Text style={{ fontSize: 28 }}>{'\u26A1'}</Text>
             </Animated.View>
           </View>
         )}
@@ -588,11 +585,7 @@ export default function AlarmRingingScreen() {
         {/* VOLUME ESCALATION BAR */}
         <View style={styles.volumeSection}>
           <View style={styles.volumeHeader}>
-            <Feather
-              name="volume-2"
-              size={18}
-              color={volumePercent >= 80 ? Colors.red : Colors.orange}
-            />
+            <Text style={{ fontSize: 18 }}>{'\u{1F50A}'}</Text>
             <ThemedText style={[
               styles.volumeLabel,
               { color: volumePercent >= 80 ? Colors.red : Colors.orange }
@@ -617,7 +610,7 @@ export default function AlarmRingingScreen() {
         {/* TODAY'S FIRST EVENT - only show if calendar is connected */}
         {isCalendarConnected && firstEvent ? (
           <View style={styles.eventCard}>
-            <Feather name="calendar" size={18} color={Colors.textMuted} />
+            <Text style={{ fontSize: 18 }}>{'\u{1F4C5}'}</Text>
             <ThemedText style={styles.eventTime}>{formatEventTime(firstEvent.start)}</ThemedText>
             <ThemedText style={styles.eventTitle} numberOfLines={1}>{firstEvent.summary}</ThemedText>
           </View>
@@ -631,7 +624,7 @@ export default function AlarmRingingScreen() {
         {/* ACTIVITY CARD */}
         <View style={styles.activityCard}>
           <View style={styles.activityIconWrapper}>
-            <Feather name={getProofIcon(proofActivityType)} size={22} color={Colors.orange} />
+            <Text style={{ fontSize: 22 }}>{getProofEmoji(proofActivityType)}</Text>
           </View>
           <View style={styles.activityTextContainer}>
             <ThemedText style={styles.activityText}>
@@ -651,13 +644,13 @@ export default function AlarmRingingScreen() {
         {/* PUNISHMENT CARDS */}
         <View style={styles.punishmentGrid}>
           <View style={styles.punishmentCard}>
-            <Feather name="dollar-sign" size={44} color={Colors.text} />
+            <Text style={{ fontSize: 44 }}>{'\u{1F4B5}'}</Text>
             <ThemedText style={styles.punishmentAmount}>${penaltyAmount}</ThemedText>
             <ThemedText style={styles.punishmentDesc}>to {buddyName}</ThemedText>
           </View>
 
           <View style={styles.punishmentCard}>
-            <Feather name="video" size={44} color={Colors.text} />
+            <Text style={{ fontSize: 44 }}>{'\u{1F3A5}'}</Text>
             <ThemedText style={styles.punishmentAmount}>SHAME</ThemedText>
             <ThemedText style={styles.punishmentDesc}>MAX volume</ThemedText>
           </View>
@@ -665,7 +658,7 @@ export default function AlarmRingingScreen() {
 
         {/* NOTIFY CARD */}
         <Animated.View style={[styles.notifyCard, shakeAnimatedStyle]}>
-          <Feather name="smartphone" size={40} color={Colors.text} />
+          <Text style={{ fontSize: 40 }}>{'\u{1F4F1}'}</Text>
           <View style={styles.notifyContent}>
             <ThemedText style={styles.notifyName}>{buddyName.toUpperCase()}</ThemedText>
             <ThemedText style={styles.notifyText}>gets notified of your failure</ThemedText>

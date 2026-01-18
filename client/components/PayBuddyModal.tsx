@@ -5,8 +5,8 @@ import {
   Pressable,
   Modal,
   Alert,
+  Text,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -103,14 +103,14 @@ export function PayBuddyModal({
     }
   };
 
-  const getButtonIcon = (): keyof typeof Feather.glyphMap => {
-    if (!paymentInfo) return 'settings';
-    
+  const getButtonEmoji = (): string => {
+    if (!paymentInfo) return '⚙️';
+
     switch (paymentInfo.method) {
       case 'apple_cash':
-        return 'message-circle';
+        return '💬';
       default:
-        return 'external-link';
+        return '🔗';
     }
   };
 
@@ -128,7 +128,7 @@ export function PayBuddyModal({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Feather name="dollar-sign" size={28} color={Colors.red} />
+              <Text style={{ fontSize: 28 }}>💵</Text>
             </View>
             <ThemedText style={styles.title}>
               You owe {buddyName}
@@ -144,7 +144,7 @@ export function PayBuddyModal({
           {/* Payment method info */}
           {paymentInfo && (
             <View style={styles.methodInfo}>
-              <Feather name="check-circle" size={16} color={Colors.green} />
+              <Text style={{ fontSize: 16 }}>✓</Text>
               <ThemedText style={styles.methodText}>
                 Using {getPaymentMethodLabel(paymentInfo.method)}
               </ThemedText>
@@ -158,7 +158,7 @@ export function PayBuddyModal({
               onPress={handleSendPayment}
               disabled={sending}
             >
-              <Feather name={getButtonIcon()} size={20} color="#000" />
+              <Text style={{ fontSize: 20 }}>{getButtonEmoji()}</Text>
               <ThemedText style={styles.payButtonText}>
                 {sending ? 'Opening...' : getButtonLabel()}
               </ThemedText>
@@ -176,7 +176,7 @@ export function PayBuddyModal({
 
           {/* Close button */}
           <Pressable style={styles.closeButton} onPress={onClose}>
-            <Feather name="x" size={20} color={Colors.textSecondary} />
+            <Text style={{ fontSize: 20 }}>✕</Text>
           </Pressable>
         </View>
       </View>

@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   TextInput,
   Pressable,
@@ -19,7 +20,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
@@ -111,7 +111,7 @@ export default function InviteBuddyScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={handleBack}>
-            <Feather name="arrow-left" size={24} color={Colors.text} />
+            <Text style={{ fontSize: 24 }}>←</Text>
           </Pressable>
         </View>
 
@@ -175,11 +175,7 @@ export default function InviteBuddyScreen() {
             onPress={handleSendInvite}
             disabled={!isValid || sending}
           >
-            <Feather
-              name="message-circle"
-              size={20}
-              color={isValid ? Colors.bg : Colors.textMuted}
-            />
+            <Text style={{ fontSize: 20 }}>💬</Text>
             <ThemedText style={[
               styles.sendButtonText,
               !isValid && styles.sendButtonTextDisabled,

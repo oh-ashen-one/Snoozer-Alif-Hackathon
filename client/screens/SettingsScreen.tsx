@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   Alert,
@@ -12,7 +13,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, CommonActions, useFocusEffect } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
@@ -70,6 +70,29 @@ const ICON_COLORS = {
   red: 'rgba(239,68,68,0.15)',
 };
 
+// Emoji mappings for icons
+const ICON_EMOJIS: Record<string, string> = {
+  'chevron-right': '\u203A',
+  'check': '\u2713',
+  'video': '\uD83C\uDFA5',
+  'calendar': '\uD83D\uDCC5',
+  'credit-card': '\uD83D\uDCB3',
+  'map-pin': '\uD83D\uDCCD',
+  'bell': '\uD83D\uDD14',
+  'info': '\u2139\uFE0F',
+  'smartphone': '\uD83D\uDCF1',
+  'message-circle': '\uD83D\uDCAC',
+  'star': '\u2B50',
+  'help-circle': '\u2753',
+  'file-text': '\uD83D\uDCC4',
+  'lock': '\uD83D\uDD12',
+  'user': '\uD83D\uDC64',
+  'log-out': '\uD83D\uDEAA',
+  'zap': '\u26A1',
+  'clock': '\u23F0',
+  'share-2': '\uD83D\uDCE4',
+};
+
 // Reusable Settings Row Component
 interface SettingsRowProps {
   icon: string;
@@ -103,7 +126,7 @@ function SettingsRow({
     <>
       <View style={styles.rowLeft}>
         <View style={[styles.iconCircle, { backgroundColor: iconBg }]}>
-          <Feather name={icon as any} size={18} color={iconColor} />
+          <Text style={{ fontSize: 18 }}>{ICON_EMOJIS[icon] || icon}</Text>
         </View>
         <ThemedText style={[styles.rowText, isDestructive && styles.dangerText]}>
           {label}
@@ -113,7 +136,7 @@ function SettingsRow({
         <View style={styles.rowRight}>
           {value && <ThemedText style={styles.rowValueText}>{value}</ThemedText>}
           {showChevron && onPress && (
-            <Feather name="chevron-right" size={20} color="#57534E" />
+            <Text style={{ fontSize: 20, color: '#57534E' }}>{ICON_EMOJIS['chevron-right']}</Text>
           )}
         </View>
       )}

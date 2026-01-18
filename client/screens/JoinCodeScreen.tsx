@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   TextInput,
@@ -11,7 +12,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -97,7 +97,7 @@ export default function JoinCodeScreen({ route }: Props) {
 
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} testID="button-back">
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24 }}>←</Text>
         </Pressable>
         <ThemedText style={styles.headerTitle}>Join with Code</ThemedText>
         <View style={styles.headerSpacer} />
@@ -106,7 +106,7 @@ export default function JoinCodeScreen({ route }: Props) {
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
-            <Feather name="user-plus" size={40} color="#FB923C" />
+            <Text style={{ fontSize: 40 }}>👤</Text>
           </View>
         </View>
 
@@ -135,7 +135,7 @@ export default function JoinCodeScreen({ route }: Props) {
         </View>
 
         <View style={styles.hintCard}>
-          <Feather name="info" size={16} color="#FB923C" />
+          <Text style={{ fontSize: 16 }}>ℹ️</Text>
           <ThemedText style={styles.hintText}>
             Codes are case-insensitive and expire after 24 hours
           </ThemedText>
@@ -164,11 +164,7 @@ export default function JoinCodeScreen({ route }: Props) {
               >
                 Join Buddy
               </ThemedText>
-              <Feather
-                name="arrow-right"
-                size={20}
-                color={isCodeComplete ? '#FAFAF9' : '#57534E'}
-              />
+              <Text style={{ fontSize: 20, color: isCodeComplete ? '#FAFAF9' : '#57534E' }}>→</Text>
             </>
           )}
         </Pressable>

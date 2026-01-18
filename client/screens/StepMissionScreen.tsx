@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Vibration, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Vibration, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Pedometer } from 'expo-sensors';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -163,7 +162,7 @@ export default function StepMissionScreen() {
           entering={FadeIn.duration(400)}
         >
           <View style={styles.successIcon}>
-            <Feather name="check" size={64} color={Colors.green} />
+            <Text style={{ fontSize: 64 }}>✓</Text>
           </View>
           <ThemedText style={styles.title}>
             {isStepOnlyMission ? 'You Did It!' : 'Mission Complete'}
@@ -180,7 +179,7 @@ export default function StepMissionScreen() {
             <ThemedText style={styles.primaryButtonText}>
               {isStepOnlyMission ? 'See Your Stats' : 'Continue'}
             </ThemedText>
-            <Feather name="arrow-right" size={20} color={Colors.bg} />
+            <Text style={{ fontSize: 20 }}>→</Text>
           </Pressable>
         </View>
       </View>
@@ -192,7 +191,7 @@ export default function StepMissionScreen() {
       <BackgroundGlow color="orange" />
       <View style={styles.content}>
         <View style={styles.missionIcon}>
-          <Feather name="navigation" size={48} color={Colors.orange} />
+          <Text style={{ fontSize: 48 }}>🧭</Text>
         </View>
         <ThemedText style={styles.title}>Walk {stepGoal} Steps</ThemedText>
 
@@ -207,7 +206,7 @@ export default function StepMissionScreen() {
 
         {shakeWarning ? (
           <View style={styles.warningContainer}>
-            <Feather name="alert-circle" size={18} color={Colors.red} />
+            <Text style={{ fontSize: 18 }}>⚠️</Text>
             <ThemedText style={styles.warningText}>Nice try. Walk, don't shake.</ThemedText>
           </View>
         ) : (

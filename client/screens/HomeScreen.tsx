@@ -180,12 +180,12 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
       {/* Stakes row */}
       <View style={styles.stakesRow}>
         <View style={styles.stakeBox}>
-          <Feather name="alert-triangle" size={16} color={Colors.red} />
+          <ThemedText style={{ fontSize: 16 }}>⚠️</ThemedText>
           <ThemedText style={styles.stakeLabel}>If you snooze</ThemedText>
           <ThemedText style={styles.stakePenalty}>-$2</ThemedText>
         </View>
         <View style={styles.stakeBox}>
-          <Feather name="eye" size={16} color="#78716C" />
+          <ThemedText style={{ fontSize: 16 }}>👁️</ThemedText>
           <ThemedText style={styles.stakeLabel}>Buddy</ThemedText>
           <ThemedText style={styles.stakeValue}>Solo mode</ThemedText>
         </View>
@@ -201,7 +201,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
       {/* Streak Card */}
       <View style={styles.statCard}>
         <View style={[styles.statIconCircle, { backgroundColor: 'rgba(251, 146, 60, 0.15)' }]}>
-          <Feather name="zap" size={18} color="#FB923C" />
+          <ThemedText style={{ fontSize: 18 }}>⚡</ThemedText>
         </View>
         <ThemedText style={styles.statLabel}>Streak</ThemedText>
         <ThemedText style={styles.statValueGray}>0</ThemedText>
@@ -211,7 +211,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
       {/* Saved Card */}
       <View style={styles.statCard}>
         <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-          <Feather name="dollar-sign" size={18} color="#22C55E" />
+          <ThemedText style={{ fontSize: 18 }}>💵</ThemedText>
         </View>
         <ThemedText style={styles.statLabel}>Saved</ThemedText>
         <ThemedText style={styles.statValueGray} numberOfLines={1} adjustsFontSizeToFit>$0</ThemedText>
@@ -221,7 +221,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
       {/* Buddy Card */}
       <Pressable style={[styles.statCard, styles.statCardDashed]} onPress={onBuddyPress}>
         <View style={[styles.statIconCircle, { backgroundColor: '#292524' }]}>
-          <Feather name="users" size={18} color="#78716C" />
+          <ThemedText style={{ fontSize: 18 }}>👥</ThemedText>
         </View>
         <ThemedText style={styles.statLabel}>Buddy</ThemedText>
         <ThemedText style={styles.addBuddyText}>+ Add</ThemedText>
@@ -237,7 +237,7 @@ function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
     <View style={styles.sectionHeader}>
       <ThemedText style={styles.sectionTitle}>Your Alarms</ThemedText>
       <Pressable style={styles.addButton} onPress={onAddPress}>
-        <Feather name="plus" size={16} color={Colors.text} />
+        <ThemedText style={{ fontSize: 16 }}>➕</ThemedText>
         <ThemedText style={styles.addButtonText}>Add</ThemedText>
       </Pressable>
     </View>
@@ -283,7 +283,7 @@ function AlarmListItem({ alarm, onToggle, onDelete }: { alarm: Alarm; onToggle: 
         onDelete();
       }}
     >
-      <Feather name="trash-2" size={24} color="#fff" />
+      <ThemedText style={{ fontSize: 24 }}>🗑️</ThemedText>
     </Pressable>
   );
 
@@ -317,7 +317,7 @@ function EmptyState({ onAddAlarm }: { onAddAlarm: () => void }) {
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIcon}>
-        <Feather name="bell-off" size={48} color="#57534E" />
+        <ThemedText style={{ fontSize: 48 }}>🔕</ThemedText>
       </View>
       <ThemedText style={styles.emptyTitle}>No alarms yet</ThemedText>
       <ThemedText style={styles.emptySubtitle}>
@@ -445,7 +445,7 @@ export default function HomeScreen() {
               style={styles.testAlarmButton}
               onPress={handleTestAlarmNow}
             >
-              <Feather name="zap" size={18} color="#FB923C" />
+              <ThemedText style={{ fontSize: 18 }}>⚡</ThemedText>
               <ThemedText style={styles.testAlarmButtonText}>Test Alarm</ThemedText>
             </Pressable>
           </>

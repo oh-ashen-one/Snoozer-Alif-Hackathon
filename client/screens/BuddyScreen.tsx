@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -12,7 +13,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -126,7 +126,9 @@ function ModeCard({
       <View style={styles.modeMainRow}>
         {/* Icon */}
         <View style={[styles.modeIconCircle, { backgroundColor: `${mode.color}20` }]}>
-          <Feather name={mode.icon as any} size={26} color={mode.color} />
+          <Text style={{ fontSize: 26 }}>
+            {mode.icon === 'zap' ? '⚡' : mode.icon === 'users' ? '👥' : mode.icon === 'target' ? '🎯' : mode.icon === 'heart' ? '❤️' : mode.icon === 'gift' ? '🎁' : ''}
+          </Text>
         </View>
 
         {/* Text */}
@@ -149,7 +151,7 @@ function ModeCard({
             isSelected && { backgroundColor: mode.color, borderColor: mode.color },
           ]}
         >
-          {isSelected && <Feather name="check" size={14} color="#FAFAF9" />}
+          {isSelected && <Text style={{ fontSize: 14, color: '#FAFAF9' }}>✓</Text>}
         </View>
       </View>
 
@@ -175,7 +177,7 @@ function ModeCard({
           <View style={styles.featuresRow}>
             {mode.features.map((feature, i) => (
               <View key={i} style={[styles.featureChip, { backgroundColor: `${mode.color}15` }]}>
-                <Feather name="check" size={10} color={mode.color} />
+                <Text style={{ fontSize: 10, color: mode.color }}>✓</Text>
                 <ThemedText style={[styles.featureText, { color: mode.color }]}>{feature}</ThemedText>
               </View>
             ))}
@@ -227,7 +229,7 @@ export default function BuddyScreen() {
         <FadeInView delay={50} direction="up">
           <View style={styles.heroSection}>
             <View style={styles.heroBadge}>
-              <Feather name="zap" size={14} color="#FB923C" />
+              <Text style={{ fontSize: 14 }}>⚡</Text>
               <ThemedText style={styles.heroBadgeText}>2x more likely to succeed</ThemedText>
             </View>
             <ThemedText style={styles.heroTitle}>Choose your accountability style</ThemedText>
@@ -252,7 +254,7 @@ export default function BuddyScreen() {
         <FadeInView delay={400} direction="up">
           <View style={styles.popularBadge}>
             <View style={styles.popularIcon}>
-              <Feather name="bar-chart-2" size={18} color="#FB923C" />
+              <Text style={{ fontSize: 18 }}>📊</Text>
             </View>
             <View>
               <ThemedText style={styles.popularTitle}>Most popular: 1v1 Battle</ThemedText>
@@ -280,7 +282,7 @@ export default function BuddyScreen() {
             >
               {selectedMode ? `Set up ${selectedModeData?.title}` : 'Select a mode to continue'}
             </ThemedText>
-            {selectedMode && <Feather name="arrow-right" size={20} color="#FAFAF9" />}
+            {selectedMode && <Text style={{ fontSize: 20, color: '#FAFAF9' }}>→</Text>}
           </Pressable>
 
           <Pressable style={styles.enterCodeButton} onPress={handleEnterCode}>

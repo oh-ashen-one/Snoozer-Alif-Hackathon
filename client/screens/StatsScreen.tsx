@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -28,6 +27,19 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 type DayStatus = 'success' | 'failed' | 'today' | 'future';
 type ActivityType = 'success' | 'failed' | 'streak';
+
+// Emoji mapping for icons
+const iconToEmoji: Record<string, string> = {
+  'check': '✓',
+  'x': '✕',
+  'check-circle': '✅',
+  'moon': '🌙',
+  'zap': '⚡',
+  'dollar-sign': '💵',
+  'trending-down': '📉',
+  'clock': '⏰',
+  'inbox': '📥',
+};
 
 interface WeekDay {
   day: string;
@@ -73,9 +85,9 @@ function DayCircle({ day, status }: WeekDay) {
   const renderContent = () => {
     switch (status) {
       case 'success':
-        return <Feather name="check" size={18} color="#FFFFFF" />;
+        return <Text style={{ fontSize: 18 }}>✓</Text>;
       case 'failed':
-        return <Feather name="x" size={18} color="#FFFFFF" />;
+        return <Text style={{ fontSize: 18 }}>✕</Text>;
       case 'today':
         return <View style={styles.todayDot} />;
       default:
@@ -125,7 +137,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     <View style={[styles.activityItem, { borderLeftColor: getBorderColor() }]}>
       <View style={styles.activityLeft}>
         <View style={[styles.activityIconCircle, { backgroundColor: getIconBg() }]}>
-          <Feather name={item.icon as any} size={14} color={item.iconColor} />
+          <Text style={{ fontSize: 14 }}>{iconToEmoji[item.icon] || item.icon}</Text>
         </View>
         <ThemedText style={styles.activityText}>{item.text}</ThemedText>
       </View>
@@ -249,7 +261,7 @@ export default function StatsScreen() {
         <FadeInView delay={50} direction="up">
           <View style={styles.heroCard}>
             <View style={styles.heroIconCircle}>
-              <Feather name="zap" size={32} color="#FB923C" />
+              <Text style={{ fontSize: 32 }}>⚡</Text>
             </View>
             <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
             <ThemedText style={styles.heroValue}>{stats.currentStreak} days</ThemedText>
@@ -261,7 +273,7 @@ export default function StatsScreen() {
           <View style={styles.twoColumnRow}>
             <View style={styles.statCard}>
               <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                <Feather name="dollar-sign" size={18} color="#22C55E" />
+                <Text style={{ fontSize: 18 }}>💵</Text>
               </View>
               <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
               <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
@@ -269,7 +281,7 @@ export default function StatsScreen() {
             </View>
             <View style={styles.statCard}>
               <View style={[styles.statIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                <Feather name="trending-down" size={18} color="#EF4444" />
+                <Text style={{ fontSize: 18 }}>📉</Text>
               </View>
               <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
               <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
@@ -283,7 +295,7 @@ export default function StatsScreen() {
             <View style={styles.wakeUpHeader}>
               <View style={styles.wakeUpTitleRow}>
                 <View style={[styles.wakeUpIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                  <Feather name="clock" size={14} color="#22C55E" />
+                  <Text style={{ fontSize: 14 }}>⏰</Text>
                 </View>
                 <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
               </View>
@@ -322,7 +334,7 @@ export default function StatsScreen() {
           </View>
         ) : (
           <View style={styles.emptyActivity}>
-            <Feather name="inbox" size={32} color="#57534E" />
+            <Text style={{ fontSize: 32 }}>📥</Text>
             <ThemedText style={styles.emptyText}>No activity yet</ThemedText>
             <Pressable style={styles.seedButton} onPress={handleSeedMockData}>
               <ThemedText style={styles.seedButtonText}>Load sample data</ThemedText>

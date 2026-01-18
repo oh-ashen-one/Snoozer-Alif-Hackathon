@@ -1,39 +1,38 @@
 import React from 'react';
-import { View, StyleSheet, Modal, Pressable } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { View, StyleSheet, Modal, Pressable, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import type { CheatType } from '@/hooks/useAntiCheat';
 
 interface CheatMessage {
-  icon: keyof typeof Feather.glyphMap;
+  emoji: string;
   title: string;
   message: string;
 }
 
 const CHEAT_MESSAGES: Record<CheatType, CheatMessage> = {
   photo_too_old: {
-    icon: 'camera-off',
+    emoji: '📷',
     title: 'Nice try, time traveler',
     message: 'That photo is too old. Take a fresh one.',
   },
   time_manipulation: {
-    icon: 'clock',
+    emoji: '⏰',
     title: 'Clock manipulation detected',
     message: "Changing your phone's time won't work here.",
   },
   app_killed: {
-    icon: 'alert-triangle',
+    emoji: '⚠️',
     title: 'App killed? Really?',
     message: "Your alarm doesn't care. It's back.",
   },
   shake_detected: {
-    icon: 'activity',
+    emoji: '🏃',
     title: 'Shaking detected',
     message: "Walk, don't shake. Those steps don't count.",
   },
   clock_drift: {
-    icon: 'clock',
+    emoji: '⏰',
     title: 'Clock out of sync',
     message: "Your device time doesn't match. Nice try.",
   },
@@ -53,7 +52,7 @@ export function CheatWarningModal({ visible, cheatType, onDismiss }: CheatWarnin
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.iconContainer}>
-            <Feather name={content.icon} size={48} color={Colors.red} />
+            <Text style={{ fontSize: 48 }}>{content.emoji}</Text>
           </View>
           <ThemedText style={styles.title}>{content.title}</ThemedText>
           <ThemedText style={styles.message}>{content.message}</ThemedText>

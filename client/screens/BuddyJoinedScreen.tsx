@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   Animated,
@@ -9,7 +10,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -164,17 +164,17 @@ export default function BuddyJoinedScreen({ route }: Props) {
   const getModeInfo = () => {
     switch (mode) {
       case '1v1':
-        return { title: '1v1 Battle', color: '#FB923C', icon: 'zap' };
+        return { title: '1v1 Battle', color: '#FB923C', icon: '⚡' };
       case 'group':
-        return { title: 'Group Pool', color: '#22C55E', icon: 'users' };
+        return { title: 'Group Pool', color: '#22C55E', icon: '👥' };
       case 'survivor':
-        return { title: 'Survivor Mode', color: '#EF4444', icon: 'target' };
+        return { title: 'Survivor Mode', color: '#EF4444', icon: '🎯' };
       case 'accountability':
-        return { title: 'Accountability', color: '#7C3AED', icon: 'heart' };
+        return { title: 'Accountability', color: '#7C3AED', icon: '❤️' };
       case 'charity':
-        return { title: 'Charity Stakes', color: '#EC4899', icon: 'gift' };
+        return { title: 'Charity Stakes', color: '#EC4899', icon: '🎁' };
       default:
-        return { title: 'Challenge', color: '#FB923C', icon: 'zap' };
+        return { title: 'Challenge', color: '#FB923C', icon: '⚡' };
     }
   };
 
@@ -197,7 +197,7 @@ export default function BuddyJoinedScreen({ route }: Props) {
         >
           <View style={styles.avatarsRow}>
             <View style={styles.avatarCircle}>
-              <Feather name="user" size={28} color="#FB923C" />
+              <Text style={{ fontSize: 28 }}>👤</Text>
             </View>
             <View style={styles.connectLine}>
               <View style={[styles.connectDot, { backgroundColor: modeInfo.color }]} />
@@ -212,7 +212,7 @@ export default function BuddyJoinedScreen({ route }: Props) {
           </View>
 
           <View style={styles.successBadge}>
-            <Feather name="check-circle" size={20} color="#22C55E" />
+            <Text style={{ fontSize: 20 }}>✅</Text>
           </View>
         </Animated.View>
 
@@ -226,7 +226,7 @@ export default function BuddyJoinedScreen({ route }: Props) {
             <ThemedText style={styles.summaryLabel}>Mode</ThemedText>
             <View style={styles.summaryValue}>
               <View style={[styles.modeIconCircle, { backgroundColor: `${modeInfo.color}20` }]}>
-                <Feather name={modeInfo.icon as any} size={14} color={modeInfo.color} />
+                <Text style={{ fontSize: 14 }}>{modeInfo.icon}</Text>
               </View>
               <ThemedText style={styles.summaryValueText}>{modeInfo.title}</ThemedText>
             </View>
@@ -257,7 +257,7 @@ export default function BuddyJoinedScreen({ route }: Props) {
         </View>
 
         <View style={styles.startInfoCard}>
-          <Feather name="sunrise" size={20} color="#FB923C" />
+          <Text style={{ fontSize: 20 }}>🌅</Text>
           <ThemedText style={styles.startInfoText}>
             Your competition starts tomorrow morning
           </ThemedText>
@@ -271,7 +271,7 @@ export default function BuddyJoinedScreen({ route }: Props) {
           testID="button-start-competing"
         >
           <ThemedText style={styles.primaryButtonText}>Start Competing</ThemedText>
-          <Feather name="arrow-right" size={18} color="#FAFAF9" />
+          <Text style={{ fontSize: 18 }}>→</Text>
         </Pressable>
       </View>
     </View>

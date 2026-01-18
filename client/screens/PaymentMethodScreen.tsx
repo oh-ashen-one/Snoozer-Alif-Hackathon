@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -9,7 +10,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -29,7 +29,7 @@ interface PaymentOption {
   id: PaymentMethod;
   label: string;
   subtitle: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: string;
   color: string;
   featured?: boolean;
   fieldLabel?: string;
@@ -42,7 +42,7 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     id: 'apple_cash',
     label: 'iMessage / Apple Cash',
     subtitle: 'Just text your buddy the money',
-    icon: 'message-circle',
+    icon: '💬',
     color: Colors.green,
     featured: true,
     fieldLabel: "Buddy's phone number",
@@ -53,7 +53,7 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     id: 'venmo',
     label: 'Venmo',
     subtitle: 'Pay via Venmo app',
-    icon: 'dollar-sign',
+    icon: '💵',
     color: '#008CFF',
     fieldLabel: "Buddy's Venmo username",
     fieldPlaceholder: '@username',
@@ -63,7 +63,7 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     id: 'paypal',
     label: 'PayPal',
     subtitle: 'Pay via PayPal.me',
-    icon: 'credit-card',
+    icon: '💳',
     color: '#003087',
     fieldLabel: "Buddy's PayPal.me username",
     fieldPlaceholder: 'username',
@@ -73,7 +73,7 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     id: 'cashapp',
     label: 'Cash App',
     subtitle: 'Pay via Cash App',
-    icon: 'dollar-sign',
+    icon: '💵',
     color: '#00D632',
     fieldLabel: "Buddy's $cashtag",
     fieldPlaceholder: '$cashtag',
@@ -192,7 +192,7 @@ export default function PaymentMethodScreen() {
           >
             <View style={styles.optionHeader}>
               <View style={[styles.optionIcon, { backgroundColor: `${option.color}20` }]}>
-                <Feather name={option.icon} size={24} color={option.color} />
+                <Text style={{ fontSize: 24 }}>{option.icon}</Text>
               </View>
               <View style={styles.optionText}>
                 <ThemedText style={styles.optionLabel}>{option.label}</ThemedText>
@@ -249,7 +249,7 @@ export default function PaymentMethodScreen() {
           >
             <View style={styles.optionHeader}>
               <View style={[styles.optionIcon, { backgroundColor: `${option.color}20` }]}>
-                <Feather name={option.icon} size={20} color={option.color} />
+                <Text style={{ fontSize: 20 }}>{option.icon}</Text>
               </View>
               <View style={styles.optionText}>
                 <ThemedText style={styles.optionLabel}>{option.label}</ThemedText>

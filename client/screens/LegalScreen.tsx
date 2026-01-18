@@ -1,9 +1,8 @@
 import React, { useCallback } from 'react';
-import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -118,7 +117,7 @@ export default function LegalScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24, color: Colors.text }}>←</Text>
         </Pressable>
         <ThemedText style={styles.headerTitle}>
           {isTerms ? 'Terms of Service' : 'Privacy Policy'}

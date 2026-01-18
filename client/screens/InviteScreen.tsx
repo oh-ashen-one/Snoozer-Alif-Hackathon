@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   TextInput,
@@ -13,7 +14,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 
@@ -179,7 +179,7 @@ export default function InviteScreen({ route }: Props) {
       <BackgroundGlow color="orange" />
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} testID="button-back">
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24 }}>←</Text>
         </Pressable>
         <ThemedText style={styles.headerTitle}>Invite a Buddy</ThemedText>
         <View style={styles.headerSpacer} />
@@ -192,7 +192,7 @@ export default function InviteScreen({ route }: Props) {
             <Pressable style={styles.codeDisplay} onPress={handleCopyCode} testID="button-copy-code">
               <ThemedText style={styles.codeText}>{inviteCode || '------'}</ThemedText>
               <View style={[styles.copyBadge, copied && styles.copyBadgeSuccess]}>
-                <Feather name={copied ? 'check' : 'copy'} size={16} color="#FAFAF9" />
+                <Text style={{ fontSize: 16 }}>{copied ? '✓' : '📋'}</Text>
               </View>
             </Pressable>
             <ThemedText style={styles.tapHint}>Tap to copy</ThemedText>
@@ -208,7 +208,7 @@ export default function InviteScreen({ route }: Props) {
               testID="button-share-messages"
             >
               <View style={[styles.shareIconCircle, { backgroundColor: '#22C55E20' }]}>
-                <Feather name="message-circle" size={22} color="#22C55E" />
+                <Text style={{ fontSize: 22 }}>💬</Text>
               </View>
               <ThemedText style={styles.shareButtonText}>Messages</ThemedText>
             </Pressable>
@@ -219,7 +219,7 @@ export default function InviteScreen({ route }: Props) {
               testID="button-share-whatsapp"
             >
               <View style={[styles.shareIconCircle, { backgroundColor: '#25D36620' }]}>
-                <Feather name="phone" size={22} color="#25D366" />
+                <Text style={{ fontSize: 22 }}>📞</Text>
               </View>
               <ThemedText style={styles.shareButtonText}>WhatsApp</ThemedText>
             </Pressable>
@@ -230,7 +230,7 @@ export default function InviteScreen({ route }: Props) {
               testID="button-copy-link"
             >
               <View style={[styles.shareIconCircle, { backgroundColor: '#FB923C20' }]}>
-                <Feather name="link" size={22} color="#FB923C" />
+                <Text style={{ fontSize: 22 }}>🔗</Text>
               </View>
               <ThemedText style={styles.shareButtonText}>Copy Link</ThemedText>
             </Pressable>
@@ -269,11 +269,7 @@ export default function InviteScreen({ route }: Props) {
               {isJoining ? (
                 <ActivityIndicator size="small" color="#FAFAF9" />
               ) : (
-                <Feather
-                  name="arrow-right"
-                  size={20}
-                  color={friendCode.length === 6 ? '#FAFAF9' : '#57534E'}
-                />
+                <Text style={{ fontSize: 20, color: friendCode.length === 6 ? '#FAFAF9' : '#57534E' }}>→</Text>
               )}
             </Pressable>
           </View>
@@ -288,7 +284,7 @@ export default function InviteScreen({ route }: Props) {
           testID="button-share-wait"
         >
           <ThemedText style={styles.primaryButtonText}>Share & Wait for Buddy</ThemedText>
-          <Feather name="clock" size={18} color="#FAFAF9" />
+          <Text style={{ fontSize: 18 }}>⏰</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

@@ -154,11 +154,46 @@ export async function saveProofActivity(activity: ProofActivity): Promise<void> 
 // ═══════════════════════════════════════════════════════════════
 
 export interface BuddyInfo {
+  id?: string;
   name: string;
   phone: string;
+  avatar?: string;
   invitedAt: number;
   hasApp: boolean;
   joinedAt?: number;
+  status: 'none' | 'pending_sent' | 'pending_received' | 'linked';
+}
+
+export interface BuddyStats {
+  totalAlarms: number;
+  totalWakes: number;
+  totalSnoozes: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalPaid: number;
+  totalReceived: number;
+}
+
+export interface WakeEvent {
+  id: string;
+  alarmId: string;
+  userId: string;
+  scheduledTime: number;
+  actualTime: number;
+  result: 'woke' | 'snoozed' | 'missed';
+  snoozeCount?: number;
+  penaltyPaid?: number;
+  proofType?: string;
+  proofImageUri?: string;
+}
+
+export interface BuddyAlarm {
+  id: string;
+  time: string;
+  days: number[];
+  label: string;
+  stakes: number;
+  enabled: boolean;
 }
 
 export interface ShameContact {
@@ -190,6 +225,44 @@ export async function clearBuddyInfo(): Promise<void> {
     await AsyncStorage.removeItem(KEYS.BUDDY);
   } catch (error) {
     console.error('Error clearing buddy info:', error);
+  }
+}
+
+export async function getBuddyStats(): Promise<BuddyStats | null> {
+  try {
+    const data = await AsyncStorage.getItem('@snoozer/buddy_stats');
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error getting buddy stats:', error);
+    return null;
+  }
+}
+
+export async function saveBuddyStats(stats: BuddyStats): Promise<void> {
+  try {
+    await AsyncStorage.setItem('@snoozer/buddy_stats', JSON.stringify(stats));
+  } catch (error) {
+    console.error('Error saving buddy stats:', error);
+  }
+}
+
+export async function getBuddyWakeEvents(): Promise<WakeEvent[]> {
+  try {
+    const data = await AsyncStorage.getItem('@snoozer/buddy_wake_events');
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting buddy wake events:', error);
+    return [];
+  }
+}
+
+export async function getBuddyAlarms(): Promise<BuddyAlarm[]> {
+  try {
+    const data = await AsyncStorage.getItem('@snoozer/buddy_alarms');
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting buddy alarms:', error);
+    return [];
   }
 }
 

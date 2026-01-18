@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { CameraView } from 'expo-camera';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -167,7 +166,7 @@ export default function ReferencePhotoScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.badge}>
-              <Feather name="aperture" size={18} color={Colors.green} />
+              <Text style={{ fontSize: 18 }}>📷</Text>
               <ThemedText style={styles.badgeText}>Proof setup</ThemedText>
             </View>
 
@@ -181,7 +180,7 @@ export default function ReferencePhotoScreen() {
           <View style={styles.illustrationContainer}>
             <View style={styles.illustrationCard}>
               <View style={styles.bathroomIcon}>
-                <Feather name="aperture" size={40} color={Colors.green} />
+                <Text style={{ fontSize: 40 }}>📷</Text>
               </View>
               <ThemedText style={styles.illustrationTitle}>Your bathroom</ThemedText>
               <ThemedText style={styles.illustrationSubtitle}>Reference photo</ThemedText>
@@ -208,7 +207,7 @@ export default function ReferencePhotoScreen() {
         {/* Bottom CTA */}
         <View style={[styles.bottomCTA, { paddingBottom: insets.bottom + 24 }]}>
           <Pressable testID="button-take-photo" style={styles.greenButton} onPress={handleTakePhoto}>
-            <Feather name="camera" size={20} color={Colors.text} />
+            <Text style={{ fontSize: 20 }}>📷</Text>
             <ThemedText style={styles.greenButtonText}>Take reference photo</ThemedText>
           </Pressable>
         </View>
@@ -285,7 +284,7 @@ export default function ReferencePhotoScreen() {
         <View style={styles.confirmContent}>
           {/* Success icon */}
           <View style={styles.successIcon}>
-            <Feather name="check" size={40} color={Colors.green} />
+            <Text style={{ fontSize: 40 }}>✓</Text>
           </View>
 
           <ThemedText style={styles.confirmTitle}>Looking good!</ThemedText>
@@ -304,7 +303,7 @@ export default function ReferencePhotoScreen() {
               </View>
             )}
             <View style={styles.locationBadge}>
-              <Feather name="map-pin" size={14} color={Colors.textSecondary} />
+              <Text style={{ fontSize: 14 }}>📍</Text>
               <ThemedText style={styles.locationText}>Bathroom</ThemedText>
             </View>
           </View>
@@ -318,7 +317,7 @@ export default function ReferencePhotoScreen() {
 
           <Pressable testID="button-confirm" style={styles.greenButton} onPress={handleConfirm}>
             <ThemedText style={styles.greenButtonText}>Looks good, continue</ThemedText>
-            <Feather name="arrow-right" size={20} color={Colors.text} />
+            <Text style={{ fontSize: 20 }}>→</Text>
           </Pressable>
         </View>
       </View>

@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { View, StyleSheet, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/theme';
 
@@ -15,11 +14,7 @@ export function VolumeIndicator({ volumePercent }: VolumeIndicatorProps) {
 
   return (
     <View style={styles.container}>
-      <Feather 
-        name="volume-2" 
-        size={18} 
-        color={isMax ? Colors.red : Colors.orange} 
-      />
+      <Text style={{ fontSize: 18 }}>🔊</Text>
       <View style={styles.barsContainer}>
         {Array.from({ length: bars }).map((_, i) => (
           <View

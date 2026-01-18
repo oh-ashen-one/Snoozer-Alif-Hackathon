@@ -1,10 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, Pressable, Image, Text, Platform, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Pressable, Image, Text as RNText, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import { CameraView } from 'expo-camera';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { successDismissPattern, buttonPress } from '@/utils/haptics';
 
@@ -47,9 +46,9 @@ const GESTURE_PROMPTS = [
 // Mock camera placeholder component
 const MockCameraView = () => (
   <View style={styles.mockCamera}>
-    <Text style={styles.mockCameraEmoji}>📷</Text>
-    <Text style={styles.mockCameraText}>Camera preview</Text>
-    {isDev && <Text style={styles.mockCameraSubtext}>(Dev mode - mock camera)</Text>}
+    <RNText style={styles.mockCameraEmoji}>📷</RNText>
+    <RNText style={styles.mockCameraText}>Camera preview</RNText>
+    {isDev && <RNText style={styles.mockCameraSubtext}>(Dev mode - mock camera)</RNText>}
   </View>
 );
 
@@ -223,8 +222,8 @@ export default function ProofCameraScreen() {
         <BackgroundGlow color="green" />
         {photoUri.startsWith('mock://') ? (
           <View style={styles.mockPreview}>
-            <Text style={styles.mockPreviewEmoji}>✅</Text>
-            <Text style={styles.mockPreviewText}>Photo captured</Text>
+            <RNText style={styles.mockPreviewEmoji}>✅</RNText>
+            <RNText style={styles.mockPreviewText}>Photo captured</RNText>
           </View>
         ) : (
           <Image source={{ uri: photoUri }} style={styles.fullScreenImage} />
@@ -233,7 +232,7 @@ export default function ProofCameraScreen() {
         <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
           {verificationError ? (
             <View style={styles.errorContainer}>
-              <Feather name="alert-circle" size={20} color={Colors.red} />
+              <RNText style={{ fontSize: 20 }}>⚠️</RNText>
               <ThemedText style={styles.errorText}>{verificationError}</ThemedText>
             </View>
           ) : null}
@@ -266,7 +265,7 @@ export default function ProofCameraScreen() {
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
         <Pressable style={styles.backButton} onPress={handleBack}>
-          <Feather name="arrow-left" size={20} color={Colors.text} />
+          <RNText style={{ fontSize: 20 }}>←</RNText>
         </Pressable>
         <ThemedText style={styles.topBarTitle}>{activity ? `Proof: ${activity.activity}` : 'Take your proof photo'}</ThemedText>
         <View style={styles.backButton} />

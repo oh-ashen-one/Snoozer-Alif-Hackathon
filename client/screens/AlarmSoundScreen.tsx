@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -8,7 +9,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -144,7 +144,7 @@ export default function AlarmSoundScreen() {
       
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24 }}>←</Text>
         </Pressable>
         <ThemedText style={styles.headerTitle}>Alarm Sound</ThemedText>
         <View style={styles.headerSpacer} />
@@ -182,7 +182,7 @@ export default function AlarmSoundScreen() {
                       </ThemedText>
                       {isSelected && (
                         <View style={styles.selectedBadge}>
-                          <Feather name="check" size={12} color={Colors.green} />
+                          <Text style={{ fontSize: 12 }}>✓</Text>
                           <ThemedText style={styles.selectedText}>Selected</ThemedText>
                         </View>
                       )}
@@ -195,11 +195,9 @@ export default function AlarmSoundScreen() {
                     onPress={() => handlePlaySound(sound.id)}
                     hitSlop={8}
                   >
-                    <Feather
-                      name={isPlaying ? 'pause' : 'play'}
-                      size={20}
-                      color={isPlaying ? Colors.bg : Colors.orange}
-                    />
+                    <Text style={{ fontSize: 20, color: isPlaying ? Colors.bg : Colors.orange }}>
+                      {isPlaying ? '⏸' : '▶'}
+                    </Text>
                   </Pressable>
                 </Pressable>
               </FadeInView>

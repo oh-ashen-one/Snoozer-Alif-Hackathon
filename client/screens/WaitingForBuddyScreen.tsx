@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   Animated,
@@ -8,7 +9,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -172,7 +172,7 @@ export default function WaitingForBuddyScreen({ route }: Props) {
           <PulsingCircle delay={600} />
           <PulsingCircle delay={1200} />
           <View style={styles.avatarCircle}>
-            <Feather name="user-plus" size={32} color="#FB923C" />
+            <Text style={{ fontSize: 32 }}>👤</Text>
           </View>
         </View>
 
@@ -210,7 +210,7 @@ export default function WaitingForBuddyScreen({ route }: Props) {
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View style={styles.infoIconCircle}>
-              <Feather name="hash" size={16} color="#FB923C" />
+              <Text style={{ fontSize: 16 }}>#️⃣</Text>
             </View>
             <View style={styles.infoTextContainer}>
               <ThemedText style={styles.infoLabel}>Invite Code</ThemedText>
@@ -220,7 +220,7 @@ export default function WaitingForBuddyScreen({ route }: Props) {
           <View style={styles.infoDivider} />
           <View style={styles.infoRow}>
             <View style={styles.infoIconCircle}>
-              <Feather name="clock" size={16} color="#FB923C" />
+              <Text style={{ fontSize: 16 }}>⏰</Text>
             </View>
             <View style={styles.infoTextContainer}>
               <ThemedText style={styles.infoLabel}>Waiting for</ThemedText>

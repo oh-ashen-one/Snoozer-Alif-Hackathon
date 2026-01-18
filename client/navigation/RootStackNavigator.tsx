@@ -20,6 +20,9 @@ import BuddySetupScreen from '@/screens/BuddySetupScreen';
 import InviteScreen from '@/screens/InviteScreen';
 import WaitingForBuddyScreen from '@/screens/WaitingForBuddyScreen';
 import BuddyJoinedScreen from '@/screens/BuddyJoinedScreen';
+import BuddyDashboardScreen from '@/screens/BuddyDashboardScreen';
+import BuddyLeaderboardScreen from '@/screens/BuddyLeaderboardScreen';
+import BuddySettingsScreen from '@/screens/BuddySettingsScreen';
 import HelpScreen from '@/screens/HelpScreen';
 import NotificationSetupScreen from '@/screens/NotificationSetupScreen';
 import LegalScreen from '@/screens/LegalScreen';
@@ -46,6 +49,9 @@ export type RootStackParamList = {
   Invite: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName?: string };
   WaitingForBuddy: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; isHost: boolean; code: string; buddyName: string };
   BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
+  BuddyDashboard: undefined;
+  BuddyLeaderboard: undefined;
+  BuddySettings: undefined;
   JoinCode: undefined;
   InviteBuddyiMessage: {
     returnTo?: string;
@@ -247,6 +253,27 @@ export default function RootStackNavigator() {
         component={BuddyJoinedScreen}
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="BuddyDashboard"
+        component={BuddyDashboardScreen}
+        options={{
+          headerTitle: () => <HeaderTitle title="Your Buddy" />,
+        }}
+      />
+      <Stack.Screen
+        name="BuddyLeaderboard"
+        component={BuddyLeaderboardScreen}
+        options={{
+          headerTitle: () => <HeaderTitle title="Leaderboard" />,
+        }}
+      />
+      <Stack.Screen
+        name="BuddySettings"
+        component={BuddySettingsScreen}
+        options={{
+          headerTitle: () => <HeaderTitle title="Buddy Settings" />,
         }}
       />
       <Stack.Screen

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -13,7 +14,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 
@@ -36,11 +36,11 @@ interface ModeInfo {
 }
 
 const MODE_INFO: Record<ModeId, ModeInfo> = {
-  '1v1': { id: '1v1', title: '1v1 Battle', color: '#FB923C', icon: 'zap' },
-  group: { id: 'group', title: 'Group Pool', color: '#22C55E', icon: 'users' },
-  survivor: { id: 'survivor', title: 'Survivor Mode', color: '#EF4444', icon: 'target' },
-  accountability: { id: 'accountability', title: 'Accountability Partner', color: '#7C3AED', icon: 'heart' },
-  charity: { id: 'charity', title: 'Charity Stakes', color: '#EC4899', icon: 'gift' },
+  '1v1': { id: '1v1', title: '1v1 Battle', color: '#FB923C', icon: '\u26A1' },
+  group: { id: 'group', title: 'Group Pool', color: '#22C55E', icon: '\uD83D\uDC65' },
+  survivor: { id: 'survivor', title: 'Survivor Mode', color: '#EF4444', icon: '\uD83C\uDFAF' },
+  accountability: { id: 'accountability', title: 'Accountability Partner', color: '#7C3AED', icon: '\u2764\uFE0F' },
+  charity: { id: 'charity', title: 'Charity Stakes', color: '#EC4899', icon: '\uD83C\uDF81' },
 };
 
 const CHARITIES = [
@@ -321,7 +321,7 @@ export default function BuddySetupScreen({ route }: Props) {
             onPress={handleCopyLink}
             testID="button-copy-link"
           >
-            <Feather name={copied ? 'check' : 'copy'} size={16} color="#FAFAF9" />
+            <Text style={{ fontSize: 16 }}>{copied ? '\u2713' : '\uD83D\uDCCB'}</Text>
           </Pressable>
         </View>
       </View>
@@ -332,7 +332,7 @@ export default function BuddySetupScreen({ route }: Props) {
           onPress={handleShareMessages}
           testID="button-share-messages"
         >
-          <Feather name="message-circle" size={20} color="#FAFAF9" />
+          <Text style={{ fontSize: 20 }}>{'\uD83D\uDCAC'}</Text>
           <ThemedText style={styles.shareButtonText}>Messages</ThemedText>
         </Pressable>
         <Pressable
@@ -340,7 +340,7 @@ export default function BuddySetupScreen({ route }: Props) {
           onPress={handleShareWhatsApp}
           testID="button-share-whatsapp"
         >
-          <Feather name="phone" size={20} color="#FAFAF9" />
+          <Text style={{ fontSize: 20 }}>{'\uD83D\uDCDE'}</Text>
           <ThemedText style={styles.shareButtonText}>WhatsApp</ThemedText>
         </Pressable>
         <Pressable
@@ -348,14 +348,14 @@ export default function BuddySetupScreen({ route }: Props) {
           onPress={handleCopyLink}
           testID="button-share-copy"
         >
-          <Feather name="link" size={20} color="#FAFAF9" />
+          <Text style={{ fontSize: 20 }}>{'\uD83D\uDD17'}</Text>
           <ThemedText style={styles.shareButtonText}>Copy Link</ThemedText>
         </Pressable>
       </View>
 
       <View style={styles.qrSection}>
         <View style={styles.qrPlaceholder}>
-          <Feather name="grid" size={48} color="#57534E" />
+          <Text style={{ fontSize: 48 }}>{'\uD83D\uDD32'}</Text>
           <ThemedText style={styles.qrText}>QR Code</ThemedText>
         </View>
         <ThemedText style={styles.qrLabel}>Scan for in-person</ThemedText>
@@ -412,13 +412,13 @@ export default function BuddySetupScreen({ route }: Props) {
       <View style={styles.card}>
         <View style={styles.cardRow}>
           <View style={styles.cardIconCircle}>
-            <Feather name="credit-card" size={20} color={modeInfo.color} />
+            <Text style={{ fontSize: 20 }}>{'\uD83D\uDCB3'}</Text>
           </View>
           <View style={styles.cardTextContainer}>
             <ThemedText style={styles.cardRowTitle}>Add payment method</ThemedText>
             <ThemedText style={styles.cardRowSubtitle}>Required to participate</ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color="#57534E" />
+          <Text style={{ fontSize: 20, color: '#57534E' }}>{'\u203A'}</Text>
         </View>
       </View>
 
@@ -431,7 +431,7 @@ export default function BuddySetupScreen({ route }: Props) {
             <ThemedText style={styles.cardRowTitle}>Connect Venmo</ThemedText>
             <ThemedText style={styles.cardRowSubtitle}>Instant payouts</ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color="#57534E" />
+          <Text style={{ fontSize: 20, color: '#57534E' }}>{'\u203A'}</Text>
         </View>
       </View>
     </View>
@@ -600,7 +600,7 @@ export default function BuddySetupScreen({ route }: Props) {
       </View>
 
       <View style={styles.noPaymentBadge}>
-        <Feather name="heart" size={16} color={modeInfo.color} />
+        <Text style={{ fontSize: 16 }}>{'\u2764\uFE0F'}</Text>
         <ThemedText style={styles.noPaymentText}>No payment required for this mode</ThemedText>
       </View>
     </View>
@@ -666,7 +666,7 @@ export default function BuddySetupScreen({ route }: Props) {
 
       <View style={styles.card}>
         <View style={styles.cardRow}>
-          <Feather name="eye" size={18} color="#57534E" />
+          <Text style={{ fontSize: 18 }}>{'\uD83D\uDC41\uFE0F'}</Text>
           <ThemedText style={styles.verifyText}>Your buddy will verify your wake-ups</ThemedText>
         </View>
       </View>
@@ -674,13 +674,13 @@ export default function BuddySetupScreen({ route }: Props) {
       <View style={styles.card}>
         <View style={styles.cardRow}>
           <View style={styles.cardIconCircle}>
-            <Feather name="credit-card" size={20} color={modeInfo.color} />
+            <Text style={{ fontSize: 20 }}>{'\uD83D\uDCB3'}</Text>
           </View>
           <View style={styles.cardTextContainer}>
             <ThemedText style={styles.cardRowTitle}>Connect payment method</ThemedText>
             <ThemedText style={styles.cardRowSubtitle}>Required for auto-donations</ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color="#57534E" />
+          <Text style={{ fontSize: 20, color: '#57534E' }}>{'\u203A'}</Text>
         </View>
       </View>
     </View>
@@ -725,7 +725,7 @@ export default function BuddySetupScreen({ route }: Props) {
       <View style={styles.stepContent}>
         <View style={styles.successContainer}>
           <View style={[styles.successCircle, { backgroundColor: `${modeInfo.color}20` }]}>
-            <Feather name="check" size={48} color={modeInfo.color} />
+            <Text style={{ fontSize: 48 }}>{'\u2713'}</Text>
           </View>
           <ThemedText style={styles.successTitle}>You're all set!</ThemedText>
           <ThemedText style={styles.successSubtitle}>
@@ -738,7 +738,7 @@ export default function BuddySetupScreen({ route }: Props) {
             <ThemedText style={styles.summaryLabel}>Mode</ThemedText>
             <View style={styles.summaryValue}>
               <View style={[styles.summaryIcon, { backgroundColor: `${modeInfo.color}20` }]}>
-                <Feather name={modeInfo.icon as any} size={14} color={modeInfo.color} />
+                <Text style={{ fontSize: 14 }}>{modeInfo.icon}</Text>
               </View>
               <ThemedText style={styles.summaryValueText}>{modeInfo.title}</ThemedText>
             </View>
@@ -774,7 +774,7 @@ export default function BuddySetupScreen({ route }: Props) {
       <BackgroundGlow color="orange" />
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} testID="button-back">
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24, color: Colors.text }}>{'\u2190'}</Text>
         </Pressable>
         <View style={styles.progressContainer}>
           {Array.from({ length: totalSteps }).map((_, i) => (
@@ -840,7 +840,7 @@ export default function BuddySetupScreen({ route }: Props) {
             testID="button-finish"
           >
             <ThemedText style={styles.primaryButtonText}>Let's go!</ThemedText>
-            <Feather name="arrow-right" size={20} color="#FAFAF9" />
+            <Text style={{ fontSize: 20, color: '#FAFAF9' }}>{'\u2192'}</Text>
           </Pressable>
         </View>
       )}

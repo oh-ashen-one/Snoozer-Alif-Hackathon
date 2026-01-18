@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { CameraView } from 'expo-camera';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
@@ -32,20 +31,18 @@ const isDev = __DEV__;
 const isWeb = Platform.OS === 'web';
 const useMockCamera = isDev || isWeb;
 
-type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
-
 interface ActivityPreset {
   label: string;
-  icon: FeatherIconName;
+  icon: string;
 }
 
 const PRESETS: ActivityPreset[] = [
-  { label: 'Coffee', icon: 'coffee' },
-  { label: 'Brush teeth', icon: 'smile' },
-  { label: 'Shower', icon: 'droplet' },
-  { label: 'Drink water', icon: 'droplet' },
-  { label: 'Stretch', icon: 'activity' },
-  { label: 'Walk around', icon: 'navigation' },
+  { label: 'Coffee', icon: '\u2615' },
+  { label: 'Brush teeth', icon: '\uD83D\uDE01' },
+  { label: 'Shower', icon: '\uD83D\uDCA7' },
+  { label: 'Drink water', icon: '\uD83D\uDCA7' },
+  { label: 'Stretch', icon: '\uD83D\uDEB6' },
+  { label: 'Walk around', icon: '\uD83E\uDDED' },
 ];
 
 // Step-only activities don't require a reference photo
@@ -54,7 +51,7 @@ const STEP_GOAL_WALK = 50;
 
 const MockCameraView = () => (
   <View style={styles.mockCamera}>
-    <Feather name="camera" size={48} color={Colors.textMuted} />
+    <Text style={{ fontSize: 48 }}>{'\uD83D\uDCF7'}</Text>
     <Text style={styles.mockCameraText}>Camera preview</Text>
     {isDev && <Text style={styles.mockCameraSubtext}>(Dev mode - mock camera)</Text>}
   </View>
@@ -85,7 +82,7 @@ export default function ProofSetupScreen() {
 
   const [step, setStep] = useState<Step>('activity');
   const [activity, setActivity] = useState('');
-  const [activityIcon, setActivityIcon] = useState<FeatherIconName>('camera');
+  const [activityIcon, setActivityIcon] = useState<string>('\uD83D\uDCF7');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
@@ -234,7 +231,7 @@ export default function ProofSetupScreen() {
 
           <View style={styles.header}>
             <View style={styles.badge}>
-              <Feather name="check-circle" size={18} color={Colors.green} />
+              <Text style={{ fontSize: 18 }}>{'\u2705'}</Text>
               <ThemedText style={styles.badgeText}>Proof setup</ThemedText>
             </View>
 
@@ -252,7 +249,7 @@ export default function ProofSetupScreen() {
               value={activity}
               onChangeText={(text) => {
                 setActivity(text);
-                setActivityIcon('camera');
+                setActivityIcon('\uD83D\uDCF7');
               }}
               testID="input-activity"
             />
@@ -271,11 +268,7 @@ export default function ProofSetupScreen() {
                 onPress={() => handlePresetSelect(preset)}
                 testID={`preset-${preset.label.toLowerCase().replace(' ', '-')}`}
               >
-                <Feather 
-                  name={preset.icon} 
-                  size={18} 
-                  color={activity === preset.label ? Colors.bg : Colors.textSecondary} 
-                />
+                <Text style={{ fontSize: 18 }}>{preset.icon}</Text>
                 <ThemedText style={[
                   styles.presetLabel,
                   activity === preset.label && styles.presetLabelActive,
@@ -293,7 +286,7 @@ export default function ProofSetupScreen() {
             testID="button-continue"
           >
             <ThemedText style={styles.greenButtonText}>Continue</ThemedText>
-            <Feather name="arrow-right" size={20} color={Colors.text} />
+            <Text style={{ fontSize: 20, color: Colors.text }}>{'\u2192'}</Text>
           </Pressable>
         </View>
       </View>
@@ -313,7 +306,7 @@ export default function ProofSetupScreen() {
         </View>
 
         <View style={styles.activityBadge}>
-          <Feather name={activityIcon} size={16} color={Colors.green} />
+          <Text style={{ fontSize: 16 }}>{activityIcon}</Text>
           <ThemedText style={styles.activityBadgeText}>{activity}</ThemedText>
         </View>
 
@@ -359,7 +352,7 @@ export default function ProofSetupScreen() {
             entering={FadeIn.duration(400)}
           >
             <View style={styles.successIcon}>
-              <Feather name="navigation" size={40} color={Colors.green} />
+              <Text style={{ fontSize: 40 }}>{'\uD83E\uDDED'}</Text>
             </View>
 
             <ThemedText style={styles.confirmTitle}>Walk to wake up!</ThemedText>
@@ -373,7 +366,7 @@ export default function ProofSetupScreen() {
                 <ThemedText style={styles.stepLabel}>steps</ThemedText>
               </View>
               <View style={styles.activityTag}>
-                <Feather name={activityIcon} size={14} color={Colors.green} />
+                <Text style={{ fontSize: 14 }}>{activityIcon}</Text>
                 <ThemedText style={styles.activityTagText}>{activity}</ThemedText>
               </View>
             </View>
@@ -386,7 +379,7 @@ export default function ProofSetupScreen() {
 
             <Pressable testID="button-save" style={styles.greenButton} onPress={handleSave}>
               <ThemedText style={styles.greenButtonText}>Let's go</ThemedText>
-              <Feather name="check" size={20} color={Colors.text} />
+              <Text style={{ fontSize: 20, color: Colors.text }}>{'\u2713'}</Text>
             </Pressable>
           </View>
         </View>
@@ -401,7 +394,7 @@ export default function ProofSetupScreen() {
           entering={FadeIn.duration(400)}
         >
           <View style={styles.successIcon}>
-            <Feather name="check" size={40} color={Colors.green} />
+            <Text style={{ fontSize: 40, color: Colors.green }}>{'\u2713'}</Text>
           </View>
 
           <ThemedText style={styles.confirmTitle}>Looking good!</ThemedText>
@@ -414,12 +407,12 @@ export default function ProofSetupScreen() {
               <Image source={{ uri: photoUri }} style={styles.previewImage} />
             ) : (
               <View style={styles.mockPreview}>
-                <Feather name={activityIcon} size={48} color={Colors.textMuted} />
+                <Text style={{ fontSize: 48 }}>{activityIcon}</Text>
                 <Text style={styles.mockPreviewText}>{activity}</Text>
               </View>
             )}
             <View style={styles.activityTag}>
-              <Feather name={activityIcon} size={14} color={Colors.green} />
+              <Text style={{ fontSize: 14 }}>{activityIcon}</Text>
               <ThemedText style={styles.activityTagText}>{activity}</ThemedText>
             </View>
           </View>
@@ -432,7 +425,7 @@ export default function ProofSetupScreen() {
 
           <Pressable testID="button-save" style={styles.greenButton} onPress={handleSave}>
             <ThemedText style={styles.greenButtonText}>Looks good</ThemedText>
-            <Feather name="check" size={20} color={Colors.text} />
+            <Text style={{ fontSize: 20, color: Colors.text }}>{'\u2713'}</Text>
           </Pressable>
         </View>
       </View>

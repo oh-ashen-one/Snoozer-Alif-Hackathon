@@ -9,6 +9,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -18,7 +19,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Polyline, Circle, Line } from 'react-native-svg';
 
@@ -213,7 +213,7 @@ export default function PaymentSettingsScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <Pressable style={styles.backButton} onPress={handleBack}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24 }}>←</Text>
         </Pressable>
         <ThemedText style={styles.headerTitle}>Payment Methods</ThemedText>
         <View style={styles.headerSpacer} />
@@ -260,11 +260,9 @@ export default function PaymentSettingsScreen() {
                         {isAppleCash ? (
                           <AppleIcon color={isSelected ? Colors.bg : Colors.text} />
                         ) : (
-                          <Feather
-                            name={option.id === 'venmo' ? 'dollar-sign' : 'credit-card'}
-                            size={20}
-                            color={isSelected ? Colors.bg : Colors.text}
-                          />
+                          <Text style={{ fontSize: 20 }}>
+                            {option.id === 'venmo' ? '💵' : '💳'}
+                          </Text>
                         )}
                       </View>
                       <View style={styles.methodInfo}>
@@ -410,7 +408,7 @@ export default function PaymentSettingsScreen() {
               </View>
               <View style={styles.editButton}>
                 <ThemedText style={styles.editButtonText}>Edit</ThemedText>
-                <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+                <Text style={{ fontSize: 16, color: Colors.textMuted }}>›</Text>
               </View>
             </Pressable>
           </View>

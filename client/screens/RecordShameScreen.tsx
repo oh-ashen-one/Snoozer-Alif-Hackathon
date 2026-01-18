@@ -14,7 +14,6 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
-import { Feather } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { ProgressDots } from '@/components/ProgressDots';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
@@ -421,7 +420,7 @@ export default function RecordShameScreen() {
 
         {/* Alternative punishment link */}
         <Pressable style={styles.alternativeButton} onPress={handleChoosePunishment}>
-          <Feather name="settings" size={16} color={Colors.orange} />
+          <Text style={{ fontSize: 16 }}>⚙️</Text>
           <Text style={styles.alternativeText}>Choose a different punishment</Text>
         </Pressable>
       </View>

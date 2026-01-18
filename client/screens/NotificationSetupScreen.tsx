@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -12,7 +13,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -67,7 +67,7 @@ function StepCard({ step }: { step: SetupStep }) {
       </View>
       <ThemedText style={styles.stepDescription}>{step.description}</ThemedText>
       <View style={styles.pathContainer}>
-        <Feather name="navigation" size={14} color={Colors.orange} />
+        <Text style={{ fontSize: 14 }}>🧭</Text>
         <ThemedText style={styles.pathText}>{step.path}</ThemedText>
       </View>
     </View>
@@ -106,7 +106,7 @@ export default function NotificationSetupScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24 }}>←</Text>
         </Pressable>
         <ThemedText style={styles.headerTitle}>Setup Guide</ThemedText>
         <View style={styles.headerSpacer} />
@@ -123,7 +123,7 @@ export default function NotificationSetupScreen() {
         {/* Intro */}
         <View style={styles.introSection}>
           <View style={styles.introBadge}>
-            <Feather name="bell" size={18} color={Colors.orange} />
+            <Text style={{ fontSize: 18 }}>🔔</Text>
             <ThemedText style={styles.introBadgeText}>iOS Settings</ThemedText>
           </View>
           <ThemedText style={styles.introTitle}>
@@ -156,7 +156,7 @@ export default function NotificationSetupScreen() {
           <ThemedText style={styles.sectionLabel}>WHY THIS MATTERS</ThemedText>
           <View style={styles.card}>
             <View style={styles.whyCard}>
-              <Feather name="alert-circle" size={20} color={Colors.orange} />
+              <Text style={{ fontSize: 20 }}>⚠️</Text>
               <ThemedText style={styles.whyText}>
                 Without these settings, iOS may silence or delay your alarm notifications. This is especially important if you use Focus mode, Sleep mode, or Do Not Disturb at night.
               </ThemedText>
@@ -168,7 +168,7 @@ export default function NotificationSetupScreen() {
       {/* Bottom CTA */}
       <View style={[styles.bottomCTA, { paddingBottom: insets.bottom + 24 }]}>
         <Pressable style={styles.primaryButton} onPress={handleOpenSettings}>
-          <Feather name="external-link" size={20} color={Colors.text} />
+          <Text style={{ fontSize: 20 }}>🔗</Text>
           <ThemedText style={styles.primaryButtonText}>Open iOS Settings</ThemedText>
         </Pressable>
       </View>

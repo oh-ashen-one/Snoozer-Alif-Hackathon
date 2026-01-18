@@ -12,7 +12,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -26,25 +25,25 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const GOALS = [
   {
     id: 'discipline',
-    icon: 'target',
+    emoji: '🎯',
     title: 'Build discipline',
     subtitle: 'Be more consistent every day',
   },
   {
     id: 'productivity',
-    icon: 'zap',
+    emoji: '⚡',
     title: 'Be more productive',
     subtitle: 'Get more done in the morning',
   },
   {
     id: 'health',
-    icon: 'heart',
+    emoji: '❤️',
     title: 'Improve health',
     subtitle: 'Better sleep, better mornings',
   },
   {
     id: 'time',
-    icon: 'clock',
+    emoji: '🕐',
     title: 'Stop wasting time',
     subtitle: 'No more snoozing away hours',
   },
@@ -53,28 +52,28 @@ const GOALS = [
 const HABITS = [
   {
     id: 'wakeup',
-    icon: 'sunrise',
+    emoji: '🌅',
     title: 'Wake up on time',
     subtitle: 'Build a morning routine',
     available: true,
   },
   {
     id: 'gym',
-    icon: 'activity',
+    emoji: '💪',
     title: 'Go to the gym',
     subtitle: 'Stay fit and healthy',
     available: false,
   },
   {
     id: 'pray',
-    icon: 'moon',
+    emoji: '🌙',
     title: 'Pray consistently',
     subtitle: 'Never miss a prayer',
     available: false,
   },
   {
     id: 'touch',
-    icon: 'phone',
+    emoji: '📞',
     title: 'Stay in touch',
     subtitle: 'Call loved ones regularly',
     available: false,
@@ -120,7 +119,7 @@ const GoalCard = ({ goal, isSelected, onSelect }: GoalCardProps) => {
       style={[styles.card, isSelected && styles.cardSelected]}
     >
       <View style={[styles.iconBox, isSelected && styles.iconBoxSelected]}>
-        <Feather name={goal.icon as any} size={24} color={isSelected ? Colors.orange : Colors.textSecondary} />
+        <Text style={{ fontSize: 24 }}>{goal.emoji}</Text>
       </View>
 
       <View style={styles.cardContent}>
@@ -130,7 +129,7 @@ const GoalCard = ({ goal, isSelected, onSelect }: GoalCardProps) => {
 
       <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
         {isSelected ? (
-          <Feather name="check" size={16} color={Colors.text} />
+          <Text style={{ fontSize: 16, color: Colors.text }}>✓</Text>
         ) : null}
       </View>
     </Pressable>
@@ -161,11 +160,7 @@ const HabitCard = ({ habit, isSelected, onSelect }: HabitCardProps) => {
       ]}
     >
       <View style={[styles.iconBox, isSelected && styles.iconBoxSelected]}>
-        <Feather 
-          name={habit.icon as any} 
-          size={24} 
-          color={isSelected ? Colors.orange : habit.available ? Colors.textSecondary : Colors.textMuted} 
-        />
+        <Text style={{ fontSize: 24 }}>{habit.emoji}</Text>
       </View>
 
       <View style={styles.cardContent}>
@@ -177,7 +172,7 @@ const HabitCard = ({ habit, isSelected, onSelect }: HabitCardProps) => {
 
       {habit.available ? (
         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-          {isSelected ? <Feather name="check" size={16} color={Colors.text} /> : null}
+          {isSelected ? <Text style={{ fontSize: 16, color: Colors.text }}>✓</Text> : null}
         </View>
       ) : (
         <View style={styles.soonPill}>
@@ -248,7 +243,7 @@ export default function OnboardingScreen() {
             <FadeInView delay={50} direction="up">
               <View style={styles.header}>
                 <View style={styles.pillBadge}>
-                  <Feather name="user" size={14} color={Colors.orange} />
+                  <Text style={{ fontSize: 14 }}>👤</Text>
                   <Text style={styles.pillText}>Let's get to know you</Text>
                 </View>
                 <Text style={styles.title}>What's your name?</Text>
@@ -279,7 +274,7 @@ export default function OnboardingScreen() {
             <FadeInView delay={50} direction="up">
               <View style={styles.header}>
                 <View style={styles.pillBadge}>
-                  <Feather name="target" size={14} color={Colors.orange} />
+                  <Text style={{ fontSize: 14 }}>🎯</Text>
                   <Text style={styles.pillText}>Your motivation</Text>
                 </View>
                 <Text style={styles.title}>What are your goals?</Text>
@@ -313,7 +308,7 @@ export default function OnboardingScreen() {
             <FadeInView delay={50} direction="up">
               <View style={styles.header}>
                 <View style={styles.pillBadge}>
-                  <Feather name="check-circle" size={14} color={Colors.orange} />
+                  <Text style={{ fontSize: 14 }}>✅</Text>
                   <Text style={styles.pillText}>Almost done</Text>
                 </View>
                 <Text style={styles.title}>What do you want to be consistent with?</Text>
@@ -355,7 +350,7 @@ export default function OnboardingScreen() {
       <View style={styles.topRow}>
         {step > 0 ? (
           <Pressable style={styles.backButton} onPress={handleBack}>
-            <Feather name="arrow-left" size={20} color={Colors.text} />
+            <Text style={{ fontSize: 20, color: Colors.text }}>←</Text>
           </Pressable>
         ) : (
           <View style={styles.backButton} />
@@ -384,11 +379,7 @@ export default function OnboardingScreen() {
           >
             {step === 2 ? 'Set Up Alarm' : 'Continue'}
           </Text>
-          <Feather 
-            name="arrow-right" 
-            size={20} 
-            color={isButtonEnabled ? Colors.bg : Colors.textMuted} 
-          />
+          <Text style={{ fontSize: 20, color: isButtonEnabled ? Colors.bg : Colors.textMuted }}>→</Text>
         </Pressable>
       </View>
     </View>

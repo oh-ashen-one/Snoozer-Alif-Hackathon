@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -122,7 +121,7 @@ export default function OnboardingCompleteScreen() {
       <View style={styles.content}>
         {/* Success icon */}
         <Animated.View style={[styles.successIcon, iconStyle]}>
-          <Feather name="check" size={40} color={Colors.green} />
+          <Text style={{ fontSize: 40 }}>✓</Text>
         </Animated.View>
 
         <Animated.View style={[styles.textContainer, contentStyle]}>
@@ -175,7 +174,7 @@ export default function OnboardingCompleteScreen() {
       <Animated.View style={[styles.bottomContainer, contentStyle]}>
         <Pressable testID="button-lets-go" style={styles.greenButton} onPress={handleDone}>
           <ThemedText style={styles.greenButtonText}>Let's go</ThemedText>
-          <Feather name="arrow-right" size={20} color={Colors.text} />
+          <Text style={{ fontSize: 20 }}>→</Text>
         </Pressable>
 
         <Pressable style={styles.inviteLink}>

@@ -15,7 +15,6 @@ import Animated, {
   Easing,
   interpolateColor,
 } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/theme';
 import { useIMessage } from '@/hooks/useIMessage';
@@ -199,11 +198,7 @@ export function PaymentPressureScreen({
 
           <View style={styles.volumeSection}>
             <View style={styles.volumeHeader}>
-              <Feather 
-                name="volume-2" 
-                size={20} 
-                color={volumeLevel >= 90 ? '#EF4444' : '#FB923C'} 
-              />
+              <Text style={{ fontSize: 20 }}>🔊</Text>
               <ThemedText style={[
                 styles.volumeLabel,
                 { color: volumeLevel >= 90 ? '#EF4444' : '#FB923C' }
@@ -236,7 +231,7 @@ export function PaymentPressureScreen({
             </View>
 
             <View style={styles.appleCashBadge}>
-              <Feather name="smartphone" size={14} color={Colors.text} />
+              <Text style={{ fontSize: 14 }}>📱</Text>
               <ThemedText style={styles.appleCashText}>Apple Cash</ThemedText>
             </View>
           </View>
@@ -265,15 +260,15 @@ export function PaymentPressureScreen({
 
           <View style={styles.consequencesList}>
             <View style={styles.consequenceItem}>
-              <Feather name="check" size={18} color="#22C55E" />
+              <Text style={{ fontSize: 18 }}>✓</Text>
               <ThemedText style={styles.consequenceText}>Alarm will stop</ThemedText>
             </View>
             <View style={styles.consequenceItem}>
-              <Feather name="check" size={18} color="#22C55E" />
+              <Text style={{ fontSize: 18 }}>✓</Text>
               <ThemedText style={styles.consequenceText}>Shame video cancelled</ThemedText>
             </View>
             <View style={styles.consequenceItem}>
-              <Feather name="check" size={18} color="#22C55E" />
+              <Text style={{ fontSize: 18 }}>✓</Text>
               <ThemedText style={styles.consequenceText}>{recipientName} gets ${amount}</ThemedText>
             </View>
           </View>
@@ -285,7 +280,7 @@ export function PaymentPressureScreen({
             onPress={handlePayPress}
             disabled={sending}
           >
-            <Feather name="message-circle" size={22} color="#0C0A09" />
+            <Text style={{ fontSize: 22 }}>💬</Text>
             <ThemedText style={styles.payButtonText}>
               {sending ? 'Opening...' : 'Open iMessage to Pay'}
             </ThemedText>

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -8,7 +9,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -85,7 +85,7 @@ function AccordionItem({ item }: { item: FAQItem }) {
       <Pressable style={styles.accordionHeader} onPress={toggleAccordion}>
         <ThemedText style={styles.questionText}>{item.question}</ThemedText>
         <Animated.View style={chevronStyle}>
-          <Feather name="chevron-down" size={20} color={Colors.textMuted} />
+          <Text style={{ fontSize: 20, color: Colors.textMuted }}>▼</Text>
         </Animated.View>
       </Pressable>
       <Animated.View style={[styles.accordionContent, contentStyle]}>
@@ -110,7 +110,7 @@ export default function HelpScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Text style={{ fontSize: 24 }}>←</Text>
         </Pressable>
         <ThemedText style={styles.headerTitle}>FAQs</ThemedText>
         <View style={styles.headerSpacer} />

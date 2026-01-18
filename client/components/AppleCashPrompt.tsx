@@ -12,8 +12,8 @@ import {
   Modal,
   Pressable,
   Alert,
+  Text,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/theme';
 import { useIMessage } from '@/hooks/useIMessage';
@@ -74,7 +74,7 @@ export function AppleCashPrompt({
             </ThemedText>
             <ThemedText style={styles.amount}>${amount}</ThemedText>
             <View style={styles.methodRow}>
-              <Feather name="message-circle" size={14} color={Colors.textSecondary} />
+              <Text style={{ fontSize: 14 }}>💬</Text>
               <ThemedText style={styles.method}>via Apple Cash</ThemedText>
             </View>
           </View>
@@ -84,7 +84,7 @@ export function AppleCashPrompt({
             onPress={handleSendPayment}
             disabled={sending}
           >
-            <Feather name="send" size={18} color={Colors.text} />
+            <Text style={{ fontSize: 18 }}>📤</Text>
             <ThemedText style={styles.payButtonText}>
               {sending ? 'Opening...' : `Send $${amount} via iMessage`}
             </ThemedText>
