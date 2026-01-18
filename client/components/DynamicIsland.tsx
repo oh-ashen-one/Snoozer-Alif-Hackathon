@@ -4,17 +4,24 @@
  *
  * iOS Dynamic Island style component showing alarm status.
  * Two states: sleeping (shows alarm time + stake) and ringing (shake + glow)
+ *
+ * Features notification-style entry/exit animations:
+ * - Animates in from top with scale + translate
+ * - Fades out with scale down
  */
 
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
   withSequence,
+  withSpring,
   Easing,
+  interpolate,
+  Extrapolation,
 } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/theme';
@@ -23,15 +30,40 @@ interface DynamicIslandProps {
   state: 'sleeping' | 'ringing';
   alarmTime?: string;
   stakeAmount?: number;
+  visible?: boolean;
+  onPress?: () => void;
 }
 
-export function DynamicIsland({ state, alarmTime = '6:00', stakeAmount = 5 }: DynamicIslandProps) {
+export function DynamicIsland({
+  state,
+  alarmTime = '6:00',
+  stakeAmount = 5,
+  visible = true,
+  onPress,
+}: DynamicIslandProps) {
   const isRinging = state === 'ringing';
+
+  // Entry/exit animation values
+  const animationProgress = useSharedValue(visible ? 1 : 0);
 
   // Shake animation for bell icon
   const rotation = useSharedValue(0);
   // Glow pulse animation
   const glowOpacity = useSharedValue(0.5);
+
+  // Handle visibility changes with animation
+  useEffect(() => {
+    if (visible) {
+      // Animate in with spring for natural feel
+      animationProgress.value = withSpring(1, {
+        damping: 15,
+        stiffness: 150,
+      });
+    } else {
+      // Animate out quickly
+      animationProgress.value = withTiming(0, { duration: 250 });
+    }
+  }, [visible, animationProgress]);
 
   useEffect(() => {
     if (isRinging) {
@@ -69,28 +101,59 @@ export function DynamicIsland({ state, alarmTime = '6:00', stakeAmount = 5 }: Dy
     shadowOpacity: glowOpacity.value,
   }));
 
+  // Entry/exit animation style
+  const entryExitStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      animationProgress.value,
+      [0, 1],
+      [0.3, 1],
+      Extrapolation.CLAMP
+    );
+    const translateY = interpolate(
+      animationProgress.value,
+      [0, 1],
+      [-20, 0],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      animationProgress.value,
+      [0, 0.5, 1],
+      [0, 0.8, 1],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      transform: [{ scale }, { translateY }],
+      opacity,
+    };
+  });
+
   const displayText = isRinging ? 'WAKE UP' : alarmTime;
   const displayStake = isRinging ? `-$${stakeAmount}` : `$${stakeAmount}`;
   const icon = isRinging ? '🔔' : '⏰';
 
   return (
-    <Animated.View
-      style={[
-        styles.island,
-        isRinging && styles.islandRinging,
-        isRinging && glowStyle,
-      ]}
-    >
-      <Animated.Text style={[styles.icon, isRinging && shakeStyle]}>
-        {icon}
-      </Animated.Text>
-      <Text style={[styles.time, isRinging && styles.textRed]}>
-        {displayText}
-      </Text>
-      <View style={styles.divider} />
-      <Text style={[styles.stake, isRinging ? styles.textRed : styles.textGreen]}>
-        {displayStake}
-      </Text>
+    <Animated.View style={entryExitStyle}>
+      <Pressable onPress={onPress}>
+        <Animated.View
+          style={[
+            styles.island,
+            isRinging && styles.islandRinging,
+            isRinging && glowStyle,
+          ]}
+        >
+          <Animated.Text style={[styles.icon, isRinging && shakeStyle]}>
+            {icon}
+          </Animated.Text>
+          <Text style={[styles.time, isRinging && styles.textRed]}>
+            {displayText}
+          </Text>
+          <View style={styles.divider} />
+          <Text style={[styles.stake, isRinging ? styles.textRed : styles.textGreen]}>
+            {displayStake}
+          </Text>
+        </Animated.View>
+      </Pressable>
     </Animated.View>
   );
 }

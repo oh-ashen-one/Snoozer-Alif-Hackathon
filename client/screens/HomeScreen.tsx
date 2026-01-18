@@ -274,6 +274,8 @@ function getProofTypeLabel(proofType: string | undefined, activityName?: string,
       return '🧮 Math';
     case 'type_phrase':
       return '⌨️ Type';
+    case 'stretch':
+      return '🧘 Stretch';
     default:
       return '📷 Photo';
   }
@@ -474,19 +476,28 @@ export default function HomeScreen() {
   const { alarms, loading, toggleAlarm, deleteAlarm, loadAlarms } = useAlarms();
   const [debugMode, setDebugMode] = useState(false);
   const [userName, setUserName] = useState('');
+  const [islandVisible, setIslandVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       // HARD STOP: Set current screen and kill any rogue alarm sounds
       setCurrentScreen('Home');
       killAllSounds();
-      
+
       loadAlarms();
       const loadUserName = async () => {
         const name = await getUserName();
         setUserName(name);
       };
       loadUserName();
+
+      // Show Dynamic Island notification briefly
+      setIslandVisible(true);
+      const timer = setTimeout(() => {
+        setIslandVisible(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
     }, [loadAlarms])
   );
 
@@ -585,6 +596,23 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <BackgroundGlow color="orange" />
+
+      {/* Dynamic Island - Positioned at top notch area */}
+      {nextAlarm && (
+        <View style={[styles.dynamicIslandOverlay, { top: insets.top }]}>
+          <DynamicIsland
+            state="sleeping"
+            alarmTime={(() => {
+              const { time, period } = formatTime(nextAlarm.time);
+              return `${time} ${period}`;
+            })()}
+            stakeAmount={nextAlarm.punishment || 0}
+            visible={islandVisible}
+            onPress={() => setIslandVisible(true)}
+          />
+        </View>
+      )}
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -600,21 +628,6 @@ export default function HomeScreen() {
             name={userName || 'You'}
           />
         </View>
-
-        {nextAlarm && (
-          <FadeInView delay={50} direction="up">
-            <View style={styles.dynamicIslandContainer}>
-              <DynamicIsland
-                state="sleeping"
-                alarmTime={(() => {
-                  const { time, period } = formatTime(nextAlarm.time);
-                  return `${time} ${period}`;
-                })()}
-                stakeAmount={nextAlarm.punishment || 0}
-              />
-            </View>
-          </FadeInView>
-        )}
 
         {nextAlarm ? (
           <>
@@ -683,9 +696,13 @@ const styles = StyleSheet.create({
   headerContainer: {
     marginBottom: 16,
   },
-  dynamicIslandContainer: {
-    marginBottom: 16,
+  dynamicIslandOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 100,
     alignItems: 'center',
+    paddingTop: 4,
   },
   greeting: {
     fontSize: 14,

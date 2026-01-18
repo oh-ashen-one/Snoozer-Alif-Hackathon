@@ -77,7 +77,7 @@ const PROOF_ACTIVITIES = [
   {
     id: 'stretch',
     name: 'Stretch',
-    description: 'Strike a stretch pose on timer',
+    description: 'Take a photo of yourself stretching',
     emoji: '🧘',
     ctaText: () => 'Stretch Photo',
     defaultActivity: 'Stretch',

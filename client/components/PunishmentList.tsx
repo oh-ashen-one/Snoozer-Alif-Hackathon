@@ -362,10 +362,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="boss@company.com"
             placeholderTextColor={Colors.textMuted}
             value={bossEmail}
-            onChangeText={(text) => {
-              setBossEmail(text);
-              // Save immediately to prevent data loss on navigation
-              onSaveConfig({ ...config, email_boss: { bossEmail: text } });
+            onChangeText={setBossEmail}
+            onBlur={() => {
+              if (bossEmail) {
+                onSaveConfig({ ...config, email_boss: { bossEmail } });
+              }
             }}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -414,10 +415,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="+1 555 123 4567"
             placeholderTextColor={Colors.textMuted}
             value={exPhoneNumber}
-            onChangeText={(text) => {
-              setExPhoneNumber(text);
-              // Save immediately to prevent data loss on navigation
-              onSaveConfig({ ...config, text_ex: { exPhoneNumber: text } });
+            onChangeText={setExPhoneNumber}
+            onBlur={() => {
+              if (exPhoneNumber) {
+                onSaveConfig({ ...config, text_ex: { exPhoneNumber } });
+              }
             }}
             keyboardType="phone-pad"
             autoCapitalize="none"
@@ -466,10 +468,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="+1 555 123 4567"
             placeholderTextColor={Colors.textMuted}
             value={wifesDadPhone}
-            onChangeText={(text) => {
-              setWifesDadPhone(text);
-              // Save immediately to prevent data loss on navigation
-              onSaveConfig({ ...config, wife_dad: { phoneNumber: text } });
+            onChangeText={setWifesDadPhone}
+            onBlur={() => {
+              if (wifesDadPhone) {
+                onSaveConfig({ ...config, wife_dad: { phoneNumber: wifesDadPhone } });
+              }
             }}
             keyboardType="phone-pad"
             autoCapitalize="none"
@@ -518,10 +521,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="+1 555 123 4567"
             placeholderTextColor={Colors.textMuted}
             value={momPhone}
-            onChangeText={(text) => {
-              setMomPhone(text);
-              // Save immediately to prevent data loss on navigation
-              onSaveConfig({ ...config, mom: { phoneNumber: text } });
+            onChangeText={setMomPhone}
+            onBlur={() => {
+              if (momPhone) {
+                onSaveConfig({ ...config, mom: { phoneNumber: momPhone } });
+              }
             }}
             keyboardType="phone-pad"
             autoCapitalize="none"
@@ -571,6 +575,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholderTextColor={Colors.textMuted}
             value={grandmaPhone}
             onChangeText={setGrandmaPhone}
+            onBlur={() => {
+              if (grandmaPhone) {
+                onSaveConfig({ ...config, grandma: { phoneNumber: grandmaPhone } });
+              }
+            }}
             keyboardType="phone-pad"
             autoCapitalize="none"
             autoCorrect={false}

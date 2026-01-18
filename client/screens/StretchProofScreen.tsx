@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Text as RNText, Platform, ActivityIndicator, Linking, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,13 +6,6 @@ import { useNavigation, useRoute, RouteProp, CommonActions, useFocusEffect } fro
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system/legacy';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
@@ -29,9 +22,7 @@ type RouteProps = RouteProp<RootStackParamList, 'StretchProof'>;
 const isWeb = Platform.OS === 'web';
 const useMockCamera = isWeb;
 
-type Phase = 'setup' | 'countdown' | 'capturing' | 'verifying' | 'result';
-
-const COUNTDOWN_SECONDS = 3;
+type Phase = 'camera' | 'verifying' | 'result';
 
 export default function StretchProofScreen() {
   const insets = useSafeAreaInsets();
@@ -40,31 +31,18 @@ export default function StretchProofScreen() {
   const { alarmId } = route.params;
 
   const [permission, requestPermission] = useCameraPermissions();
-  const [phase, setPhase] = useState<Phase>('setup');
-  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [phase, setPhase] = useState<Phase>('camera');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'passed' | 'failed'>('idle');
   const [verificationReason, setVerificationReason] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
-  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Animation values
-  const countdownScale = useSharedValue(1);
 
   useFocusEffect(
     useCallback(() => {
       setCurrentScreen('StretchProof');
     }, [])
   );
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownTimerRef.current) {
-        clearInterval(countdownTimerRef.current);
-      }
-    };
-  }, []);
 
   const handleOpenSettings = async () => {
     try {
@@ -99,7 +77,7 @@ export default function StretchProofScreen() {
       // Call the AI verification API
       const response = await apiRequest('POST', '/api/verify-proof', {
         imageBase64: `data:image/jpeg;base64,${imageBase64}`,
-        activityDescription: 'stretching - person should be in a stretch pose with arms raised above head, bending/reaching, touching toes, or any stretching position that shows deliberate body stretching',
+        activityDescription: 'stretching - person should be doing any form of stretching like arms up, touching toes, side stretches, or any stretching movement',
       });
 
       const result = await response.json();
@@ -117,7 +95,7 @@ export default function StretchProofScreen() {
       setPhase('result');
     } catch (error) {
       if (__DEV__) console.log('[StretchProof] Verification API error:', error);
-      // On API error, allow user to retry or show error
+      // On API error, allow user to retry
       setVerificationStatus('failed');
       setVerificationReason('Verification service error. Please try again.');
       setPhase('result');
@@ -126,8 +104,9 @@ export default function StretchProofScreen() {
   }, []);
 
   const capturePhoto = useCallback(async () => {
-    setPhase('capturing');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (isCapturing) return;
+    setIsCapturing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (__DEV__) console.log('[StretchProof] Capturing photo...');
 
     try {
@@ -157,42 +136,14 @@ export default function StretchProofScreen() {
       setPhotoUri(mockUri);
       setPhase('verifying');
       runVerification(mockUri);
+    } finally {
+      setIsCapturing(false);
     }
-  }, [runVerification]);
-
-  const startCountdown = useCallback(() => {
-    setPhase('countdown');
-    setCountdown(COUNTDOWN_SECONDS);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (__DEV__) console.log('[StretchProof] Starting countdown...');
-
-    let currentCount = COUNTDOWN_SECONDS;
-
-    countdownTimerRef.current = setInterval(() => {
-      currentCount -= 1;
-
-      if (currentCount > 0) {
-        setCountdown(currentCount);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        // Animate the number
-        countdownScale.value = withSequence(
-          withTiming(1.3, { duration: 100 }),
-          withSpring(1, { damping: 10 })
-        );
-      } else {
-        // Time's up - capture!
-        if (countdownTimerRef.current) {
-          clearInterval(countdownTimerRef.current);
-        }
-        capturePhoto();
-      }
-    }, 1000);
-  }, [capturePhoto, countdownScale]);
+  }, [isCapturing, runVerification]);
 
   const handleRetry = useCallback(() => {
-    setPhase('setup');
+    setPhase('camera');
     setPhotoUri(null);
-    setCountdown(COUNTDOWN_SECONDS);
     setVerificationStatus('idle');
     setVerificationReason(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -232,10 +183,6 @@ export default function StretchProofScreen() {
     );
   }, [alarmId, navigation]);
 
-  const countdownStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: countdownScale.value }],
-  }));
-
   // Permission loading state
   if (!isWeb && !permission) {
     return (
@@ -255,7 +202,7 @@ export default function StretchProofScreen() {
           <RNText style={styles.permissionEmoji}>📷</RNText>
           <ThemedText style={styles.permissionTitle}>Camera Access Needed</ThemedText>
           <ThemedText style={styles.permissionText}>
-            We need camera access to verify your stretch pose.
+            We need camera access to verify your stretch.
           </ThemedText>
           {permission.canAskAgain ? (
             <Pressable style={styles.primaryButton} onPress={requestPermission}>
@@ -276,59 +223,20 @@ export default function StretchProofScreen() {
     );
   }
 
-  // Setup phase - instructions
-  if (phase === 'setup') {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
-        <BackgroundGlow color="orange" />
-
-        <View style={styles.header}>
-          <ThemedText style={styles.title}>Stretch Proof</ThemedText>
-          <ThemedText style={styles.subtitle}>Strike a pose to dismiss your alarm</ThemedText>
-        </View>
-
-        <View style={styles.instructionsCard}>
-          <RNText style={styles.instructionEmoji}>🧘</RNText>
-          <ThemedText style={styles.instructionTitle}>How it works</ThemedText>
-
-          <View style={styles.instructionStep}>
-            <View style={styles.stepNumber}><ThemedText style={styles.stepNumberText}>1</ThemedText></View>
-            <ThemedText style={styles.stepText}>Prop your phone up so it can see you</ThemedText>
-          </View>
-
-          <View style={styles.instructionStep}>
-            <View style={styles.stepNumber}><ThemedText style={styles.stepNumberText}>2</ThemedText></View>
-            <ThemedText style={styles.stepText}>Tap "Start Timer" and get into position</ThemedText>
-          </View>
-
-          <View style={styles.instructionStep}>
-            <View style={styles.stepNumber}><ThemedText style={styles.stepNumberText}>3</ThemedText></View>
-            <ThemedText style={styles.stepText}>Hold a stretch pose when the timer hits 0</ThemedText>
-          </View>
-
-          <View style={styles.tipBox}>
-            <RNText style={styles.tipEmoji}>💡</RNText>
-            <ThemedText style={styles.tipText}>
-              Try arms up, touching toes, or any stretching pose! AI will verify you're actually stretching.
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
-          <Pressable style={styles.primaryButton} onPress={startCountdown}>
-            <ThemedText style={styles.primaryButtonText}>Start 3s Timer</ThemedText>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
-  // Countdown phase
-  if (phase === 'countdown') {
+  // Camera phase - main capture screen
+  if (phase === 'camera') {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <BackgroundGlow color="orange" />
 
+        {/* Header */}
+        <View style={styles.header}>
+          <RNText style={styles.headerEmoji}>🧘</RNText>
+          <ThemedText style={styles.headerTitle}>Stretch Proof</ThemedText>
+          <ThemedText style={styles.headerSubtitle}>Take a photo of yourself stretching</ThemedText>
+        </View>
+
+        {/* Camera view */}
         <View style={styles.cameraContainer}>
           {useMockCamera ? (
             <View style={styles.mockCamera}>
@@ -339,14 +247,6 @@ export default function StretchProofScreen() {
             <CameraView ref={cameraRef} style={styles.camera} facing="front" />
           )}
 
-          {/* Countdown overlay */}
-          <View style={styles.countdownOverlay}>
-            <Animated.View style={[styles.countdownCircle, countdownStyle]}>
-              <ThemedText style={styles.countdownNumber}>{countdown}</ThemedText>
-            </Animated.View>
-            <ThemedText style={styles.countdownLabel}>Get into your stretch pose!</ThemedText>
-          </View>
-
           {/* Corner guides */}
           <View style={[styles.cameraCorner, styles.cameraCornerTL]} />
           <View style={[styles.cameraCorner, styles.cameraCornerTR]} />
@@ -354,15 +254,25 @@ export default function StretchProofScreen() {
           <View style={[styles.cameraCorner, styles.cameraCornerBR]} />
         </View>
 
+        {/* Capture button */}
         <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
-          <ThemedText style={styles.countdownHint}>Strike your stretch pose!</ThemedText>
+          <ThemedText style={styles.captureHint}>
+            Any stretch works - arms up, touching toes, side stretch
+          </ThemedText>
+          <Pressable
+            style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
+            onPress={capturePhoto}
+            disabled={isCapturing}
+          >
+            <View style={styles.captureButtonInner} />
+          </Pressable>
         </View>
       </View>
     );
   }
 
-  // Capturing / Verifying phase
-  if (phase === 'capturing' || phase === 'verifying') {
+  // Verifying phase
+  if (phase === 'verifying') {
     return (
       <View style={styles.container}>
         <BackgroundGlow color="orange" />
@@ -379,11 +289,9 @@ export default function StretchProofScreen() {
         <View style={styles.verifyingOverlay}>
           <View style={styles.verifyingCard}>
             <ActivityIndicator size="large" color={Colors.orange} />
-            <ThemedText style={styles.verifyingTitle}>
-              {phase === 'capturing' ? 'Capturing...' : 'AI is verifying your pose...'}
-            </ThemedText>
+            <ThemedText style={styles.verifyingTitle}>Verifying your stretch...</ThemedText>
             <ThemedText style={styles.verifyingSubtext}>
-              Checking that you're actually stretching
+              AI is checking your photo
             </ThemedText>
           </View>
         </View>
@@ -428,7 +336,7 @@ export default function StretchProofScreen() {
               <View style={styles.errorContainer}>
                 <RNText style={{ fontSize: 24 }}>❌</RNText>
                 <ThemedText style={styles.errorText}>
-                  {verificationReason || "Couldn't verify a stretch pose. Try again!"}
+                  {verificationReason || "Couldn't verify a stretch. Try again!"}
                 </ThemedText>
               </View>
               <Pressable style={styles.retryButton} onPress={handleRetry}>
@@ -455,107 +363,29 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: Spacing.xl,
     paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
-  title: {
-    fontSize: 28,
+  headerEmoji: {
+    fontSize: 40,
+    marginBottom: Spacing.sm,
+  },
+  headerTitle: {
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
-  subtitle: {
-    fontSize: 16,
+  headerSubtitle: {
+    fontSize: 15,
     color: Colors.textSecondary,
     textAlign: 'center',
-  },
-  instructionsCard: {
-    marginHorizontal: Spacing.xl,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.xl,
-    alignItems: 'center',
-  },
-  instructionEmoji: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
-  },
-  instructionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: Spacing.xl,
-  },
-  instructionStep: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-    width: '100%',
-  },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumberText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.bg,
-  },
-  stepText: {
-    fontSize: 15,
-    color: Colors.text,
-    flex: 1,
-  },
-  tipBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: 'rgba(251, 146, 60, 0.1)',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.md,
-    width: '100%',
-  },
-  tipEmoji: {
-    fontSize: 16,
-  },
-  tipText: {
-    fontSize: 13,
-    color: Colors.orange,
-    flex: 1,
-  },
-  footer: {
-    marginTop: 'auto',
-    paddingHorizontal: Spacing.xl,
-  },
-  primaryButton: {
-    backgroundColor: Colors.orange,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: Colors.orange,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  primaryButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Colors.bg,
   },
   cameraContainer: {
     flex: 1,
     marginHorizontal: Spacing.xl,
-    marginTop: Spacing.xl,
+    marginTop: Spacing.md,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: Colors.bgElevated,
@@ -578,36 +408,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textMuted,
     fontWeight: '500',
-  },
-  countdownOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  countdownCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.lg,
-  },
-  countdownNumber: {
-    fontSize: 64,
-    fontWeight: '700',
-    color: Colors.bg,
-  },
-  countdownLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  countdownHint: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
   },
   cameraCorner: {
     position: 'absolute',
@@ -642,6 +442,41 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderRightWidth: 3,
     borderBottomRightRadius: 8,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+  },
+  captureHint: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  captureButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.orange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  captureButtonDisabled: {
+    opacity: 0.5,
+  },
+  captureButtonInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.orange,
+    borderWidth: 3,
+    borderColor: Colors.text,
   },
   mockPreview: {
     flex: 1,
@@ -786,5 +621,22 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     marginBottom: Spacing.lg,
+  },
+  primaryButton: {
+    backgroundColor: Colors.orange,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 18,
+    paddingHorizontal: Spacing['2xl'],
+    alignItems: 'center',
+    shadowColor: Colors.orange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  primaryButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.bg,
   },
 });

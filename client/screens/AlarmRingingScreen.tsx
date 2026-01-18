@@ -57,6 +57,7 @@ import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import ShameMessageSent from '@/components/ShameMessageSent';
 import { DynamicIsland } from '@/components/DynamicIsland';
+import { LiveActivityWidget } from '@/components/LiveActivityWidget';
 import { notifyBuddySnoozed } from '@/utils/buddyNotifications';
 import { setCurrentScreen } from '@/utils/soundKiller';
 import { useIMessage } from '@/hooks/useIMessage';
@@ -835,19 +836,16 @@ export default function AlarmRingingScreen() {
           <Animated.View style={[styles.payOnlyRing, { opacity: 0.1, transform: [{ scale: 2 }] }]} />
         </View>
 
+        {/* Dynamic Island - Positioned at top notch area */}
+        <View style={[styles.dynamicIslandOverlay, { top: insets.top }]}>
+          <DynamicIsland state="ringing" stakeAmount={penaltyAmount} visible={true} />
+        </View>
+
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.payOnlyScrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Dynamic Island - Ringing State */}
-          <View style={styles.dynamicIslandContainer}>
-            <DynamicIsland
-              state="ringing"
-              stakeAmount={penaltyAmount}
-            />
-          </View>
-
           {/* Header: ALARM RINGING with pulsing dots */}
           <View style={styles.payOnlyHeader}>
             <Animated.View style={[styles.payOnlyDot, timeAnimatedStyle]} />
@@ -957,19 +955,16 @@ export default function AlarmRingingScreen() {
       {/* Background Glow */}
       <Animated.View style={styles.backgroundGlow} />
 
+      {/* Dynamic Island - Positioned at top notch area */}
+      <View style={[styles.dynamicIslandOverlay, { top: insets.top }]}>
+        <DynamicIsland state="ringing" stakeAmount={penaltyAmount} visible={true} />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Dynamic Island - Ringing State */}
-        <View style={styles.dynamicIslandContainer}>
-          <DynamicIsland
-            state="ringing"
-            stakeAmount={penaltyAmount}
-          />
-        </View>
-
         {/* STREAK BANNER */}
         {streak > 0 && (
           <View style={styles.streakBanner}>
@@ -1055,115 +1050,25 @@ export default function AlarmRingingScreen() {
               <View style={styles.snoozeLine} />
             </View>
 
-            {/* PUNISHMENT CARDS - only show enabled punishments */}
-            <View style={styles.punishmentGrid}>
-              {moneyEnabled && penaltyAmount > 0 ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F4B5}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>${penaltyAmount}</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>to {buddyName}</ThemedText>
-                </View>
-              ) : null}
-
-              {shameVideoEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F3A5}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>SHAME</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>MAX volume</ThemedText>
-                </View>
-              ) : null}
-
-              {textExEnabled && exPhoneNumber ? (
-                <Pressable
-                  style={[styles.punishmentCard, textExSent && styles.punishmentCardSent]}
-                  onPress={handleTextEx}
-                  disabled={textExSent}
-                >
-                  <Text style={{ fontSize: 44 }}>{'\u{1F494}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>
-                    {textExSent ? 'SENT' : 'TEXT EX'}
-                  </ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>
-                    {textExSent ? 'Message opened' : '"I miss you"'}
-                  </ThemedText>
-                </Pressable>
-              ) : null}
-
-              {socialShameEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F4AC}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>SOCIAL</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>Group chat shamed</ThemedText>
-                </View>
-              ) : null}
-
-              {antiCharityEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F5F3}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>DONATE</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>To party you hate</ThemedText>
-                </View>
-              ) : null}
-
-              {emailBossEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F4E7}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>EMAIL</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>Boss notified</ThemedText>
-                </View>
-              ) : null}
-
-              {tweetBadEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F426}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>TWEET</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>Something bad</ThemedText>
-                </View>
-              ) : null}
-
-              {callBuddyEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F4DE}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>CALL</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>Buddy woken up</ThemedText>
-                </View>
-              ) : null}
-
-              {textWifesDadEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F474}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>TEXT</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>Wife's dad</ThemedText>
-                </View>
-              ) : null}
-
-              {momEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F469}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>CALL</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>Mom at 6am</ThemedText>
-                </View>
-              ) : null}
-
-              {grandmaEnabled ? (
-                <View style={styles.punishmentCard}>
-                  <Text style={{ fontSize: 44 }}>{'\u{1F475}'}</Text>
-                  <ThemedText style={styles.punishmentAmount}>CALL</ThemedText>
-                  <ThemedText style={styles.punishmentDesc}>Grandma at 6am</ThemedText>
-                </View>
-              ) : null}
-            </View>
-
-            {/* NOTIFY CARD - only show if buddy notify is enabled */}
-            {buddyNotifyEnabled ? (
-              <Animated.View style={[styles.notifyCard, shakeAnimatedStyle]}>
-                <Text style={{ fontSize: 40 }}>{'\u{1F4F1}'}</Text>
-                <View style={styles.notifyContent}>
-                  <ThemedText style={styles.notifyName}>{buddyName.toUpperCase()}</ThemedText>
-                  <ThemedText style={styles.notifyText}>gets notified of your failure</ThemedText>
-                </View>
-              </Animated.View>
-            ) : null}
+            {/* LIVE ACTIVITY WIDGET - Punishment Preview */}
+            <LiveActivityWidget
+              state="ringing"
+              punishments={(() => {
+                const items: { emoji: string; shortLabel: string; fullMessage: string }[] = [];
+                if (textWifesDadEnabled) items.push({ emoji: '\u{1F474}', shortLabel: "Text wife's dad", fullMessage: 'Wife\'s dad gets "hey bro what are you wearing"' });
+                if (textExEnabled && exPhoneNumber) items.push({ emoji: '\u{1F494}', shortLabel: 'Text ex "i miss u"', fullMessage: 'Ex gets "i miss u"' });
+                if (emailBossEnabled) items.push({ emoji: '\u{1F4E7}', shortLabel: 'Email your boss', fullMessage: 'Boss gets "running late again"' });
+                if (shameVideoEnabled) items.push({ emoji: '\u{1F3A5}', shortLabel: 'Shame video plays', fullMessage: 'Shame video plays at MAX volume' });
+                if (moneyEnabled && penaltyAmount > 0) items.push({ emoji: '\u{1F4B5}', shortLabel: `Pay $${penaltyAmount}`, fullMessage: `$${penaltyAmount} goes to ${buddyName}` });
+                if (socialShameEnabled) items.push({ emoji: '\u{1F4AC}', shortLabel: 'Group chat shamed', fullMessage: 'You get shamed in group chat' });
+                if (antiCharityEnabled) items.push({ emoji: '\u{1F5F3}', shortLabel: 'Donate to enemy', fullMessage: 'Donation goes to party you hate' });
+                if (callBuddyEnabled) items.push({ emoji: '\u{1F4DE}', shortLabel: 'Call buddy', fullMessage: 'Buddy gets woken up by your failure' });
+                if (momEnabled) items.push({ emoji: '\u{1F469}', shortLabel: 'Call mom', fullMessage: 'Mom gets called at 6am' });
+                if (grandmaEnabled) items.push({ emoji: '\u{1F475}', shortLabel: 'Call grandma', fullMessage: 'Grandma gets called at 6am' });
+                if (buddyNotifyEnabled) items.push({ emoji: '\u{1F4F1}', shortLabel: `Notify ${buddyName}`, fullMessage: `${buddyName} gets notified of your failure` });
+                return items.slice(0, 4);
+              })()}
+            />
           </>
         ) : (
           <View style={styles.noPunishmentCard}>
@@ -1329,9 +1234,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
-  dynamicIslandContainer: {
+  dynamicIslandOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 100,
     alignItems: 'center',
-    marginBottom: 12,
+    paddingTop: 4,
   },
 
   // STREAK BANNER
