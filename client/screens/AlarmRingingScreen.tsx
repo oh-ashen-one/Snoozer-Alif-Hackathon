@@ -416,9 +416,11 @@ export default function AlarmRingingScreen() {
     setShowShame(true);
   };
 
-  const handleShameDismiss = () => {
-    if (__DEV__) console.log('ALARM: Shame dismissed - navigating to shame video playback');
+  const handleShameDismiss = async () => {
+    if (__DEV__) console.log('ALARM: Shame triggered - navigating to shame video playback');
+    setShowPaymentPrompt(false);
     setShowShame(false);
+    await stopAlarm();
     navigation.navigate('ShamePlayback', {
       alarmId: alarmData.alarmId,
       shameVideoUri: alarmData.shameVideoUri,

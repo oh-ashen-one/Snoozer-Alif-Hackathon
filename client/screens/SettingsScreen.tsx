@@ -443,22 +443,6 @@ export default function SettingsScreen() {
           </View>
         </FadeInView>
 
-        {/* Shame Video Section */}
-        <FadeInView delay={150} direction="up">
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>SHAME VIDEO</ThemedText>
-            <View style={styles.card}>
-              <SettingsRow
-                icon="video"
-                iconColor="#9333EA"
-                iconBg={ICON_COLORS.purple}
-                label="Re-record shame video"
-                onPress={handleRerecordShameVideo}
-              />
-            </View>
-          </View>
-        </FadeInView>
-
         {/* Calendar Section */}
         <FadeInView delay={175} direction="up">
           <View style={styles.section}>
@@ -513,6 +497,14 @@ export default function SettingsScreen() {
                 label="Manage punishments"
                 showChevron={true}
                 onPress={handleManagePunishments}
+              />
+              <View style={styles.rowDivider} />
+              <SettingsRow
+                icon="video"
+                iconColor="#9333EA"
+                iconBg={ICON_COLORS.purple}
+                label="Re-record shame video"
+                onPress={handleRerecordShameVideo}
               />
             </View>
           </View>

@@ -437,13 +437,13 @@ const styles = StyleSheet.create({
   },
   paymentAmount: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'baseline',
   },
   dollarSign: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: '700',
     color: Colors.text,
-    marginTop: 8,
+    marginRight: 2,
   },
   amount: {
     fontSize: 72,
@@ -452,16 +452,16 @@ const styles = StyleSheet.create({
   },
   recipientRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     gap: 6,
     marginBottom: 12,
   },
   recipientLabel: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#78716C',
   },
   recipientName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.text,
   },
@@ -472,12 +472,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#292524',
     borderRadius: 20,
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   appleCashText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.text,
+    flexShrink: 0,
   },
 
   shameStatus: {
