@@ -13,7 +13,12 @@
       "bundleIdentifier": "com.snoozer.app",
       "infoPlist": {
         "NSAlarmKitUsageDescription": "Snoozer needs to schedule alarms that will ring even when your phone is on silent or Focus mode, so you never oversleep.",
-        "UIBackgroundModes": ["audio", "fetch", "processing", "voip"]
+        "UIBackgroundModes": [
+          "audio",
+          "fetch",
+          "processing",
+          "voip"
+        ]
       }
     },
     "android": {
@@ -23,7 +28,14 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.snoozer.app"
+      "package": "com.snoozer.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
+      ]
     },
     "web": {
       "output": "single",
@@ -65,6 +77,25 @@
     ],
     "experiments": {
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "LiveActivity",
+                  "bundleIdentifier": "com.snoozer.app.LiveActivity",
+                  "entitlements": {}
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "ae431fc8-a0f3-45cf-bf68-da480d502d50"
+      }
+    },
+    "owner": "ohashenone1"
   }
 }

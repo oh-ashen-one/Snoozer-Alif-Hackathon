@@ -20,9 +20,10 @@ import { AnimatedPressable } from '@/components/AnimatedPressable';
 import Header, { getGreeting } from '@/components/Header';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
-import { Alarm, getUserName } from '@/utils/storage';
+import { Alarm, getUserName, getPunishmentConfig } from '@/utils/storage';
 import { killAllSounds, setCurrentScreen } from '@/utils/soundKiller';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { getInterruptedAlarm, clearInterruptedAlarm, StoredAlarmState } from '@/hooks/useAntiCheat';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -488,7 +489,64 @@ export default function HomeScreen() {
         setUserName(name);
       };
       loadUserName();
-    }, [loadAlarms])
+
+      // Check for interrupted alarms (user force-closed app during alarm)
+      const checkForForceClose = async () => {
+        const interrupted = await getInterruptedAlarm();
+        if (interrupted) {
+          if (__DEV__) console.log('[Home] Detected force-closed alarm:', interrupted.alarmId);
+
+          // Get the alarm details to determine punishments
+          const allAlarms = await loadAlarms();
+          const alarm = allAlarms?.find((a: Alarm) => a.id === interrupted.alarmId);
+
+          // Build punishment types from alarm settings
+          const punishmentTypes: string[] = [];
+          if (alarm) {
+            const alarmAny = alarm as any;
+            if (alarmAny.shameVideoEnabled) punishmentTypes.push('shame_video');
+            if (alarmAny.emailBossEnabled) punishmentTypes.push('email_boss');
+            if (alarmAny.tweetBadEnabled) punishmentTypes.push('tweet');
+            if (alarmAny.callBuddyEnabled) punishmentTypes.push('call_buddy');
+            if (alarmAny.momEnabled) punishmentTypes.push('call_mom');
+            if (alarmAny.grandmaEnabled) punishmentTypes.push('call_grandma');
+            if (alarmAny.textWifesDadEnabled) punishmentTypes.push('text_wife_dad');
+            if (alarmAny.textExEnabled) punishmentTypes.push('text_ex');
+            if (alarmAny.socialShameEnabled) punishmentTypes.push('social_shame');
+            if (alarmAny.antiCharityEnabled) punishmentTypes.push('anti_charity');
+          } else {
+            // Default to shame video if we can't find the alarm
+            punishmentTypes.push('shame_video');
+          }
+
+          const config = await getPunishmentConfig();
+          const moneyEnabled = alarm ? ((alarm as any).moneyEnabled ?? true) : true;
+          const moneyAmount = alarm?.punishment ?? 5;
+
+          // Navigate directly to punishment execution
+          navigation.navigate('PunishmentExecution', {
+            alarmId: interrupted.alarmId,
+            alarmLabel: interrupted.alarmLabel || 'Force-closed alarm',
+            punishmentTypes,
+            moneyEnabled,
+            moneyAmount,
+            shameVideoUri: interrupted.shameVideoUri,
+            config: {
+              bossEmail: config.email_boss?.bossEmail,
+              momPhone: config.mom?.phoneNumber,
+              grandmaPhone: config.grandma?.phoneNumber,
+              wifesDadPhone: config.wife_dad?.phoneNumber,
+              exPhone: config.text_ex?.exPhoneNumber,
+            },
+            wasForceClose: true, // Flag to show special message
+          });
+
+          // Clear the interrupted state so we don't trigger again
+          await clearInterruptedAlarm();
+        }
+      };
+      checkForForceClose();
+    }, [loadAlarms, navigation])
   );
 
   const handleDebugModeActivate = useCallback(() => {

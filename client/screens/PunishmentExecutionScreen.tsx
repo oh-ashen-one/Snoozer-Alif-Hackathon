@@ -125,6 +125,7 @@ export default function PunishmentExecutionScreen() {
     moneyAmount,
     shameVideoUri: routeVideoUri,
     config,
+    wasForceClose,
   } = route.params;
 
   // Sequential execution state
@@ -476,8 +477,15 @@ export default function PunishmentExecutionScreen() {
         {/* Top overlay */}
         <View style={styles.topOverlay}>
           <Animated.View style={pulseStyle}>
-            <ThemedText style={styles.shameText}>YOU SNOOZED</ThemedText>
+            <ThemedText style={styles.shameText}>
+              {wasForceClose ? 'NICE TRY' : 'YOU SNOOZED'}
+            </ThemedText>
           </Animated.View>
+          {wasForceClose && (
+            <ThemedText style={styles.forceCloseSubtext}>
+              You can't escape by closing the app
+            </ThemedText>
+          )}
           {totalPunishments > 1 && (
             <Animated.View style={[styles.progressBadge, progressScaleStyle]}>
               <ThemedText style={styles.progressText}>
@@ -509,8 +517,15 @@ export default function PunishmentExecutionScreen() {
 
       <View style={styles.content}>
         <Animated.View style={pulseStyle}>
-          <ThemedText style={styles.shameText}>YOU SNOOZED</ThemedText>
+          <ThemedText style={styles.shameText}>
+            {wasForceClose ? 'NICE TRY' : 'YOU SNOOZED'}
+          </ThemedText>
         </Animated.View>
+        {wasForceClose && (
+          <ThemedText style={styles.forceCloseSubtext}>
+            You can't escape by closing the app
+          </ThemedText>
+        )}
 
         {/* Progress indicator */}
         {totalPunishments > 1 && (
@@ -630,7 +645,13 @@ const styles = StyleSheet.create({
     color: Colors.red,
     textTransform: 'uppercase',
     letterSpacing: 6,
+    marginBottom: Spacing.sm,
+  },
+  forceCloseSubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
     marginBottom: Spacing.lg,
+    textAlign: 'center',
   },
 
   // Punishment card

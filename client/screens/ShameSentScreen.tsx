@@ -22,6 +22,7 @@ import Animated, {
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { clearInterruptedAlarm } from '@/hooks/useAntiCheat';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ShameSent'>;
@@ -60,6 +61,9 @@ export default function ShameSentScreen() {
   const ring3Opacity = useSharedValue(0.4);
 
   useEffect(() => {
+    // Clear the anti-cheat alarm state since punishment was executed
+    clearInterruptedAlarm();
+
     // Main glow pulse
     glowScale.value = withRepeat(
       withTiming(1.1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),

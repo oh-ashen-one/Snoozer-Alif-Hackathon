@@ -196,6 +196,7 @@ export type RootStackParamList = {
       wifesDadPhone?: string;
       exPhone?: string;
     };
+    wasForceClose?: boolean; // True if user force-closed app during alarm
   };
 };
 

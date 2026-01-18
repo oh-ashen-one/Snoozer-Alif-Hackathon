@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { setCurrentScreen, killAllSounds } from '@/utils/soundKiller';
+import { clearInterruptedAlarm } from '@/hooks/useAntiCheat';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type WakeUpSuccessRouteProp = RouteProp<RootStackParamList, 'WakeUpSuccess'>;
@@ -98,11 +99,13 @@ export default function WakeUpSuccessScreen() {
     FACTS[Math.floor(Math.random() * FACTS.length)],
   []);
 
-  // Stop alarm sound when this screen is shown
+  // Stop alarm sound when this screen is shown and clear anti-cheat state
   useFocusEffect(
     useCallback(() => {
       setCurrentScreen('WakeUpSuccess');
       killAllSounds();
+      // Clear the anti-cheat alarm state since wake-up was successful
+      clearInterruptedAlarm();
     }, [])
   );
 

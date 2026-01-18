@@ -88,15 +88,29 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
   const startHeartbeat = useCallback(async (alarmData: AlarmData) => {
     // Clear any stale alarm state first to prevent false positives
     await clearAlarmState();
-    
+
     alarmStartTime.current = Date.now();
-    
-    saveAlarmState(alarmData);
-    
+
+    // Save initial state with 'ringing' status
+    saveAlarmState(alarmData, 'ringing');
+
     heartbeatInterval.current = setInterval(() => {
-      saveAlarmState(alarmData);
+      saveAlarmState(alarmData, 'ringing');
     }, HEARTBEAT_INTERVAL);
   }, [saveAlarmState, clearAlarmState]);
+
+  // Call this when alarm is properly dismissed (proof completed or punishment executed)
+  const markAlarmDismissed = useCallback(async () => {
+    if (__DEV__) console.log('[AntiCheat] Marking alarm as properly dismissed');
+    // Stop heartbeat first
+    if (heartbeatInterval.current) {
+      clearInterval(heartbeatInterval.current);
+      heartbeatInterval.current = null;
+    }
+    // Clear the alarm state entirely - the alarm was handled properly
+    await clearAlarmState();
+    alarmStartTime.current = null;
+  }, [clearAlarmState]);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatInterval.current) {
@@ -183,12 +197,49 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
   return {
     startHeartbeat,
     stopHeartbeat,
+    markAlarmDismissed,
     checkForInterruptedAlarm,
     scheduleBackupNotification,
     cancelBackupNotification,
     validatePhotoFreshness,
     validateTimeIntegrity,
   };
+}
+
+// Standalone function to check for interrupted alarms (used by HomeScreen on mount)
+export async function getInterruptedAlarm(): Promise<StoredAlarmState | null> {
+  try {
+    const stored = await AsyncStorage.getItem(ALARM_STATE_KEY);
+    if (stored) {
+      const alarmState: StoredAlarmState = JSON.parse(stored);
+      const timeSinceHeartbeat = Date.now() - alarmState.lastHeartbeat;
+
+      // Only return if status is 'ringing' and heartbeat is stale
+      if (alarmState.status === 'ringing' && timeSinceHeartbeat > STALE_THRESHOLD) {
+        if (__DEV__) console.log('[AntiCheat] getInterruptedAlarm found:', alarmState.alarmId);
+        return alarmState;
+      }
+
+      // If dismissed, clean it up
+      if (alarmState.status === 'dismissed') {
+        await AsyncStorage.removeItem(ALARM_STATE_KEY);
+      }
+    }
+    return null;
+  } catch (error) {
+    if (__DEV__) console.error('[AntiCheat] getInterruptedAlarm error:', error);
+    return null;
+  }
+}
+
+// Clear the interrupted alarm state (call after punishment is executed)
+export async function clearInterruptedAlarm(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(ALARM_STATE_KEY);
+    if (__DEV__) console.log('[AntiCheat] Cleared interrupted alarm state');
+  } catch (error) {
+    if (__DEV__) console.error('[AntiCheat] clearInterruptedAlarm error:', error);
+  }
 }
 
 export type { CheatType, AlarmData, StoredAlarmState };
