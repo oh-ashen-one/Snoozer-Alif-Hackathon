@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, CommonActions } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -22,6 +23,7 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import { AnimatedCard } from '@/components/AnimatedCard';
+import { getBuddyInfo, BuddyInfo } from '@/utils/storage';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -192,6 +194,37 @@ export default function BuddyScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const [selectedMode, setSelectedMode] = useState<ModeId | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasBuddy, setHasBuddy] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkBuddyStatus = async () => {
+        try {
+          const buddy = await getBuddyInfo();
+          if (buddy) {
+            setHasBuddy(true);
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [
+                  { name: 'Home' },
+                  { name: 'BuddyDashboard' },
+                ],
+              })
+            );
+          } else {
+            setHasBuddy(false);
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.error('[BuddyScreen] Error checking buddy:', error);
+          setIsLoading(false);
+        }
+      };
+      checkBuddyStatus();
+    }, [navigation])
+  );
 
   const handleSelectMode = useCallback((modeId: ModeId) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -211,6 +244,14 @@ export default function BuddyScreen() {
   }, [navigation]);
 
   const selectedModeData = MODES.find(m => m.id === selectedMode);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={Colors.orange} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -301,6 +342,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bg,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Header
