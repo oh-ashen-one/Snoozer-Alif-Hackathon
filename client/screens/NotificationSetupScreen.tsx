@@ -106,7 +106,7 @@ export default function NotificationSetupScreen() {
 
       {/* Header */}
       <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md }}>
-        <Header type="nav" title="Setup Guide" onBackPress={handleBack} />
+        <Header type="nav" title="Setup Guide" emoji={'\uD83D\uDCF1'} onBackPress={handleBack} />
       </View>
 
       <ScrollView

@@ -144,7 +144,7 @@ export default function AlarmSoundScreen() {
       <BackgroundGlow color="orange" />
       
       <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md }}>
-        <Header type="nav" title="Alarm Sound" onBackPress={handleBack} />
+        <Header type="nav" title="Alarm Sound" emoji={'\uD83D\uDD0A'} onBackPress={handleBack} />
       </View>
 
       <ScrollView

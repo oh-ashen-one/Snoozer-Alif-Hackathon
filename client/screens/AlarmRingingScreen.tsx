@@ -700,17 +700,45 @@ export default function AlarmRingingScreen() {
   };
 
   const handleShameDismiss = async () => {
-    if (__DEV__) console.log('ALARM: Shame triggered - navigating to shame video playback');
+    if (__DEV__) console.log('ALARM: Shame triggered - determining punishment type');
     setShowPaymentPrompt(false);
     setShowShame(false);
     await stopAlarm();
-    navigation.navigate('ShamePlayback', {
+
+    // Determine primary punishment type based on what's enabled
+    const getPrimaryPunishment = (): string => {
+      if (shameVideoEnabled) return 'shame_video';
+      if (emailBossEnabled) return 'email_boss';
+      if (tweetBadEnabled) return 'tweet';
+      if (callBuddyEnabled) return 'call_buddy';
+      if (momEnabled) return 'call_mom';
+      if (grandmaEnabled) return 'call_grandma';
+      if (textWifesDadEnabled) return 'text_wife_dad';
+      if (textExEnabled) return 'text_ex';
+      if (socialShameEnabled) return 'social_shame';
+      if (antiCharityEnabled) return 'anti_charity';
+      return 'shame_video'; // Default fallback
+    };
+
+    const punishmentType = getPrimaryPunishment();
+    if (__DEV__) console.log('ALARM: Primary punishment type:', punishmentType);
+
+    // Get punishment config for phone numbers/emails
+    const config = await getPunishmentConfig();
+
+    navigation.navigate('PunishmentExecution', {
       alarmId: alarmData.alarmId,
-      shameVideoUri: alarmData.shameVideoUri,
       alarmLabel: alarmData.alarmLabel,
-      referencePhotoUri: alarmData.referencePhotoUri,
-      showPaymentAfter: false,
-      buddyPhone: buddyInfo?.phone,
+      punishmentType,
+      shameVideoUri: alarmData.shameVideoUri,
+      config: {
+        bossEmail: config.email_boss?.bossEmail,
+        momPhone: config.mom?.phoneNumber,
+        grandmaPhone: config.grandma?.phoneNumber,
+        buddyPhone: buddyInfo?.phone,
+        wifesDadPhone: config.wife_dad?.phoneNumber,
+        exPhone: config.text_ex?.exPhoneNumber,
+      },
     });
   };
 
@@ -970,7 +998,9 @@ export default function AlarmRingingScreen() {
         </View>
 
         {/* SNOOZE = HEADER - only show if any punishment is enabled */}
-        {(moneyEnabled || shameVideoEnabled || buddyNotifyEnabled || (textExEnabled && exPhoneNumber)) ? (
+        {(moneyEnabled || shameVideoEnabled || buddyNotifyEnabled || socialShameEnabled ||
+          antiCharityEnabled || emailBossEnabled || tweetBadEnabled || callBuddyEnabled ||
+          textWifesDadEnabled || textExEnabled || momEnabled || grandmaEnabled) ? (
           <>
             <View style={styles.snoozeHeader}>
               <View style={styles.snoozeLine} />
@@ -997,8 +1027,8 @@ export default function AlarmRingingScreen() {
               ) : null}
 
               {textExEnabled && exPhoneNumber ? (
-                <Pressable 
-                  style={[styles.punishmentCard, textExSent && styles.punishmentCardSent]} 
+                <Pressable
+                  style={[styles.punishmentCard, textExSent && styles.punishmentCardSent]}
                   onPress={handleTextEx}
                   disabled={textExSent}
                 >
@@ -1010,6 +1040,70 @@ export default function AlarmRingingScreen() {
                     {textExSent ? 'Message opened' : '"I miss you"'}
                   </ThemedText>
                 </Pressable>
+              ) : null}
+
+              {socialShameEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F4AC}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>SOCIAL</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>Group chat shamed</ThemedText>
+                </View>
+              ) : null}
+
+              {antiCharityEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F5F3}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>DONATE</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>To party you hate</ThemedText>
+                </View>
+              ) : null}
+
+              {emailBossEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F4E7}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>EMAIL</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>Boss notified</ThemedText>
+                </View>
+              ) : null}
+
+              {tweetBadEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F426}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>TWEET</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>Something bad</ThemedText>
+                </View>
+              ) : null}
+
+              {callBuddyEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F4DE}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>CALL</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>Buddy woken up</ThemedText>
+                </View>
+              ) : null}
+
+              {textWifesDadEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F474}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>TEXT</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>Wife's dad</ThemedText>
+                </View>
+              ) : null}
+
+              {momEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F469}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>CALL</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>Mom at 6am</ThemedText>
+                </View>
+              ) : null}
+
+              {grandmaEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F475}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>CALL</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>Grandma at 6am</ThemedText>
+                </View>
               ) : null}
             </View>
 

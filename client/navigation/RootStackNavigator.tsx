@@ -36,6 +36,7 @@ import JoinCodeScreen from '@/screens/JoinCodeScreen';
 import InviteBuddyScreen from '@/screens/InviteBuddyScreen';
 import PunishmentsScreen from '@/screens/PunishmentsScreen';
 import AcceptInviteScreen from '@/screens/AcceptInviteScreen';
+import PunishmentExecutionScreen from '@/screens/PunishmentExecutionScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
@@ -172,6 +173,21 @@ export type RootStackParamList = {
     amount: number;
     currentTime: string;
     previousStreak: number;
+    punishmentType?: string;
+  };
+  PunishmentExecution: {
+    alarmId: string;
+    alarmLabel: string;
+    punishmentType: string;
+    shameVideoUri?: string;
+    config?: {
+      bossEmail?: string;
+      momPhone?: string;
+      grandmaPhone?: string;
+      buddyPhone?: string;
+      wifesDadPhone?: string;
+      exPhone?: string;
+    };
   };
 };
 
@@ -396,6 +412,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="ShameSent"
         component={ShameSentScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="PunishmentExecution"
+        component={PunishmentExecutionScreen}
         options={{
           headerShown: false,
           gestureEnabled: false,

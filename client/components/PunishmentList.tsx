@@ -1,9 +1,7 @@
 /**
- * PUNISHMENTS SCREEN
- * PunishmentsScreen.tsx
- *
- * Settings page for managing default punishments.
- * Users can toggle which punishments are enabled by default.
+ * SHARED PUNISHMENT LIST COMPONENT
+ * Used by both PunishmentsScreen and AddAlarmScreen
+ * Single source of truth for punishment UI
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -11,41 +9,24 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Pressable,
   TextInput,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import * as SMS from 'expo-sms';
+import * as Linking from 'expo-linking';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
-import * as SMS from 'expo-sms';
-import * as Linking from 'expo-linking';
-
 import { ThemedText } from '@/components/ThemedText';
-import { BackgroundGlow } from '@/components/BackgroundGlow';
-import { FadeInView } from '@/components/FadeInView';
-import Header from '@/components/Header';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
-import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import {
-  getDefaultPunishments,
-  saveDefaultPunishments,
-  getPunishmentConfig,
-  savePunishmentConfig,
-  PunishmentConfig,
-} from '@/utils/storage';
+import { PunishmentConfig, saveDefaultPunishments, savePunishmentConfig } from '@/utils/storage';
 import { openURL } from '@/utils/linking';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-interface PunishmentOption {
+export interface PunishmentOption {
   id: string;
   label: string;
   description: string;
@@ -55,7 +36,7 @@ interface PunishmentOption {
   configurable?: boolean;
 }
 
-const PUNISHMENT_OPTIONS: PunishmentOption[] = [
+export const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'shame_video', label: 'Shame video plays', description: 'At max volume', icon: '🎬', color: '#EF4444' },
   { id: 'buddy_call', label: 'Auto-call your buddy', description: 'Jake gets woken up too', icon: '📞', color: '#FB923C' },
   { id: 'group_chat', label: 'Text the group chat', description: '"The boys" on iMessage', icon: '💬', color: '#7C3AED' },
@@ -72,7 +53,6 @@ const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'thermostat', label: 'Drop thermostat to 55°F', description: 'Smart home integration', icon: '🥶', color: '#22C55E', comingSoon: true },
 ];
 
-// Embarrassing email templates for boss punishment
 const EMBARRASSING_EMAILS = [
   { subject: "I pooped my pants this morning", body: "Hi,\n\nI'm running late because I had a bit of an accident. The less said the better.\n\nPlease don't bring this up." },
   { subject: "A raccoon is living in my car", body: "Hi,\n\nI can't come in because there's a raccoon in my car and it won't leave. It hissed at me. I'm scared.\n\nSend help." },
@@ -84,21 +64,8 @@ const EMBARRASSING_EMAILS = [
   { subject: "My pet ferret escaped into my walls", body: "Hi,\n\nMr. Noodles is somewhere in my walls. I can hear him. I can't leave until I find him. He's my best friend.\n\nThis could take days." },
   { subject: "I superglued my hand to my face", body: "Hi,\n\nI was trying to fix something and now my hand is permanently on my cheek. I look ridiculous. The ER is packed.\n\nThis hurts." },
   { subject: "I ate a whole cake and I feel sick", body: "Hi,\n\nIt was my birthday cake. I was supposed to share it with the office. I ate it all at 2am. No regrets. Many regrets.\n\nSend Tums." },
-  { subject: "I got chased by a goose for 2 miles", body: "Hi,\n\nThat goose is still outside my house. It's been 3 hours. It knows what it did. I know what I did.\n\nWe're at a standoff." },
-  { subject: "I cried during a commercial and can't stop", body: "Hi,\n\nIt was the one with the dog waiting for its owner. I'm still crying. I've gone through 3 tissue boxes.\n\nI'm not okay." },
-  { subject: "I wore my shirt inside out all day yesterday", body: "Hi,\n\nNobody told me. Not one person. I trusted you all. I'm taking a mental health day to recover from this betrayal.\n\nHow could you." },
-  { subject: "I thought today was Saturday", body: "Hi,\n\nI'm at brunch. I ordered mimosas. It's Wednesday. I'm in my pajamas. Everyone is staring.\n\nShould I just stay?" },
-  { subject: "I got scared by my own reflection", body: "Hi,\n\nI screamed so loud my neighbors called the police. I had to explain. They laughed. I'm hiding now.\n\nI hate mirrors." },
-  { subject: "I accidentally joined a flash mob", body: "Hi,\n\nI didn't know the dance. Everyone knew the dance. I panicked. I did the Macarena. It was not the Macarena.\n\nI'm never going outside again." },
-  { subject: "I locked myself in the bathroom at home", body: "Hi,\n\nThe lock is jammed. I've been in here for 6 hours. I've named the spiders. We're friends now.\n\nSend a locksmith." },
-  { subject: "My pants ripped in public", body: "Hi,\n\nBig rip. Very visible. Very embarrassing location. I'm currently hiding behind a dumpster.\n\nCan someone bring me pants?" },
-  { subject: "I sleep-texted my ex 47 times", body: "Hi,\n\nI woke up to responses. So many responses. I can never show my face again. I'm changing my identity.\n\nCall me Steve now." },
-  { subject: "I challenged a teenager to a dance battle and lost", body: "Hi,\n\nIt was at the mall. There were witnesses. Someone filmed it. It might go viral. I need to leave the country.\n\nI did the worm. Badly." },
 ];
 
-const getRandomEmail = () => EMBARRASSING_EMAILS[Math.floor(Math.random() * EMBARRASSING_EMAILS.length)];
-
-// Embarrassing text messages for friend punishment
 const EMBARRASSING_TEXTS = [
   "I just shit myself at work",
   "I still sleep with a stuffed animal",
@@ -122,9 +89,6 @@ const EMBARRASSING_TEXTS = [
   "I still can't whistle and I'm devastated about it",
 ];
 
-const getRandomEmbarrassingText = () => EMBARRASSING_TEXTS[Math.floor(Math.random() * EMBARRASSING_TEXTS.length)];
-
-// Embarrassing tweets for Twitter punishment
 const EMBARRASSING_TWEETS = [
   "im gay",
   "i like butt",
@@ -136,21 +100,12 @@ const EMBARRASSING_TWEETS = [
   "my mom still does my laundry",
   "i talk to my plants and they dont even respond",
   "just got rejected by a bot on a dating app",
-  "i eat cereal for dinner 5 nights a week",
-  "i once lied on my resume and got the job and i still dont know what im doing",
-  "i practice conversations in the mirror before social events",
-  "i flinch at my own reflection sometimes",
-  "just realized ive been pronouncing 'quinoa' wrong for 6 years",
-  "i clapped when the plane landed last week",
-  "i wave back at people who werent waving at me on a daily basis",
-  "my screen time report made me question my life choices",
-  "i sniff my clothes to check if theyre clean enough to rewear",
-  "i still dont know the difference between affect and effect",
 ];
 
+const getRandomEmail = () => EMBARRASSING_EMAILS[Math.floor(Math.random() * EMBARRASSING_EMAILS.length)];
+const getRandomEmbarrassingText = () => EMBARRASSING_TEXTS[Math.floor(Math.random() * EMBARRASSING_TEXTS.length)];
 const getRandomEmbarrassingTweet = () => EMBARRASSING_TWEETS[Math.floor(Math.random() * EMBARRASSING_TWEETS.length)];
 
-// Toggle Component
 function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () => void }) {
   const translateX = useSharedValue(value ? 23 : 3);
 
@@ -172,7 +127,6 @@ function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () =>
   );
 }
 
-// Punishment Row Component
 interface PunishmentRowProps {
   punishment: PunishmentOption;
   enabled: boolean;
@@ -184,14 +138,13 @@ interface PunishmentRowProps {
   onExpand: () => void;
 }
 
-function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand }: PunishmentRowProps) {
+export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand }: PunishmentRowProps) {
   const [bossEmail, setBossEmail] = useState(config.email_boss?.bossEmail || '');
   const [exPhoneNumber, setExPhoneNumber] = useState(config.text_ex?.exPhoneNumber || '');
   const [wifesDadPhone, setWifesDadPhone] = useState(config.wife_dad?.phoneNumber || '');
   const [momPhone, setMomPhone] = useState(config.mom?.phoneNumber || '');
   const [grandmaPhone, setGrandmaPhone] = useState(config.grandma?.phoneNumber || '');
 
-  // Sync local state when config changes
   useEffect(() => {
     if (punishment.id === 'email_boss') {
       setBossEmail(config.email_boss?.bossEmail || '');
@@ -259,13 +212,6 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
       "Hey Robert, quick question - is it normal for grown adults to hit snooze 5 times? Asking for a friend (me).",
       "Good morning! Just wanted you to know your daughter married someone who can't wake up on time.",
       "Hi, it's me. I overslept again. Please don't tell her.",
-      "Robert, I need advice. How did you raise such an early riser? Asking because I clearly wasn't.",
-      "Hey! Random thought at 6am - do you think I'm good enough for your daughter? I can't even wake up.",
-      "Morning! I'm supposed to be at work but I'm still in bed. Life advice?",
-      "Hi Robert! Quick poll: is hitting snooze 7 times a red flag?",
-      "Hey, hypothetically, if someone snoozed their alarm 5 times, would that be grounds for disappointment?",
-      "Good morning sir. I have failed. Again. The alarm won.",
-      "Robert, I'm texting you from bed at 6am because I can't adult properly.",
     ];
     const randomMessage = messages[Math.floor(Math.random() * messages.length)];
     const isAvailable = await SMS.isAvailableAsync();
@@ -351,11 +297,10 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </Pressable>
       )}
 
-      {/* Show saved email when configured and not expanded */}
       {enabled && punishment.id === 'email_boss' && config.email_boss?.bossEmail && !expanded && (
         <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigText}>
-            📧 {config.email_boss.bossEmail}
+            {config.email_boss.bossEmail}
           </ThemedText>
           <View style={styles.savedConfigButtons}>
             <Pressable style={styles.savedConfigButton} onPress={handleTestEmail}>
@@ -368,7 +313,6 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Email Boss Configuration */}
       {expanded && punishment.id === 'email_boss' && (
         <View style={styles.configSection}>
           <ThemedText style={styles.configLabel}>What is your boss's email?</ThemedText>
@@ -401,11 +345,10 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Show saved phone number when configured and not expanded */}
       {enabled && punishment.id === 'text_ex' && config.text_ex?.exPhoneNumber && !expanded && (
         <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigText}>
-            📱 {config.text_ex.exPhoneNumber}
+            {config.text_ex.exPhoneNumber}
           </ThemedText>
           <View style={styles.savedConfigButtons}>
             <Pressable onPress={handleTestTextEx}>
@@ -418,7 +361,6 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Text Friend Something Embarrassing Configuration */}
       {expanded && punishment.id === 'text_ex' && (
         <View style={styles.configSection}>
           <ThemedText style={styles.configLabel}>Enter your friend's number</ThemedText>
@@ -451,11 +393,10 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Show saved wife's dad number when configured and not expanded */}
       {enabled && punishment.id === 'wife_dad' && config.wife_dad?.phoneNumber && !expanded && (
         <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigTextGreen}>
-            📱 {config.wife_dad.phoneNumber}
+            {config.wife_dad.phoneNumber}
           </ThemedText>
           <View style={styles.savedConfigButtons}>
             <Pressable style={styles.savedConfigButton} onPress={handleTestWifesDad}>
@@ -468,7 +409,6 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Wife's Dad Configuration */}
       {expanded && punishment.id === 'wife_dad' && (
         <View style={styles.configSection}>
           <ThemedText style={styles.configLabel}>What is your wife's dad's number?</ThemedText>
@@ -501,11 +441,10 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Show saved mom's number when configured and not expanded */}
       {enabled && punishment.id === 'mom' && config.mom?.phoneNumber && !expanded && (
         <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigTextGreen}>
-            📞 {config.mom.phoneNumber}
+            {config.mom.phoneNumber}
           </ThemedText>
           <View style={styles.savedConfigButtons}>
             <Pressable style={styles.savedConfigButton} onPress={handleTestMom}>
@@ -518,7 +457,6 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Mom Configuration */}
       {expanded && punishment.id === 'mom' && (
         <View style={styles.configSection}>
           <ThemedText style={styles.configLabel}>What is your mom's number?</ThemedText>
@@ -551,11 +489,10 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Show saved grandma's number when configured and not expanded */}
       {enabled && punishment.id === 'grandma_call' && config.grandma?.phoneNumber && !expanded && (
         <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigTextGreen}>
-            📞 {config.grandma.phoneNumber}
+            {config.grandma.phoneNumber}
           </ThemedText>
           <View style={styles.savedConfigButtons}>
             <Pressable style={styles.savedConfigButton} onPress={handleTestGrandma}>
@@ -568,7 +505,6 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Grandma Configuration */}
       {expanded && punishment.id === 'grandma_call' && (
         <View style={styles.configSection}>
           <ThemedText style={styles.configLabel}>What is your grandma's number?</ThemedText>
@@ -601,11 +537,10 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Twitter Test row - no config needed, just Test button */}
       {enabled && punishment.id === 'twitter' && (
         <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigText}>
-            🐦 Random embarrassing tweet
+            Random embarrassing tweet
           </ThemedText>
           <Pressable style={styles.savedConfigButton} onPress={handleTestTweet}>
             <ThemedText style={styles.testLinkText}>Test</ThemedText>
@@ -618,169 +553,56 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
   );
 }
 
-export default function PunishmentsScreen() {
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation<NavigationProp>();
+interface PunishmentListProps {
+  enabledPunishments: string[];
+  onTogglePunishment: (id: string) => void;
+  punishmentConfig: PunishmentConfig;
+  onSaveConfig: (config: PunishmentConfig) => void;
+  expandedPunishment: string | null;
+  onExpandPunishment: (id: string | null) => void;
+}
 
-  const [enabledPunishments, setEnabledPunishments] = useState<string[]>(['shame_video']);
-  const [punishmentConfig, setPunishmentConfig] = useState<PunishmentConfig>({});
-  const [expandedPunishment, setExpandedPunishment] = useState<string | null>(null);
-
-  // Load settings on mount
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const [punishments, config] = await Promise.all([
-          getDefaultPunishments(),
-          getPunishmentConfig(),
-        ]);
-        setEnabledPunishments(punishments);
-        setPunishmentConfig(config);
-      } catch {
-        // Use defaults
-      }
-    };
-    loadSettings();
-  }, []);
-
-  const handleBack = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.goBack();
-  }, [navigation]);
-
-  const handleTogglePunishment = useCallback((id: string) => {
+export function PunishmentList({
+  enabledPunishments,
+  onTogglePunishment,
+  punishmentConfig,
+  onSaveConfig,
+  expandedPunishment,
+  onExpandPunishment,
+}: PunishmentListProps) {
+  const handleToggle = useCallback((id: string) => {
     const punishment = PUNISHMENT_OPTIONS.find(p => p.id === id);
     const isCurrentlyEnabled = enabledPunishments.includes(id);
+    
+    onTogglePunishment(id);
 
-    setEnabledPunishments(prev => {
-      const newPunishments = isCurrentlyEnabled
-        ? prev.filter(p => p !== id)
-        : [...prev, id];
-
-      // Save to storage
-      saveDefaultPunishments(newPunishments);
-
-      return newPunishments;
-    });
-
-    // If toggling ON a configurable punishment, expand it
     if (!isCurrentlyEnabled && punishment?.configurable) {
-      setExpandedPunishment(id);
+      onExpandPunishment(id);
     } else if (isCurrentlyEnabled) {
-      // If toggling OFF, collapse
-      setExpandedPunishment(null);
+      onExpandPunishment(null);
     }
-  }, [enabledPunishments]);
-
-  const handleSaveConfig = useCallback(async (config: PunishmentConfig) => {
-    setPunishmentConfig(config);
-    await savePunishmentConfig(config);
-    // Collapse after saving
-    setExpandedPunishment(null);
-  }, []);
+  }, [enabledPunishments, onTogglePunishment, onExpandPunishment]);
 
   return (
-    <View style={styles.container}>
-      <BackgroundGlow color="orange" />
-
-      {/* Header */}
-      <View style={{ paddingTop: insets.top + Spacing.sm, paddingHorizontal: Spacing.lg }}>
-        <Header type="nav" title="Punishments" emoji={'\uD83D\uDC80'} onBackPress={handleBack} />
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + Spacing['2xl'] },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Punishments List */}
-        <FadeInView delay={100} direction="up">
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>ENABLED PUNISHMENTS</ThemedText>
-            <ThemedText style={styles.sectionHint}>
-              These will be selected by default when creating new alarms
-            </ThemedText>
-            <View style={styles.card}>
-              {PUNISHMENT_OPTIONS.map((punishment, index) => (
-                <PunishmentRow
-                  key={punishment.id}
-                  punishment={punishment}
-                  enabled={enabledPunishments.includes(punishment.id)}
-                  onToggle={() => handleTogglePunishment(punishment.id)}
-                  isLast={index === PUNISHMENT_OPTIONS.length - 1}
-                  expanded={expandedPunishment === punishment.id}
-                  config={punishmentConfig}
-                  onSaveConfig={handleSaveConfig}
-                  onExpand={() => setExpandedPunishment(punishment.id)}
-                />
-              ))}
-            </View>
-          </View>
-        </FadeInView>
-      </ScrollView>
+    <View style={styles.card}>
+      {PUNISHMENT_OPTIONS.map((punishment, index) => (
+        <PunishmentRow
+          key={punishment.id}
+          punishment={punishment}
+          enabled={enabledPunishments.includes(punishment.id)}
+          onToggle={() => handleToggle(punishment.id)}
+          isLast={index === PUNISHMENT_OPTIONS.length - 1}
+          expanded={expandedPunishment === punishment.id}
+          config={punishmentConfig}
+          onSaveConfig={onSaveConfig}
+          onExpand={() => onExpandPunishment(punishment.id)}
+        />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.lg,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  headerSpacer: {
-    width: 44,
-  },
-
-  // Scroll
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.lg,
-  },
-
-  // Section
-  section: {
-    marginBottom: Spacing.xl,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textMuted,
-    letterSpacing: 0.5,
-    marginBottom: Spacing.md,
-  },
-  sectionHint: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginBottom: Spacing.md,
-    lineHeight: 18,
-  },
-
-  // Card
   card: {
     backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.lg,
@@ -788,8 +610,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     overflow: 'hidden',
   },
-
-  // Punishment Row
   punishmentRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -818,15 +638,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textMuted,
   },
-
-  // Divider
   divider: {
     height: 1,
     backgroundColor: Colors.border,
-    marginLeft: Spacing.lg + 24 + Spacing.md, // icon width + margin
+    marginLeft: Spacing.lg + 24 + Spacing.md,
   },
-
-  // Toggle
   toggle: {
     width: 52,
     height: 32,
@@ -839,8 +655,6 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     backgroundColor: Colors.text,
   },
-
-  // Coming Soon
   comingSoonBadge: {
     backgroundColor: 'rgba(120, 113, 108, 0.2)',
     paddingHorizontal: 10,
@@ -858,8 +672,6 @@ const styles = StyleSheet.create({
   comingSoonLabel: {
     color: Colors.textMuted,
   },
-
-  // Configuration Section
   configSection: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.lg,
@@ -914,8 +726,6 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-
-  // Saved config display
   savedConfigRow: {
     flexDirection: 'row',
     alignItems: 'center',

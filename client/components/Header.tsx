@@ -13,6 +13,7 @@ interface HeaderProps {
   greeting?: string;
   name?: string;
   title?: string;
+  emoji?: string;
   filter?: 'week' | 'month' | 'year';
   onSettingsPress?: () => void;
   onBackPress?: () => void;
@@ -63,6 +64,7 @@ export default function Header({
       return (
         <NavHeader
           title="Settings"
+          emoji={'\u2699\uFE0F'}
           onBackPress={onBackPress}
         />
       );
@@ -70,6 +72,7 @@ export default function Header({
       return (
         <NavHeader
           title={title || 'Back'}
+          emoji={emoji}
           onBackPress={onBackPress}
         />
       );
@@ -183,23 +186,29 @@ function BuddyHeader({
   );
 }
 
-function NavHeader({ 
-  title, 
-  onBackPress 
-}: { 
-  title: string; 
+function NavHeader({
+  title,
+  emoji,
+  onBackPress
+}: {
+  title: string;
+  emoji?: string;
   onBackPress?: () => void;
 }) {
   return (
-    <View style={styles.capsuleNav}>
-      <Pressable 
-        style={styles.backBtn} 
+    <View style={styles.capsule}>
+      <View style={styles.left}>
+        <View style={styles.emojiCircle}>
+          <Text style={styles.emoji}>{emoji || '\u2699\uFE0F'}</Text>
+        </View>
+        <Text style={styles.title}>{title}</Text>
+      </View>
+      <Pressable
+        style={styles.backBtn}
         onPress={onBackPress}
       >
         <Text style={styles.backBtnText}>{'\u2190'}</Text>
       </Pressable>
-      <Text style={styles.titleCenter}>{title}</Text>
-      <View style={styles.placeholder} />
     </View>
   );
 }

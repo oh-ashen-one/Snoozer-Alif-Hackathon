@@ -286,7 +286,7 @@ export default function PaymentSettingsScreen() {
 
       {/* Header */}
       <View style={{ paddingTop: insets.top + Spacing.sm, paddingHorizontal: Spacing.lg }}>
-        <Header type="nav" title="Payment Methods" onBackPress={handleBack} />
+        <Header type="nav" title="Payment Methods" emoji={'\uD83D\uDCB3'} onBackPress={handleBack} />
       </View>
 
       <ScrollView

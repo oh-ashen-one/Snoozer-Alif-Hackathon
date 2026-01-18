@@ -110,7 +110,7 @@ export default function HelpScreen() {
       <BackgroundGlow color="orange" />
       {/* Header */}
       <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md }}>
-        <Header type="nav" title="FAQs" onBackPress={handleBack} />
+        <Header type="nav" title="FAQs" emoji={'\u2753'} onBackPress={handleBack} />
       </View>
 
       <ScrollView

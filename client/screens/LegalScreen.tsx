@@ -117,7 +117,7 @@ export default function LegalScreen() {
       <BackgroundGlow color="orange" />
       {/* Header */}
       <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md }}>
-        <Header type="nav" title={isTerms ? 'Terms of Service' : 'Privacy Policy'} onBackPress={handleBack} />
+        <Header type="nav" title={isTerms ? 'Terms of Service' : 'Privacy Policy'} emoji={'\uD83D\uDCC4'} onBackPress={handleBack} />
       </View>
 
       <ScrollView

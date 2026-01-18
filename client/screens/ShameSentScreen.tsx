@@ -25,11 +25,30 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ShameSent'>;
 
+// Punishment-specific messages
+const PUNISHMENT_MESSAGES: Record<string, { title: string; subtitle: string }> = {
+  shame_video: { title: 'Your shame video played', subtitle: 'At max volume. Everyone heard.' },
+  email_boss: { title: 'You emailed your boss', subtitle: 'Something embarrassing. Good luck Monday.' },
+  tweet: { title: 'You tweeted something cringe', subtitle: 'Your followers will never forget.' },
+  call_mom: { title: 'You called your mom', subtitle: 'At 6am. She\'s worried now.' },
+  call_grandma: { title: 'You called your grandma', subtitle: 'At 6am. She probably thought someone died.' },
+  call_buddy: { title: 'You called your buddy', subtitle: 'They\'re awake now too. Thanks.' },
+  text_wife_dad: { title: 'You texted your wife\'s dad', subtitle: '"Hey Robert, quick question..."' },
+  text_ex: { title: 'You texted your ex', subtitle: '"I miss you" — yikes.' },
+  social_shame: { title: 'The group chat knows', subtitle: 'Everyone saw your failure.' },
+  anti_charity: { title: 'You donated money', subtitle: 'To a cause you hate. Congrats.' },
+};
+
 export default function ShameSentScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { buddyName, amount, currentTime, previousStreak } = route.params;
+  const { buddyName, amount, currentTime, previousStreak, punishmentType } = route.params;
+
+  // Get punishment-specific message
+  const punishmentMessage = punishmentType
+    ? PUNISHMENT_MESSAGES[punishmentType] || PUNISHMENT_MESSAGES.shame_video
+    : PUNISHMENT_MESSAGES.shame_video;
 
   // Pulsing glow animation
   const glowScale = useSharedValue(0.9);
@@ -169,14 +188,14 @@ export default function ShameSentScreen() {
           </View>
         </View>
 
-        {/* Proof sent */}
+        {/* Punishment executed card */}
         <View style={styles.proofCard}>
           <View style={styles.proofIcon}>
             <Text style={styles.proofIconText}>✓</Text>
           </View>
           <View style={styles.proofText}>
-            <ThemedText style={styles.proofTitle}>{buddyName} has been notified</ThemedText>
-            <ThemedText style={styles.proofSub}>They know what you did.</ThemedText>
+            <ThemedText style={styles.proofTitle}>{punishmentMessage.title}</ThemedText>
+            <ThemedText style={styles.proofSub}>{punishmentMessage.subtitle}</ThemedText>
           </View>
         </View>
 
