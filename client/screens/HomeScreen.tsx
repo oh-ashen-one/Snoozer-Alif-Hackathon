@@ -304,48 +304,39 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
     return parts.join(' + ');
   };
 
-  const renderRightActions = () => (
-    <GHTouchableOpacity
-      style={styles.deleteAction}
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onDelete();
-      }}
-    >
-      <ThemedText style={{ fontSize: 24 }}>🗑️</ThemedText>
-    </GHTouchableOpacity>
-  );
-
   return (
-    <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-      <View style={styles.alarmCard}>
-        <View style={styles.alarmContent}>
-          <View style={styles.alarmTopRow}>
-            <GHTouchableOpacity style={styles.alarmLeft} onPress={onEdit} activeOpacity={0.7}>
-              <View style={styles.alarmTimeRow}>
-                <ThemedText style={styles.alarmTime}>{time}</ThemedText>
-                <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
+    <View style={styles.alarmCard}>
+      <View style={styles.alarmContent}>
+        <View style={styles.alarmTopRow}>
+          <Pressable style={styles.alarmLeft} onPress={onEdit}>
+            <View style={styles.alarmTimeRow}>
+              <ThemedText style={styles.alarmTime}>{time}</ThemedText>
+              <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
+            </View>
+            <View style={styles.alarmSubtitleRow}>
+              <View style={styles.proofBadge}>
+                <ThemedText style={styles.proofBadgeText}>{proofLabel}</ThemedText>
               </View>
-              <View style={styles.alarmSubtitleRow}>
-                <View style={styles.proofBadge}>
-                  <ThemedText style={styles.proofBadgeText}>{proofLabel}</ThemedText>
-                </View>
-                <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
-              </View>
-            </GHTouchableOpacity>
-            <View style={styles.alarmRight}>
-              <Toggle value={alarm.enabled} onValueChange={onToggle} />
+              <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
+            </View>
+          </Pressable>
+          <View style={styles.alarmRight}>
+            <Toggle value={alarm.enabled} onValueChange={onToggle} />
+            <View style={styles.alarmButtonsRow}>
               <Pressable style={styles.testButton} onPress={onTest}>
                 <ThemedText style={styles.testButtonText}>Test</ThemedText>
               </Pressable>
+              <Pressable style={styles.deleteButton} onPress={onDelete}>
+                <ThemedText style={{ fontSize: 14 }}>🗑️</ThemedText>
+              </Pressable>
             </View>
           </View>
-          <GHTouchableOpacity onPress={onEdit} activeOpacity={0.7}>
-            <DayPills selectedDays={selectedDays} />
-          </GHTouchableOpacity>
         </View>
+        <Pressable onPress={onEdit}>
+          <DayPills selectedDays={selectedDays} />
+        </Pressable>
       </View>
-    </Swipeable>
+    </View>
   );
 }
 
@@ -879,6 +870,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     color: '#FB923C',
+  },
+  alarmButtonsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  deleteButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
   },
 
   // Day Pills

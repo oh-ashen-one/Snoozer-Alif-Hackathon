@@ -62,6 +62,7 @@ interface Stats {
   totalDays: number;
   weeklyData: WeekDay[];
   recentActivity: ActivityItem[];
+  hasData: boolean;
 }
 
 // Day circle component
@@ -157,6 +158,7 @@ export default function StatsScreen() {
     totalDays: 30,
     weeklyData: [],
     recentActivity: [],
+    hasData: false,
   });
 
   const loadStats = useCallback(async () => {
@@ -214,6 +216,7 @@ export default function StatsScreen() {
         totalDays: totalDays || 30,
         weeklyData,
         recentActivity,
+        hasData: totalDays > 0,
       });
     } catch (error) {
       if (__DEV__) console.log('[Stats] Error loading stats:', error);
@@ -250,87 +253,101 @@ export default function StatsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        <FadeInView delay={50} direction="up">
-          <View style={styles.heroCard}>
-            <View style={styles.heroIconCircle}>
-              <Text style={{ fontSize: 32 }}>⚡</Text>
-            </View>
-            <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
-            <ThemedText style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{stats.currentStreak} days</ThemedText>
-            <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
-          </View>
-        </FadeInView>
-
-        <FadeInView delay={100} direction="up">
-          <View style={styles.twoColumnRow}>
-            <View style={styles.statCard}>
-              <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>💵</Text>
-              </View>
-              <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
-              <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
-              <ThemedText style={styles.statSubtext}>this month</ThemedText>
-            </View>
-            <View style={styles.statCard}>
-              <View style={[styles.statIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>📉</Text>
-              </View>
-              <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
-              <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
-              <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
-            </View>
-          </View>
-        </FadeInView>
-
-        <FadeInView delay={150} direction="up">
-          <View style={styles.wakeUpCard}>
-            <View style={styles.wakeUpHeader}>
-              <View style={styles.wakeUpTitleRow}>
-                <View style={[styles.wakeUpIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                  <Text style={{ fontSize: 14 }}>⏰</Text>
+        {stats.hasData ? (
+          <>
+            <FadeInView delay={50} direction="up">
+              <View style={styles.heroCard}>
+                <View style={styles.heroIconCircle}>
+                  <Text style={{ fontSize: 32 }}>⚡</Text>
                 </View>
-                <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
+                <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
+                <ThemedText style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{stats.currentStreak} days</ThemedText>
+                <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
               </View>
-              <ThemedText style={styles.wakeUpPercent}>{stats.wakeUpRate}%</ThemedText>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${stats.wakeUpRate}%` }]} />
-            </View>
-            <ThemedText style={styles.wakeUpSubtext}>
-              {stats.wakeUpDays} of {stats.totalDays} days this month
-            </ThemedText>
-          </View>
-        </FadeInView>
+            </FadeInView>
 
-        <FadeInView delay={200} direction="up">
-          <ThemedText style={styles.sectionTitle}>This Week</ThemedText>
-        </FadeInView>
-        {stats.weeklyData.length > 0 ? (
-          <View style={styles.weekGrid}>
-            {stats.weeklyData.map((item, index) => (
-              <DayCircle key={index} day={item.day} status={item.status} />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyWeek}>
-            <ThemedText style={styles.emptyText}>No data yet</ThemedText>
-            <ThemedText style={styles.emptySubtext}>Your week will fill in as alarms go off</ThemedText>
-          </View>
-        )}
+            <FadeInView delay={100} direction="up">
+              <View style={styles.twoColumnRow}>
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                    <Text style={{ fontSize: 18 }}>💵</Text>
+                  </View>
+                  <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
+                  <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
+                  <ThemedText style={styles.statSubtext}>this month</ThemedText>
+                </View>
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                    <Text style={{ fontSize: 18 }}>📉</Text>
+                  </View>
+                  <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
+                  <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
+                  <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
+                </View>
+              </View>
+            </FadeInView>
 
-        <ThemedText style={styles.activityTitle}>Recent Activity</ThemedText>
-        {stats.recentActivity.length > 0 ? (
-          <View style={styles.activityList}>
-            {stats.recentActivity.map((item, index) => (
-              <ActivityRow key={index} item={item} />
-            ))}
-          </View>
+            <FadeInView delay={150} direction="up">
+              <View style={styles.wakeUpCard}>
+                <View style={styles.wakeUpHeader}>
+                  <View style={styles.wakeUpTitleRow}>
+                    <View style={[styles.wakeUpIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                      <Text style={{ fontSize: 14 }}>⏰</Text>
+                    </View>
+                    <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
+                  </View>
+                  <ThemedText style={styles.wakeUpPercent}>{stats.wakeUpRate}%</ThemedText>
+                </View>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${stats.wakeUpRate}%` }]} />
+                </View>
+                <ThemedText style={styles.wakeUpSubtext}>
+                  {stats.wakeUpDays} of {stats.totalDays} days this month
+                </ThemedText>
+              </View>
+            </FadeInView>
+
+            <FadeInView delay={200} direction="up">
+              <ThemedText style={styles.sectionTitle}>This Week</ThemedText>
+            </FadeInView>
+            {stats.weeklyData.length > 0 ? (
+              <View style={styles.weekGrid}>
+                {stats.weeklyData.map((item, index) => (
+                  <DayCircle key={index} day={item.day} status={item.status} />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyWeek}>
+                <ThemedText style={styles.emptyText}>No data yet</ThemedText>
+                <ThemedText style={styles.emptySubtext}>Your week will fill in as alarms go off</ThemedText>
+              </View>
+            )}
+
+            <ThemedText style={styles.activityTitle}>Recent Activity</ThemedText>
+            {stats.recentActivity.length > 0 ? (
+              <View style={styles.activityList}>
+                {stats.recentActivity.map((item, index) => (
+                  <ActivityRow key={index} item={item} />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyActivity}>
+                <Text style={{ fontSize: 32 }}>📥</Text>
+                <ThemedText style={styles.emptyText}>No activity yet</ThemedText>
+                <ThemedText style={styles.emptySubtext}>Stats will appear as you use your alarms</ThemedText>
+              </View>
+            )}
+          </>
         ) : (
-          <View style={styles.emptyActivity}>
-            <Text style={{ fontSize: 32 }}>📥</Text>
-            <ThemedText style={styles.emptyText}>No activity yet</ThemedText>
-            <ThemedText style={styles.emptySubtext}>Stats will appear as you use your alarms</ThemedText>
-          </View>
+          <FadeInView delay={50} direction="up">
+            <View style={styles.noDataCard}>
+              <Text style={{ fontSize: 48 }}>📊</Text>
+              <ThemedText style={styles.noDataTitle}>No stats yet</ThemedText>
+              <ThemedText style={styles.noDataSubtext}>
+                Your stats will appear here once you start using alarms
+              </ThemedText>
+            </View>
+          </FadeInView>
         )}
       </ScrollView>
 
@@ -633,5 +650,30 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     marginTop: 4,
+  },
+
+  // No Data Empty State
+  noDataCard: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 48,
+    gap: 16,
+  },
+  noDataTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  noDataSubtext: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
