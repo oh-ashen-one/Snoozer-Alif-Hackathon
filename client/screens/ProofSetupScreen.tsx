@@ -39,7 +39,6 @@ interface ActivityPreset {
 const PRESETS: ActivityPreset[] = [
   { label: 'Coffee', icon: '\u2615' },
   { label: 'Brush teeth', icon: '\uD83D\uDE01' },
-  { label: 'Shower', icon: '\uD83D\uDCA7' },
   { label: 'Drink water', icon: '\uD83D\uDCA7' },
   { label: 'Stretch', icon: '\uD83D\uDEB6' },
   { label: 'Walk around', icon: '\uD83E\uDDED' },

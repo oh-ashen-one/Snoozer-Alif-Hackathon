@@ -223,6 +223,11 @@ export default function AlarmRingingScreen() {
   const [textExEnabled, setTextExEnabled] = useState(false);
   const [exPhoneNumber, setExPhoneNumber] = useState<string>('');
   const [textExSent, setTextExSent] = useState(false);
+  // Additional punishment flags
+  const [socialShameEnabled, setSocialShameEnabled] = useState(false);
+  const [antiCharityEnabled, setAntiCharityEnabled] = useState(false);
+  const [momEnabled, setMomEnabled] = useState(false);
+  const [grandmaEnabled, setGrandmaEnabled] = useState(false);
   const [motivationalQuote] = useState(() => 
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]
   );
@@ -380,6 +385,22 @@ export default function AlarmRingingScreen() {
           setCallBuddyEnabled(targetAlarm.callBuddyEnabled ?? false);
           setTextWifesDadEnabled(targetAlarm.textWifesDadEnabled ?? false);
           setTextExEnabled(targetAlarm.textExEnabled ?? false);
+
+          // Load social shame (check both flag and extraPunishments for compatibility)
+          const hasSocialShame = targetAlarm.socialShameEnabled !== undefined
+            ? targetAlarm.socialShameEnabled
+            : (targetAlarm.extraPunishments || []).includes('group_chat');
+          setSocialShameEnabled(hasSocialShame);
+
+          // Load anti-charity
+          const hasAntiCharity = targetAlarm.antiCharityEnabled !== undefined
+            ? targetAlarm.antiCharityEnabled
+            : (targetAlarm.extraPunishments || []).includes('donate_enemy');
+          setAntiCharityEnabled(hasAntiCharity);
+
+          // Load mom and grandma call settings
+          setMomEnabled(targetAlarm.momEnabled ?? false);
+          setGrandmaEnabled(targetAlarm.grandmaEnabled ?? false);
 
           // Load ex phone number from punishment config
           if (targetAlarm.textExEnabled) {
