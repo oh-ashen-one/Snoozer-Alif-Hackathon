@@ -7,6 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
+import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -146,7 +147,7 @@ export default function StatsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Feather name="arrow-left" size={24} color="#FAFAF9" />
+          <Feather name="arrow-left" size={24} color={Colors.text} />
         </Pressable>
         <ThemedText style={styles.headerTitle}>Your Stats</ThemedText>
         <View style={styles.headerSpacer} />
@@ -229,7 +230,7 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0C0A09',
+    backgroundColor: Colors.bg,
   },
 
   // Header
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#FAFAF9',
+    color: Colors.text,
   },
   headerSpacer: {
     width: 44,
@@ -265,10 +266,10 @@ const styles = StyleSheet.create({
 
   // Hero Card
   heroCard: {
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#292524',
+    borderColor: Colors.border,
     padding: 24,
     alignItems: 'center',
     marginTop: 16,
@@ -284,17 +285,17 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: 14,
-    color: '#78716C',
+    color: Colors.textMuted,
     marginBottom: 4,
   },
   heroValue: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#FB923C',
+    color: Colors.orange,
   },
   heroBest: {
     fontSize: 13,
-    color: '#57534E',
+    color: Colors.textMuted,
     marginTop: 8,
   },
 
@@ -306,8 +307,10 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
     padding: 16,
     alignItems: 'center',
   },
@@ -321,29 +324,31 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 13,
-    color: '#78716C',
+    color: Colors.textMuted,
     marginBottom: 4,
   },
   statValueGreen: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#22C55E',
+    color: Colors.green,
   },
   statValueRed: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#EF4444',
+    color: Colors.red,
   },
   statSubtext: {
     fontSize: 12,
-    color: '#57534E',
+    color: Colors.textMuted,
     marginTop: 4,
   },
 
   // Wake Up Rate Card
   wakeUpCard: {
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
     padding: 20,
     marginTop: 24,
   },
@@ -368,27 +373,27 @@ const styles = StyleSheet.create({
   wakeUpTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FAFAF9',
+    color: Colors.text,
   },
   wakeUpPercent: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#22C55E',
+    color: Colors.green,
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
     borderRadius: 100,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.green,
     borderRadius: 100,
   },
   wakeUpSubtext: {
     fontSize: 13,
-    color: '#78716C',
+    color: Colors.textMuted,
     marginTop: 12,
   },
 
@@ -396,7 +401,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FAFAF9',
+    color: Colors.text,
     marginTop: 24,
   },
   weekGrid: {
@@ -410,7 +415,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 12,
-    color: '#57534E',
+    color: Colors.textMuted,
     marginBottom: 8,
   },
   dayCircle: {
@@ -421,31 +426,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   circleSuccess: {
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.green,
   },
   circleFailed: {
-    backgroundColor: '#EF4444',
+    backgroundColor: Colors.red,
   },
   circleToday: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#FB923C',
+    borderColor: Colors.orange,
   },
   circleFuture: {
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
   },
   todayDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FB923C',
+    backgroundColor: Colors.orange,
   },
 
   // Recent Activity
   activityTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FAFAF9',
+    color: Colors.text,
     marginTop: 24,
     marginBottom: 12,
   },
@@ -453,7 +458,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   activityItem: {
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     borderRadius: 14,
     padding: 14,
     flexDirection: 'row',
@@ -475,10 +480,10 @@ const styles = StyleSheet.create({
   },
   activityText: {
     fontSize: 14,
-    color: '#FAFAF9',
+    color: Colors.text,
   },
   activityTime: {
     fontSize: 14,
-    color: '#78716C',
+    color: Colors.textMuted,
   },
 });

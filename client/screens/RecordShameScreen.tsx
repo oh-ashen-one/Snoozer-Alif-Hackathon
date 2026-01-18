@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   // Mock camera
   mockCamera: {
     flex: 1,
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -351,17 +351,17 @@ const styles = StyleSheet.create({
   },
   mockCameraText: {
     fontSize: 14,
-    color: '#57534E',
+    color: Colors.textMuted,
     fontWeight: '500',
   },
   mockCameraSubtext: {
     fontSize: 11,
-    color: '#57534E',
+    color: Colors.textMuted,
     marginTop: Spacing.xs,
   },
   mockVideoPreview: {
     flex: 1,
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     fontSize: 14,
-    color: '#57534E',
+    color: Colors.textMuted,
   },
 
   // Progress

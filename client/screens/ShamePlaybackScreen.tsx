@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   // Mock video for dev/web
   mockVideo: {
     flex: 1,
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
