@@ -200,11 +200,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sign out
   const signOut = useCallback(async () => {
+    // Clear user state immediately so navigation can proceed
+    setUser(null);
     try {
       await firebaseSignOut(auth);
     } catch (error) {
       console.error('Sign out error:', error);
-      throw error;
+      // Don't throw - we already cleared local state
     }
   }, []);
 
