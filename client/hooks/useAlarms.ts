@@ -118,12 +118,17 @@ export function useAlarms() {
   }, []);
 
   const toggleAlarm = useCallback(async (id: string) => {
-    const alarm = alarms.find(a => a.id === id);
-    if (!alarm) return;
-
-    const newEnabled = !alarm.enabled;
-
     try {
+      // Get fresh alarm from storage to avoid stale closure issues
+      const alarm = await getAlarmByIdFromStorage(id);
+      if (!alarm) {
+        if (__DEV__) console.log('[useAlarms] Toggle failed - alarm not found:', id);
+        return;
+      }
+
+      const newEnabled = !alarm.enabled;
+      if (__DEV__) console.log('[useAlarms] Toggling alarm:', id, 'from', alarm.enabled, 'to', newEnabled);
+
       if (alarm.notificationId) {
         await cancelAlarm(alarm.notificationId);
       }
@@ -137,13 +142,23 @@ export function useAlarms() {
         notificationId = await scheduleAlarm({ ...alarm, enabled: newEnabled });
       }
 
-      await updateAlarm(id, { enabled: newEnabled, notificationId });
+      // Update in storage first
+      const updates = { enabled: newEnabled, notificationId };
+      await updateAlarmInStorage(id, updates);
+      
+      // Then update local state
+      setAlarms(prev => {
+        const updated = prev.map(a => a.id === id ? { ...a, ...updates } : a);
+        if (__DEV__) console.log('[useAlarms] State updated, alarm count:', updated.length);
+        return updated;
+      });
+      
       if (__DEV__) console.log('[useAlarms] Alarm toggled:', id, 'enabled:', newEnabled);
     } catch (e) {
       if (__DEV__) console.error('[useAlarms] Error toggling alarm:', e);
       Alert.alert('Error', 'Failed to update alarm. Please try again.');
     }
-  }, [alarms, updateAlarm]);
+  }, []);
 
   const deleteAlarm = useCallback(async (id: string) => {
     try {

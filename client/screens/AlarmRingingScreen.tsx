@@ -215,6 +215,11 @@ export default function AlarmRingingScreen() {
   const [moneyEnabled, setMoneyEnabled] = useState(true);
   const [shameVideoEnabled, setShameVideoEnabled] = useState(true);
   const [buddyNotifyEnabled, setBuddyNotifyEnabled] = useState(true);
+  const [emailBossEnabled, setEmailBossEnabled] = useState(false);
+  const [tweetBadEnabled, setTweetBadEnabled] = useState(false);
+  const [callBuddyEnabled, setCallBuddyEnabled] = useState(false);
+  const [textWifesDadEnabled, setTextWifesDadEnabled] = useState(false);
+  const [textExEnabled, setTextExEnabled] = useState(false);
   const [motivationalQuote] = useState(() => 
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]
   );
