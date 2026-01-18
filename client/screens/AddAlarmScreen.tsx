@@ -180,7 +180,6 @@ export default function AddAlarmScreen() {
   const [escalatingVolume, setEscalatingVolume] = useState(true);
   const [wakeRecheck, setWakeRecheck] = useState(true);
 
-  const buddy = { name: 'Jake', phone: '+1 (555) 123-4567' };
 
   // Load alarm data when editing
   useEffect(() => {
@@ -543,18 +542,19 @@ export default function AddAlarmScreen() {
                   </Pressable>
                 ))}
               </View>
-              <View style={styles.recipientCard}>
-                <View style={styles.recipientAvatar}>
-                  <Text style={styles.recipientAvatarText}>{buddy.name[0]}</Text>
+              <Pressable
+                style={styles.recipientCard}
+                onPress={() => navigation.navigate('Settings')}
+              >
+                <View style={[styles.recipientAvatar, { backgroundColor: Colors.border }]}>
+                  <Text style={{ fontSize: 18 }}>⚙️</Text>
                 </View>
                 <View style={styles.recipientInfo}>
-                  <Text style={styles.recipientLabel}>Paid to</Text>
-                  <Text style={styles.recipientName}>{buddy.name}</Text>
+                  <Text style={styles.recipientLabel}>Recipient</Text>
+                  <Text style={styles.recipientName}>Set up in settings</Text>
                 </View>
-                <Pressable style={styles.changeBtn}>
-                  <Text style={styles.changeBtnText}>Change</Text>
-                </Pressable>
-              </View>
+                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
+              </Pressable>
             </PunishmentCard>
 
             <PunishmentCard
@@ -600,7 +600,7 @@ export default function AddAlarmScreen() {
                 <Text style={styles.messagePreviewLabel}>They'll receive:</Text>
                 <View style={styles.messagePreviewBubble}>
                   <Text style={styles.messagePreviewText}>
-                    {buddy.name}, your buddy snoozed at {hour}:{formatMinute(minute)} {isPM ? 'PM' : 'AM'}! They owe you.
+                    Hey! Your buddy snoozed at {hour}:{formatMinute(minute)} {isPM ? 'PM' : 'AM'}! They owe you.
                   </Text>
                 </View>
               </View>
@@ -618,6 +618,102 @@ export default function AddAlarmScreen() {
                 <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
               </Pressable>
             </PunishmentCard>
+
+            <PunishmentCard
+              emoji="📞"
+              title="Auto-call your buddy"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="👴"
+              title="Text your wife's dad"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="👩"
+              title="Auto-call your mom"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="🐦"
+              title="Tweet something bad"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="💔"
+              title="Text your ex 'I miss u'"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="📧"
+              title="Email your boss"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="👵"
+              title="Auto-call your grandma"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="🔥"
+              title="Update Tinder bio"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="📸"
+              title="Like your ex's old photo"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="💸"
+              title="Venmo your ex $1"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="🗳️"
+              title="Donate to a party you hate"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
+
+            <PunishmentCard
+              emoji="🥶"
+              title="Drop thermostat to 55°F"
+              enabled={false}
+              onToggle={() => {}}
+              comingSoon
+            />
 
             <View style={styles.stakesHint}>
               <Text style={{ fontSize: 16 }}>💡</Text>
