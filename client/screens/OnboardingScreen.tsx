@@ -92,15 +92,6 @@ const DIGITAL_PUNISHMENTS = [
     configKey: 'bossEmail',
   },
   {
-    id: 'group_chat',
-    emoji: '💬',
-    title: 'Text the group chat',
-    desc: '"The boys" on iMessage',
-    inputType: 'text' as const,
-    placeholder: 'Group chat name',
-    configKey: 'groupName',
-  },
-  {
     id: 'twitter',
     emoji: '🐦',
     title: 'Tweet something bad',
@@ -122,6 +113,7 @@ const DIGITAL_PUNISHMENTS = [
 
 // Coming soon punishments
 const COMING_SOON = [
+  { id: 'group_chat', emoji: '💬', title: 'Text the group chat', desc: '"The boys" on iMessage' },
   { id: 'tinder_bio', emoji: '🔥', title: 'Update Tinder bio', desc: '"Can\'t even wake up on time"' },
   { id: 'like_ex_photo', emoji: '🤳', title: "Like your ex's old photo", desc: "From 2019. They'll know." },
   { id: 'venmo_ex', emoji: '💸', title: 'Venmo your ex $1', desc: 'Memo: "thinking of u"' },
