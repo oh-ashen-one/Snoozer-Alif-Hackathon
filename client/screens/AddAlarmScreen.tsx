@@ -30,6 +30,7 @@ import { useAlarms } from '@/hooks/useAlarms';
 import { getAlarmById } from '@/utils/storage';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
+import Header from '@/components/Header';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AddAlarm'>;
@@ -371,14 +372,13 @@ export default function AddAlarmScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
 
-      <View style={styles.header}>
-        <Pressable style={styles.headerButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>{isEditing ? 'Edit Alarm' : 'New Alarm'}</Text>
-        <Pressable style={styles.headerButton} onPress={handleSave}>
-          <Text style={styles.saveText}>Save</Text>
-        </Pressable>
+      <View style={styles.headerContainer}>
+        <Header
+          type="edit"
+          title={isEditing ? 'Edit Alarm' : 'New Alarm'}
+          onCancelPress={() => navigation.goBack()}
+          onSavePress={handleSave}
+        />
       </View>
 
       <ScrollView
@@ -833,14 +833,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerContainer: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   headerButton: {
     paddingVertical: Spacing.sm,

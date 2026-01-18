@@ -24,8 +24,6 @@ import { Alarm, getUserName } from '@/utils/storage';
 import { killAllSounds, setCurrentScreen } from '@/utils/soundKiller';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
-const DEBUG_LONG_PRESS_DURATION = 3000;
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
