@@ -133,7 +133,7 @@ function ActiveBadge() {
 function NextAlarmCard({ alarm }: { alarm: Alarm }) {
   const { time, period } = formatTime(alarm.time);
   const timeUntil = getTimeUntilAlarm(alarm.time);
-  const proofLabel = getProofTypeLabel(alarm.proofActivityType);
+  const proofLabel = getProofTypeLabel(alarm.proofActivityType, alarm.activityName, alarm.stepGoal);
 
   // Build punishment text based on actual alarm settings
   // Check both extraPunishments array AND individual boolean flags for compatibility
@@ -262,14 +262,19 @@ function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
   );
 }
 
-// Get proof type display name
-function getProofTypeLabel(proofType: string | undefined): string {
+// Get proof type display with icon
+function getProofTypeLabel(proofType: string | undefined, activityName?: string, stepGoal?: number): string {
   switch (proofType) {
-    case 'photo_activity': return 'Photo';
-    case 'steps': return 'Steps';
-    case 'math': return 'Math';
-    case 'type_phrase': return 'Type';
-    default: return 'Photo';
+    case 'photo_activity':
+      return activityName ? `📷 ${activityName}` : '📷 Photo';
+    case 'steps':
+      return stepGoal ? `👟 ${stepGoal} steps` : '👟 Steps';
+    case 'math':
+      return '🧮 Math';
+    case 'type_phrase':
+      return '⌨️ Type';
+    default:
+      return '📷 Photo';
   }
 }
 
@@ -288,7 +293,7 @@ function getDaysDisplay(days: number[]): string {
 function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: Alarm; onToggle: () => void; onDelete: () => void; onTest: () => void; onEdit: () => void }) {
   const { time, period } = formatTime(alarm.time);
   const selectedDays = alarm.days ?? [1, 2, 3, 4, 5];
-  const proofLabel = getProofTypeLabel(alarm.proofActivityType);
+  const proofLabel = getProofTypeLabel(alarm.proofActivityType, alarm.activityName, alarm.stepGoal);
   const alarmAny = alarm as any;
   const extras = alarm.extraPunishments ?? [];
 
@@ -344,9 +349,6 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
                 <ThemedText style={styles.chipStakeText}>{stakeText}</ThemedText>
               </View>
             ) : null}
-            <View style={styles.chipProof}>
-              <ThemedText style={styles.chipProofText}>{proofLabel}</ThemedText>
-            </View>
           </>
         ) : (
           <>
@@ -358,6 +360,10 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
             </View>
           </>
         )}
+        {/* Always show proof type chip */}
+        <View style={styles.chipProof}>
+          <ThemedText style={styles.chipProofText}>{proofLabel}</ThemedText>
+        </View>
       </View>
 
       {/* Row 3: Actions */}
