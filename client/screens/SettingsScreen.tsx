@@ -502,6 +502,14 @@ export default function SettingsScreen() {
               />
               <View style={styles.rowDivider} />
               <SettingsRow
+                icon="message-circle"
+                iconColor="#22C55E"
+                iconBg={ICON_COLORS.green}
+                label="Test Apple Cash"
+                onPress={() => navigation.navigate('PaymentSettings')}
+              />
+              <View style={styles.rowDivider} />
+              <SettingsRow
                 icon="zap"
                 iconColor="#FB923C"
                 iconBg={ICON_COLORS.orange}

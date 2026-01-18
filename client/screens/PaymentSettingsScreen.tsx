@@ -271,10 +271,9 @@ export default function PaymentSettingsScreen() {
       return;
     }
 
-    try {
-      await sendAppleCash(buddy.phone, amount);
-    } catch (error) {
-      Alert.alert('Error', 'Could not open iMessage. Make sure Messages is available on this device.');
+    const result = await sendAppleCash(buddy.phone, amount);
+    if (!result.success && result.error) {
+      Alert.alert('Error', result.error);
     }
   }, [buddy, selectedAmount, customAmount, handleEditBuddy, sendAppleCash]);
 

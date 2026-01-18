@@ -40,6 +40,7 @@ export function PaymentPressureScreen({
   const [volumeLevel, setVolumeLevel] = useState(70);
   const [shameStage, setShameStage] = useState(0);
   const [sending, setSending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { sendAppleCash } = useIMessage();
 
@@ -148,16 +149,21 @@ export function PaymentPressureScreen({
   }));
 
   const handlePayPress = async () => {
-    if (!recipientPhone) return;
-    setSending(true);
-    try {
-      await sendAppleCash(recipientPhone, amount);
-      onPaymentSent();
-    } catch (error) {
-      if (__DEV__) console.log('Payment error:', error);
-    } finally {
-      setSending(false);
+    if (!recipientPhone) {
+      setErrorMessage('No buddy phone number configured');
+      return;
     }
+    setSending(true);
+    setErrorMessage(null);
+
+    const result = await sendAppleCash(recipientPhone, amount);
+
+    if (result.success) {
+      onPaymentSent();
+    } else if (result.error) {
+      setErrorMessage(result.error);
+    }
+    setSending(false);
   };
 
   if (!visible) return null;
@@ -285,6 +291,12 @@ export function PaymentPressureScreen({
               {sending ? 'Opening...' : 'Open iMessage to Pay'}
             </ThemedText>
           </Pressable>
+
+          {errorMessage && (
+            <View style={styles.errorBanner}>
+              <ThemedText style={styles.errorText}>{errorMessage}</ThemedText>
+            </View>
+          )}
 
           <View style={styles.instructions}>
             <View style={styles.instructionStep}>
@@ -575,5 +587,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#EF4444',
     fontWeight: '600',
+  },
+
+  errorBanner: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    width: '100%',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

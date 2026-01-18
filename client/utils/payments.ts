@@ -17,10 +17,11 @@ export interface PaymentInfo {
 export async function openAppleCashMessage(
   phoneNumber: string,
   amount: number,
-  note: string
+  _note: string
 ): Promise<boolean> {
   try {
-    const message = `Sending you $${amount} for Snoozer (${note})`;
+    // Apple Cash is triggered by sending just "$X" - iMessage auto-detects this
+    const message = `$${amount}`;
     const url = `sms:${phoneNumber}&body=${encodeURIComponent(message)}`;
     const canOpen = await Linking.canOpenURL(url);
     if (canOpen) {

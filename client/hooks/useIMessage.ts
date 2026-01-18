@@ -107,29 +107,45 @@ export function useIMessage() {
   // Opens iMessage with $ amount (Apple auto-detects Apple Cash)
   // ═══════════════════════════════════════════════════════════════
 
-  const sendAppleCash = useCallback(async (phoneNumber: string, amount: number): Promise<string> => {
+  const sendAppleCash = useCallback(async (
+    phoneNumber: string,
+    amount: number
+  ): Promise<{ success: boolean; error?: string }> => {
+    // Validate phone number
+    if (!phoneNumber) {
+      return { success: false, error: 'No phone number provided' };
+    }
+
     // Apple Cash is triggered by sending a message with just "$X"
     // iMessage auto-converts this to a payment request
     const message = `$${amount}`;
 
-    // Method 1: Use SMS API
-    const isAvailable = await SMS.isAvailableAsync();
+    try {
+      // Method 1: Use SMS API
+      const isAvailable = await SMS.isAvailableAsync();
 
-    if (isAvailable) {
-      await SMS.sendSMSAsync([phoneNumber], message);
-      return 'opened';
+      if (isAvailable) {
+        const { result } = await SMS.sendSMSAsync([phoneNumber], message);
+        if (result === 'cancelled') {
+          return { success: false, error: 'Message was cancelled' };
+        }
+        return { success: true };
+      }
+
+      // Method 2: Fallback to URL scheme
+      const smsUrl = `sms:${phoneNumber}&body=${encodeURIComponent(message)}`;
+      const canOpen = await Linking.canOpenURL(smsUrl);
+
+      if (canOpen) {
+        await Linking.openURL(smsUrl);
+        return { success: true };
+      }
+
+      return { success: false, error: 'Messages app not available' };
+    } catch (error) {
+      if (__DEV__) console.error('[useIMessage] sendAppleCash error:', error);
+      return { success: false, error: 'Failed to open Messages' };
     }
-
-    // Method 2: Fallback to URL scheme
-    const smsUrl = `sms:${phoneNumber}&body=${encodeURIComponent(message)}`;
-    const canOpen = await Linking.canOpenURL(smsUrl);
-
-    if (canOpen) {
-      await Linking.openURL(smsUrl);
-      return 'opened';
-    }
-
-    throw new Error('Cannot open Messages app');
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
