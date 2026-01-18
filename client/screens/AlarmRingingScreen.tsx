@@ -36,10 +36,12 @@ import { Feather } from '@expo/vector-icons';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
+import { VolumeIndicator } from '@/components/VolumeIndicator';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarms, getProofActivity, ProofActivity } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
+import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 
 // Import local alarm sounds
 const ALARM_SOUND_FILES: Record<string, any> = {
@@ -92,9 +94,9 @@ export default function AlarmRingingScreen() {
   const [loaded, setLoaded] = useState(false);
   const [buddyQuote] = useState(BUDDY_QUOTES[Math.floor(Math.random() * BUDDY_QUOTES.length)]);
   const [proofActivity, setProofActivity] = useState<ProofActivity | null>(null);
+  const [alarmSoundSource, setAlarmSoundSource] = useState<any>(null);
 
-  const soundRef = useRef<Audio.Sound | null>(null);
-  const isPlayingRef = useRef(false);
+  const { startAlarm: startEscalatingAlarm, stopAlarm: stopEscalatingAlarm, volumePercent, isPlaying } = useEscalatingVolume(alarmSoundSource);
 
   const breatheValue = useSharedValue(0);
   const pulseValue = useSharedValue(1);
@@ -156,62 +158,39 @@ export default function AlarmRingingScreen() {
   const stopAlarm = async () => {
     try {
       Vibration.cancel();
-      
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-      isPlayingRef.current = false;
+      await stopEscalatingAlarm();
     } catch (error) {
-      console.log('[AlarmRinging] Error stopping alarm:', error);
+      if (__DEV__) console.log('[AlarmRinging] Error stopping alarm:', error);
     }
   };
 
+  // Load alarm sound source on mount
   useEffect(() => {
-    const startAlarm = async () => {
-      if (isPlayingRef.current) return;
-      isPlayingRef.current = true;
-
+    const loadAlarmSound = async () => {
+      let soundId = ALARM_SOUND_IDS[Math.floor(Math.random() * ALARM_SOUND_IDS.length)];
       try {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: false,
-        });
-
-        // Get selected alarm sound from storage (or random default)
-        let soundId = ALARM_SOUND_IDS[Math.floor(Math.random() * ALARM_SOUND_IDS.length)];
-        try {
-          const savedSound = await AsyncStorage.getItem(ALARM_SOUND_KEY);
-          if (savedSound && ALARM_SOUND_FILES[savedSound]) {
-            soundId = savedSound;
-          }
-        } catch {
-          // Use random default if error
+        const savedSound = await AsyncStorage.getItem(ALARM_SOUND_KEY);
+        if (savedSound && ALARM_SOUND_FILES[savedSound]) {
+          soundId = savedSound;
         }
-        const soundSource = ALARM_SOUND_FILES[soundId];
-
-        const { sound } = await Audio.Sound.createAsync(
-          soundSource,
-          {
-            isLooping: true,
-            volume: 1.0,
-            shouldPlay: true,
-          }
-        );
-        soundRef.current = sound;
-      } catch (error) {
-        console.log('[AlarmRinging] Error playing sound:', error);
+      } catch {
+        // Use random default if error
       }
-
-      if (Platform.OS !== 'web') {
-        Vibration.vibrate(VIBRATION_PATTERN, true);
-      }
+      setAlarmSoundSource(ALARM_SOUND_FILES[soundId]);
     };
+    loadAlarmSound();
+  }, []);
 
-    startAlarm();
+  // Start alarm when sound source is loaded
+  useEffect(() => {
+    if (!alarmSoundSource) return;
+
+    startEscalatingAlarm();
     alarmRingingPattern();
+
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate(VIBRATION_PATTERN, true);
+    }
 
     const interval = setInterval(() => {
       setCurrentTime(new Date());
@@ -226,7 +205,7 @@ export default function AlarmRingingScreen() {
       backHandler.remove();
       stopAlarm();
     };
-  }, []);
+  }, [alarmSoundSource]);
 
   const formatTime = (date: Date) => {
     const hours = date.getHours();
@@ -339,6 +318,10 @@ export default function AlarmRingingScreen() {
             <ThemedText style={styles.streakText}>{streak} days strong</ThemedText>
           </View>
         )}
+
+        <View style={styles.volumeRow}>
+          <VolumeIndicator volumePercent={volumePercent} />
+        </View>
 
         <View style={styles.timeContainer}>
           <Animated.Text style={[styles.timeText, timeAnimatedStyle]}>
@@ -510,6 +493,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: '#FB923C',
+  },
+  volumeRow: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   timeContainer: {
     flexDirection: 'row',
