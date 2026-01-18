@@ -290,6 +290,12 @@ export default function AddAlarmScreen() {
           days: selectedDays,
           proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
           activityName: activityName,
+          // Explicit punishment toggles
+          moneyEnabled: moneyEnabled,
+          shameVideoEnabled: shameVideo,
+          buddyNotifyEnabled: buddyNotify,
+          socialShameEnabled: socialShame,
+          antiCharityEnabled: antiCharity,
           // Preserve existing data
           referencePhotoUri: existingAlarmData?.referencePhotoUri ?? null,
           shameVideoUri: existingAlarmData?.shameVideoUri ?? null,
@@ -309,6 +315,12 @@ export default function AddAlarmScreen() {
           days: selectedDays,
           proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
           activityName: activityName,
+          // Explicit punishment toggles
+          moneyEnabled: moneyEnabled,
+          shameVideoEnabled: shameVideo,
+          buddyNotifyEnabled: buddyNotify,
+          socialShameEnabled: socialShame,
+          antiCharityEnabled: antiCharity,
         });
       }
 

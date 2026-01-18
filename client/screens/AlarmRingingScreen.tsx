@@ -123,12 +123,27 @@ const MOTIVATIONAL_QUOTES = [
   "I'm not lazy. I'm building momentum.",
 ];
 
+// Motivational phrases for type_phrase proof
+const WAKE_PHRASES = [
+  "I am awake and ready to conquer today",
+  "Today I choose discipline over comfort",
+  "Winners get up when the alarm rings",
+  "My goals are worth getting up for",
+  "I refuse to waste another morning",
+  "This is the first step to my best day",
+  "No more excuses I am building my future",
+  "I am stronger than my desire to sleep",
+  "Every early morning is an investment",
+  "I am becoming the person I want to be",
+];
+
 // Helper functions for proof activity UI
 const getProofEmoji = (proofType: string): string => {
   switch (proofType) {
     case 'steps': return '\u{1F9ED}'; // compass/navigation emoji
     case 'photo_activity': return '\u{1F4F7}'; // camera emoji
     case 'math': return '\u{0023}\u{FE0F}\u{20E3}'; // hash emoji
+    case 'type_phrase': return '\u{2328}\u{FE0F}'; // keyboard emoji
     default: return '\u{1F4F7}'; // camera emoji
   }
 };
@@ -145,6 +160,8 @@ const getProofDescription = (proofType: string, activity: ProofActivity | null):
       return 'Take your wake-up photo';
     case 'math':
       return 'Solve 3 math problems';
+    case 'type_phrase':
+      return 'Type a motivational phrase';
     default:
       if (activity?.activity && activity.activity !== 'Wake up activity') {
         return `Photo: ${activity.activity}`;
@@ -158,6 +175,7 @@ const getProofButtonText = (proofType: string): string => {
     case 'steps': return "I'M UP — START WALKING";
     case 'photo_activity': return "I'M UP — TAKE PHOTO";
     case 'math': return "I'M UP — DO MATH";
+    case 'type_phrase': return "I'M UP — TYPE PHRASE";
     default: return "I'M UP — TAKE PHOTO";
   }
 };
@@ -200,6 +218,12 @@ export default function AlarmRingingScreen() {
   );
   const [snoozeInsult] = useState(() =>
     SNOOZE_INSULTS[Math.floor(Math.random() * SNOOZE_INSULTS.length)]
+  );
+  // Type phrase proof state
+  const [showTypePhraseProof, setShowTypePhraseProof] = useState(false);
+  const [typePhraseText, setTypePhraseText] = useState('');
+  const [wakePhrase] = useState(() =>
+    WAKE_PHRASES[Math.floor(Math.random() * WAKE_PHRASES.length)]
   );
 
   // Use actual buddy info or defaults
@@ -474,7 +498,6 @@ export default function AlarmRingingScreen() {
 
   const handleDismiss = async () => {
     buttonPress('primary');
-    await stopAlarm();
 
     const stepGoal = proofActivity?.stepGoal || 50;
 
@@ -482,6 +505,7 @@ export default function AlarmRingingScreen() {
     switch (proofActivityType) {
       case 'steps':
         // Steps only - walk to dismiss
+        await stopAlarm();
         navigation.navigate('StepMission', {
           alarmId: alarmData.alarmId,
           referencePhotoUri: alarmData.referencePhotoUri,
@@ -491,6 +515,7 @@ export default function AlarmRingingScreen() {
         break;
       case 'photo_activity':
         // Photo proof - go DIRECTLY to camera (no forced steps)
+        await stopAlarm();
         navigation.navigate('ProofCamera', {
           alarmId: alarmData.alarmId,
           referencePhotoUri: alarmData.referencePhotoUri,
@@ -499,12 +524,18 @@ export default function AlarmRingingScreen() {
         break;
       case 'math':
         // Math problems - go to math proof screen
+        await stopAlarm();
         navigation.navigate('MathProof', {
           alarmId: alarmData.alarmId,
         });
         break;
+      case 'type_phrase':
+        // Type phrase proof - show inline text input (don't stop alarm yet)
+        setShowTypePhraseProof(true);
+        break;
       default:
         // Fallback to photo proof (no forced steps)
+        await stopAlarm();
         navigation.navigate('ProofCamera', {
           alarmId: alarmData.alarmId,
           referencePhotoUri: alarmData.referencePhotoUri,
@@ -513,41 +544,75 @@ export default function AlarmRingingScreen() {
     }
   };
 
+  // Handle type phrase proof completion
+  const handleTypePhraseComplete = async () => {
+    if (typePhraseText.trim().toLowerCase() === wakePhrase.toLowerCase()) {
+      buttonPress('primary');
+      await stopAlarm();
+
+      // Log successful wake-up
+      try {
+        await logWakeUp(alarmData.alarmId, new Date(), false, 0);
+        if (__DEV__) console.log('[AlarmRinging] Logged successful wake-up via type phrase');
+      } catch (error) {
+        if (__DEV__) console.log('[AlarmRinging] Error logging wake-up:', error);
+      }
+
+      // Navigate to success screen
+      const now = new Date();
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{
+            name: 'WakeUpSuccess',
+            params: {
+              streak: streak + 1,
+              moneySaved: penaltyAmount,
+              wakeUpRate: 100,
+              wakeTime: formatTime(now),
+              targetTime: alarmData.alarmLabel,
+            },
+          }],
+        })
+      );
+    }
+  };
+
   const handleSnoozePress = () => {
     snoozeWarningPattern();
     setSnoozeStep(1);
   };
 
-  const handleAreYouSure = () => {
+  // Execute snooze directly (skipping text entry step)
+  const executeSnooze = async () => {
+    if (__DEV__) console.log('ALARM: User chose snooze - showing payment prompt');
+    shameTriggerPattern();
+
+    try {
+      await logWakeUp(alarmData.alarmId, new Date(), true, 1);
+      if (__DEV__) console.log('[AlarmRinging] Logged snooze');
+
+      if (buddyInfo) {
+        await notifyBuddySnoozed(userName, penaltyAmount);
+        if (__DEV__) console.log('[AlarmRinging] Sent snooze notification to buddy');
+      }
+    } catch (error) {
+      if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
+    }
+
+    setShowPaymentPrompt(true);
+  };
+
+  const handleAreYouSure = async () => {
+    // Skip step 2 (text entry) and execute snooze directly
     snoozeWarningPattern();
-    setSnoozeStep(2);
+    await executeSnooze();
   };
 
   const handleNevermind = () => {
     buttonPress('secondary');
     setSnoozeStep(0);
     setSnoozeText('');
-  };
-
-  const handleSnoozeConfirm = async () => {
-    if (snoozeText.trim().toLowerCase() === snoozeInsult.toLowerCase()) {
-      if (__DEV__) console.log('ALARM: User chose snooze - showing payment prompt');
-      shameTriggerPattern();
-
-      try {
-        await logWakeUp(alarmData.alarmId, new Date(), true, 1);
-        if (__DEV__) console.log('[AlarmRinging] Logged snooze');
-        
-        if (buddyInfo) {
-          await notifyBuddySnoozed(userName, penaltyAmount);
-          if (__DEV__) console.log('[AlarmRinging] Sent snooze notification to buddy');
-        }
-      } catch (error) {
-        if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
-      }
-
-      setShowPaymentPrompt(true);
-    }
   };
 
   const handlePaymentSent = async () => {
@@ -744,44 +809,50 @@ export default function AlarmRingingScreen() {
           </View>
         )}
 
-        {snoozeStep === 2 && (
-          <View style={styles.inputCard}>
-            <ThemedText style={styles.inputLabel}>
-              Type <Text style={styles.redText}>"{snoozeInsult}"</Text> to confirm
+        {/* TYPE PHRASE PROOF UI */}
+        {showTypePhraseProof && (
+          <View style={styles.typePhraseCard}>
+            <View style={styles.typePhraseHeader}>
+              <Text style={{ fontSize: 28 }}>{'\u{2328}\u{FE0F}'}</Text>
+              <ThemedText style={styles.typePhraseTitle}>Type to Dismiss</ThemedText>
+            </View>
+
+            <ThemedText style={styles.typePhraseLabel}>
+              Type this phrase exactly:
             </ThemedText>
 
+            <View style={styles.phraseBox}>
+              <ThemedText style={styles.phraseText}>"{wakePhrase}"</ThemedText>
+            </View>
+
             <TextInput
-              style={styles.snoozeInput}
-              value={snoozeText}
-              onChangeText={setSnoozeText}
-              placeholder="Type here..."
+              style={styles.typePhraseInput}
+              value={typePhraseText}
+              onChangeText={setTypePhraseText}
+              placeholder="Type the phrase here..."
               placeholderTextColor="#57534E"
               autoCapitalize="none"
               autoCorrect={false}
               autoFocus
-              testID="input-snooze-confirmation"
+              testID="input-type-phrase"
             />
 
-            <View style={styles.confirmButtons}>
-              <Pressable style={styles.goBackButton} onPress={handleNevermind}>
-                <ThemedText style={styles.goBackButtonText}>Go back</ThemedText>
-              </Pressable>
-              <Pressable
+            <Pressable
+              style={[
+                styles.typePhraseButton,
+                typePhraseText.trim().toLowerCase() === wakePhrase.toLowerCase() && styles.typePhraseButtonActive,
+              ]}
+              onPress={handleTypePhraseComplete}
+              disabled={typePhraseText.trim().toLowerCase() !== wakePhrase.toLowerCase()}
+              testID="button-confirm-phrase"
+            >
+              <ThemedText
                 style={[
-                  styles.confirmSnoozeButton,
-                  snoozeText.trim().toLowerCase() === snoozeInsult.toLowerCase() && styles.confirmSnoozeButtonActive,
+                  styles.typePhraseButtonText,
+                  typePhraseText.trim().toLowerCase() === wakePhrase.toLowerCase() && styles.typePhraseButtonTextActive,
                 ]}
-                onPress={handleSnoozeConfirm}
-                disabled={snoozeText.trim().toLowerCase() !== snoozeInsult.toLowerCase()}
-                testID="button-confirm-snooze"
               >
-                <ThemedText
-                  style={[
-                    styles.confirmSnoozeButtonText,
-                    snoozeText.trim().toLowerCase() === snoozeInsult.toLowerCase() && styles.confirmSnoozeButtonTextActive,
-                  ]}
-                >
-                  Confirm
+                {typePhraseText.trim().toLowerCase() === wakePhrase.toLowerCase() ? "I'M AWAKE!" : 'Type the phrase to dismiss'}
                 </ThemedText>
               </Pressable>
             </View>
