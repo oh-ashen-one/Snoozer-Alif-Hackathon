@@ -219,6 +219,111 @@ export function useIMessage() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
+  // PUNISHMENT ACTIONS
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Send embarrassing email to boss
+   * Opens Mail app with pre-filled content
+   */
+  const sendBossEmail = useCallback(async (): Promise<boolean> => {
+    const subject = encodeURIComponent('Running late again');
+    const body = encodeURIComponent('Sorry, I overslept and will be running late today. It won\'t happen again.\n\nSent from Snoozer - because I snoozed my alarm 😬');
+    const mailUrl = `mailto:?subject=${subject}&body=${body}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(mailUrl);
+      if (canOpen) {
+        await Linking.openURL(mailUrl);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      if (__DEV__) console.error('[useIMessage] sendBossEmail error:', error);
+      return false;
+    }
+  }, []);
+
+  /**
+   * Post embarrassing tweet
+   * Opens Twitter/X app with pre-filled tweet
+   */
+  const postEmbarrassingTweet = useCallback(async (): Promise<boolean> => {
+    const tweet = encodeURIComponent("I couldn't wake up on time again 😴 #snoozer #lazy #cantadult");
+
+    // Try Twitter app first, then web fallback
+    const twitterAppUrl = `twitter://post?message=${tweet}`;
+    const twitterWebUrl = `https://twitter.com/intent/tweet?text=${tweet}`;
+
+    try {
+      const canOpenApp = await Linking.canOpenURL(twitterAppUrl);
+      if (canOpenApp) {
+        await Linking.openURL(twitterAppUrl);
+        return true;
+      }
+
+      // Fallback to web
+      await Linking.openURL(twitterWebUrl);
+      return true;
+    } catch (error) {
+      if (__DEV__) console.error('[useIMessage] postEmbarrassingTweet error:', error);
+      return false;
+    }
+  }, []);
+
+  /**
+   * Initiate phone call to buddy
+   * Opens Phone app with number
+   */
+  const callBuddy = useCallback(async (phoneNumber: string): Promise<boolean> => {
+    if (!phoneNumber) return false;
+
+    const telUrl = `tel:${phoneNumber}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(telUrl);
+      if (canOpen) {
+        await Linking.openURL(telUrl);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      if (__DEV__) console.error('[useIMessage] callBuddy error:', error);
+      return false;
+    }
+  }, []);
+
+  /**
+   * Send text to wife's dad
+   * Opens Messages with embarrassing text
+   */
+  const textWifesDad = useCallback(async (phoneNumber: string): Promise<boolean> => {
+    const message = "Hey Robert, quick question - is it normal for grown adults to hit snooze 5 times? Asking for a friend (me).";
+    return await openIMessage(phoneNumber, message);
+  }, [openIMessage]);
+
+  /**
+   * Send "I miss u" text to ex
+   * Opens Messages with the dreaded text
+   */
+  const textEx = useCallback(async (phoneNumber: string): Promise<boolean> => {
+    const message = "I miss u 💔";
+    return await openIMessage(phoneNumber, message);
+  }, [openIMessage]);
+
+  /**
+   * Send buddy notification when user snoozes
+   */
+  const sendBuddyNotification = useCallback(async (
+    phoneNumber: string,
+    userName: string,
+    time: string
+  ): Promise<boolean> => {
+    const message = `🚨 ${userName} just SNOOZED at ${time}! They're being lazy again. Time to roast them! 😤`;
+    return await openIMessage(phoneNumber, message);
+  }, [openIMessage]);
+
+  // ═══════════════════════════════════════════════════════════════
   // BUDDY STATUS MANAGEMENT
   // ═══════════════════════════════════════════════════════════════
 
@@ -283,5 +388,13 @@ export function useIMessage() {
     confirmBuddyJoined,
     saveBuddyInfo,
     clearBuddy,
+
+    // Punishment actions
+    sendBossEmail,
+    postEmbarrassingTweet,
+    callBuddy,
+    textWifesDad,
+    textEx,
+    sendBuddyNotification,
   };
 }

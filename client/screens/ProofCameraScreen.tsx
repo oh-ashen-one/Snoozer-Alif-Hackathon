@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getAlarmById, getProofActivity, ProofActivity } from '@/utils/storage';
+import { getAlarmById } from '@/utils/storage';
 import { cancelAlarm } from '@/utils/notifications';
 import { saveProofPhoto } from '@/utils/fileSystem';
 import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
@@ -65,7 +65,6 @@ export default function ProofCameraScreen() {
   const [capturing, setCapturing] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [activity, setActivity] = useState<ProofActivity | null>(null);
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
   const [userName, setUserName] = useState('You');
@@ -82,7 +81,6 @@ export default function ProofCameraScreen() {
   });
 
   React.useEffect(() => {
-    getProofActivity().then(setActivity);
     getUserName().then(name => {
       if (name) setUserName(name);
     });
@@ -286,7 +284,7 @@ export default function ProofCameraScreen() {
         <Pressable style={styles.backButton} onPress={handleBack}>
           <RNText style={{ fontSize: 20 }}>←</RNText>
         </Pressable>
-        <ThemedText style={styles.topBarTitle}>{activity ? `Proof: ${activity.activity}` : 'Take your proof photo'}</ThemedText>
+        <ThemedText style={styles.topBarTitle}>{activityName ? `Proof: ${activityName}` : 'Take your proof photo'}</ThemedText>
         <View style={styles.backButton} />
       </View>
 
@@ -300,15 +298,14 @@ export default function ProofCameraScreen() {
 
         {/* Guide overlay */}
         <View style={styles.guideOverlay}>
-          <View style={styles.guideBox}>
-            <View style={styles.guidePill}>
-              <ThemedText style={styles.guidePillText}>
-                {activity 
-                  ? `Take a photo of yourself doing this activity.. ${gesturePrompt}`
-                  : `Align with reference ${gesturePrompt}`}
-              </ThemedText>
-            </View>
+          <View style={styles.guidePill}>
+            <ThemedText style={styles.guidePillText}>
+              {activityName
+                ? `Take a photo of yourself doing this activity.. ${gesturePrompt}`
+                : `Align with reference ${gesturePrompt}`}
+            </ThemedText>
           </View>
+          <View style={styles.guideBox} />
         </View>
 
         {/* Corner guides */}
@@ -433,6 +430,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.lg,
   },
   guideBox: {
     width: '75%',
@@ -441,8 +439,6 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: 'rgba(34, 197, 94, 0.4)',
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   guidePill: {
     backgroundColor: 'rgba(34, 197, 94, 0.1)',

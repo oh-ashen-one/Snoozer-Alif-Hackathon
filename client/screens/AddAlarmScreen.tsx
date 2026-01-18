@@ -209,10 +209,15 @@ export default function AddAlarmScreen() {
 
       // Parse extra punishments
       const extras = alarm.extraPunishments ?? [];
-      setShameVideo(extras.includes('shame_video'));
-      setBuddyNotify(extras.includes('buddy_call'));
-      setSocialShame(extras.includes('group_chat'));
-      setAntiCharity(extras.includes('donate_enemy'));
+      setShameVideo(alarm.shameVideoEnabled ?? extras.includes('shame_video'));
+      setBuddyNotify(alarm.buddyNotifyEnabled ?? extras.includes('buddy_call'));
+      setSocialShame(alarm.socialShameEnabled ?? extras.includes('group_chat'));
+      setAntiCharity(alarm.antiCharityEnabled ?? extras.includes('donate_enemy'));
+      setEmailBoss(alarm.emailBossEnabled ?? false);
+      setTweetBad(alarm.tweetBadEnabled ?? false);
+      setCallBuddy(alarm.callBuddyEnabled ?? false);
+      setTextWifesDad(alarm.textWifesDadEnabled ?? false);
+      setTextEx(alarm.textExEnabled ?? false);
 
       // Parse proof activity type
       if (alarm.proofActivityType) {
@@ -309,6 +314,11 @@ export default function AddAlarmScreen() {
           buddyNotifyEnabled: buddyNotify,
           socialShameEnabled: socialShame,
           antiCharityEnabled: antiCharity,
+          emailBossEnabled: emailBoss,
+          tweetBadEnabled: tweetBad,
+          callBuddyEnabled: callBuddy,
+          textWifesDadEnabled: textWifesDad,
+          textExEnabled: textEx,
           // Preserve existing data
           referencePhotoUri: existingAlarmData?.referencePhotoUri ?? null,
           shameVideoUri: existingAlarmData?.shameVideoUri ?? null,
@@ -335,6 +345,11 @@ export default function AddAlarmScreen() {
           buddyNotifyEnabled: buddyNotify,
           socialShameEnabled: socialShame,
           antiCharityEnabled: antiCharity,
+          emailBossEnabled: emailBoss,
+          tweetBadEnabled: tweetBad,
+          callBuddyEnabled: callBuddy,
+          textWifesDadEnabled: textWifesDad,
+          textExEnabled: textEx,
         });
         if (__DEV__) console.log('[AddAlarm] Alarm created with proofType:', selectedProof);
       }
@@ -597,9 +612,11 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="💬"
               title="Buddy Notification"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
+              enabled={buddyNotify}
+              onToggle={() => {
+                buttonPress('secondary');
+                setBuddyNotify(!buddyNotify);
+              }}
             >
               <View style={styles.messagePreview}>
                 <Text style={styles.messagePreviewLabel}>They'll receive:</Text>
@@ -627,17 +644,21 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="📞"
               title="Auto-call your buddy"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
+              enabled={callBuddy}
+              onToggle={() => {
+                buttonPress('secondary');
+                setCallBuddy(!callBuddy);
+              }}
             />
 
             <PunishmentCard
               emoji="👴"
               title="Text your wife's dad"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
+              enabled={textWifesDad}
+              onToggle={() => {
+                buttonPress('secondary');
+                setTextWifesDad(!textWifesDad);
+              }}
             />
 
             <PunishmentCard
@@ -651,25 +672,31 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="🐦"
               title="Tweet something bad"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
+              enabled={tweetBad}
+              onToggle={() => {
+                buttonPress('secondary');
+                setTweetBad(!tweetBad);
+              }}
             />
 
             <PunishmentCard
               emoji="💔"
               title="Text your ex 'I miss u'"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
+              enabled={textEx}
+              onToggle={() => {
+                buttonPress('secondary');
+                setTextEx(!textEx);
+              }}
             />
 
             <PunishmentCard
               emoji="📧"
               title="Email your boss"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
+              enabled={emailBoss}
+              onToggle={() => {
+                buttonPress('secondary');
+                setEmailBoss(!emailBoss);
+              }}
             />
 
             <PunishmentCard
