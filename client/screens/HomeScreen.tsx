@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator, Alert, Platform } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -245,20 +246,20 @@ function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
 }
 
 // Alarm List Item Component
-function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void }) {
+function AlarmListItem({ alarm, onToggle, onDelete }: { alarm: Alarm; onToggle: () => void; onDelete: () => void }) {
   const { time, period } = formatTime(alarm.time);
   const selectedDays = alarm.days ?? [1, 2, 3, 4, 5]; // Use stored days or default to weekdays
 
   // Build punishment display
   const getPunishmentText = () => {
     const parts: string[] = [];
-    
+
     // Add money punishment
     const money = alarm.punishment ?? 2;
     if (money > 0) {
       parts.push(`$${money}`);
     }
-    
+
     // Add extra punishments
     const extras = alarm.extraPunishments ?? [];
     if (extras.includes('shame_video')) {
@@ -267,34 +268,48 @@ function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void
     if (extras.includes('buddy_call')) {
       parts.push('Buddy call');
     }
-    
+
     if (parts.length === 0) {
       return 'No stakes';
     }
-    
+
     return parts.join(' + ');
   };
 
+  const renderRightActions = () => (
+    <Pressable
+      style={styles.deleteAction}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onDelete();
+      }}
+    >
+      <Feather name="trash-2" size={24} color="#fff" />
+    </Pressable>
+  );
+
   return (
-    <View style={styles.alarmCard}>
-      <View style={styles.alarmContent}>
-        <View style={styles.alarmTopRow}>
-          <View style={styles.alarmLeft}>
-            <View style={styles.alarmTimeRow}>
-              <ThemedText style={styles.alarmTime}>{time}</ThemedText>
-              <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
+    <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+      <View style={styles.alarmCard}>
+        <View style={styles.alarmContent}>
+          <View style={styles.alarmTopRow}>
+            <View style={styles.alarmLeft}>
+              <View style={styles.alarmTimeRow}>
+                <ThemedText style={styles.alarmTime}>{time}</ThemedText>
+                <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
+              </View>
+              <View style={styles.alarmSubtitleRow}>
+                <ThemedText style={styles.alarmLabel}>{alarm.label || 'Wake up'}</ThemedText>
+                <ThemedText style={styles.alarmDot}> · </ThemedText>
+                <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
+              </View>
             </View>
-            <View style={styles.alarmSubtitleRow}>
-              <ThemedText style={styles.alarmLabel}>{alarm.label || 'Wake up'}</ThemedText>
-              <ThemedText style={styles.alarmDot}> · </ThemedText>
-              <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
-            </View>
+            <Toggle value={alarm.enabled} onValueChange={onToggle} />
           </View>
-          <Toggle value={alarm.enabled} onValueChange={onToggle} />
+          <DayPills selectedDays={selectedDays} />
         </View>
-        <DayPills selectedDays={selectedDays} />
       </View>
-    </View>
+    </Swipeable>
   );
 }
 
@@ -319,7 +334,7 @@ function EmptyState({ onAddAlarm }: { onAddAlarm: () => void }) {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
-  const { alarms, loading, toggleAlarm, loadAlarms } = useAlarms();
+  const { alarms, loading, toggleAlarm, deleteAlarm, loadAlarms } = useAlarms();
   const [debugMode, setDebugMode] = useState(false);
 
   useFocusEffect(
@@ -430,6 +445,7 @@ export default function HomeScreen() {
                 <AlarmListItem
                   alarm={alarm}
                   onToggle={handleToggleAlarm(alarm.id)}
+                  onDelete={() => deleteAlarm(alarm.id)}
                 />
               </AnimatedCard>
             ))}
@@ -674,6 +690,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
+    marginBottom: 12,
+  },
+  deleteAction: {
+    backgroundColor: Colors.red,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 16,
     marginBottom: 12,
   },
   alarmContent: {},

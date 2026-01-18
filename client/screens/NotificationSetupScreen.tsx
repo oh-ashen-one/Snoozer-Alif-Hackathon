@@ -6,6 +6,8 @@ import {
   ScrollView,
   Linking,
   Image,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -81,9 +83,20 @@ export default function NotificationSetupScreen() {
     navigation.goBack();
   }, [navigation]);
 
-  const handleOpenSettings = useCallback(() => {
+  const handleOpenSettings = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Linking.openSettings();
+    
+    if (Platform.OS === 'web') {
+      Alert.alert('Not Available', 'Open your device settings manually to configure Snoozer notifications.');
+      return;
+    }
+    
+    try {
+      await Linking.openSettings();
+    } catch (error) {
+      if (__DEV__) console.error('Failed to open settings:', error);
+      Alert.alert('Error', 'Could not open settings. Please open your Settings app manually.');
+    }
   }, []);
 
   return (
