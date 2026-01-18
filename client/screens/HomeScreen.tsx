@@ -169,6 +169,7 @@ function ActiveBadge() {
 function NextAlarmCard({ alarm }: { alarm: Alarm }) {
   const { time, period } = formatTime(alarm.time);
   const timeUntil = getTimeUntilAlarm(alarm.time);
+  const proofLabel = getProofTypeLabel(alarm.proofActivityType);
 
   return (
     <View style={styles.nextAlarmCard}>
@@ -186,6 +187,9 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
 
       {/* Subtitle row */}
       <View style={styles.subtitleRow}>
+        <View style={styles.proofBadge}>
+          <ThemedText style={styles.proofBadgeText}>{proofLabel}</ThemedText>
+        </View>
         <ThemedText style={styles.alarmLabelText}>{alarm.label || 'Wake up'}</ThemedText>
         <ThemedText style={styles.subtitleDot}> · </ThemedText>
         <ThemedText style={styles.countdownText}>{timeUntil}</ThemedText>
@@ -258,10 +262,22 @@ function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
   );
 }
 
+// Get proof type display name
+function getProofTypeLabel(proofType: string | undefined): string {
+  switch (proofType) {
+    case 'photo_activity': return 'Photo';
+    case 'steps': return 'Steps';
+    case 'math': return 'Math';
+    case 'type_phrase': return 'Type';
+    default: return 'Photo';
+  }
+}
+
 // Alarm List Item Component
 function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: Alarm; onToggle: () => void; onDelete: () => void; onTest: () => void; onEdit: () => void }) {
   const { time, period } = formatTime(alarm.time);
   const selectedDays = alarm.days ?? [1, 2, 3, 4, 5]; // Use stored days or default to weekdays
+  const proofLabel = getProofTypeLabel(alarm.proofActivityType);
 
   // Build punishment display
   const getPunishmentText = () => {
@@ -312,6 +328,9 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
                 <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
               </View>
               <View style={styles.alarmSubtitleRow}>
+                <View style={styles.proofBadge}>
+                  <ThemedText style={styles.proofBadgeText}>{proofLabel}</ThemedText>
+                </View>
                 <ThemedText style={styles.alarmLabel}>{alarm.label || 'Wake up'}</ThemedText>
                 <ThemedText style={styles.alarmDot}> · </ThemedText>
                 <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
@@ -827,6 +846,20 @@ const styles = StyleSheet.create({
   alarmPenalty: {
     fontSize: 12,
     color: '#EF4444',
+  },
+  proofBadge: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 8,
+  },
+  proofBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#22C55E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // Toggle
