@@ -86,12 +86,13 @@ function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () =>
   }));
 
   return (
-    <Pressable
+    <GHTouchableOpacity
       onPress={onValueChange}
+      activeOpacity={0.8}
       style={[styles.toggle, { backgroundColor: value ? Colors.green : Colors.border }]}
     >
       <Animated.View style={[styles.toggleKnob, knobStyle]} />
-    </Pressable>
+    </GHTouchableOpacity>
   );
 }
 
@@ -337,9 +338,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
               </View>
             </View>
             <View style={styles.alarmRight}>
-              <GHTouchableOpacity onPress={onToggle} activeOpacity={1}>
-                <Toggle value={alarm.enabled} onValueChange={onToggle} />
-              </GHTouchableOpacity>
+              <Toggle value={alarm.enabled} onValueChange={onToggle} />
               <Pressable style={styles.testButton} onPress={onTest}>
                 <ThemedText style={styles.testButtonText}>Test</ThemedText>
               </Pressable>

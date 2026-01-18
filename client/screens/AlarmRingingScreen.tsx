@@ -228,7 +228,7 @@ export default function AlarmRingingScreen() {
   );
 
   // Use actual buddy info or defaults
-  const buddyName = buddyInfo?.name || 'Your buddy';
+  const buddyName = buddyInfo?.name || 'your archenemy';
   const penaltyAmount = alarmPunishment;
 
   // iMessage for Apple Cash payments
