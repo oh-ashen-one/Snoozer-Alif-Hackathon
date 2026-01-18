@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -23,7 +23,7 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import { AnimatedCard } from '@/components/AnimatedCard';
-import { getBuddyInfo, BuddyInfo } from '@/utils/storage';
+// import { getBuddyInfo, BuddyInfo } from '@/utils/storage'; // Buddy not fully built yet
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -195,30 +195,11 @@ export default function BuddyScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [selectedMode, setSelectedMode] = useState<ModeId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasBuddy, setHasBuddy] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      const checkBuddyStatus = async () => {
-        try {
-          const buddy = await getBuddyInfo();
-          if (buddy && buddy.status === 'linked') {
-            // Has a linked buddy - go to dashboard
-            setHasBuddy(true);
-            navigation.replace('BuddyDashboard');
-          } else {
-            // No buddy or not linked - show mode selection
-            setHasBuddy(false);
-            setIsLoading(false);
-          }
-        } catch (error) {
-          console.error('[BuddyScreen] Error checking buddy:', error);
-          setIsLoading(false);
-        }
-      };
-      checkBuddyStatus();
-    }, [navigation])
-  );
+  // Buddy feature not fully built - always show mode selection
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
 
   const handleSelectMode = useCallback((modeId: ModeId) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
