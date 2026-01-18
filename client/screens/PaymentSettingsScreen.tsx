@@ -27,6 +27,7 @@ import Svg, { Path, Polyline, Circle, Line } from 'react-native-svg';
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
+import Header from '@/components/Header';
 import { useIMessage } from '@/hooks/useIMessage';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
@@ -284,12 +285,8 @@ export default function PaymentSettingsScreen() {
       <BackgroundGlow color="orange" />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
-        <Pressable style={styles.backButton} onPress={handleBack}>
-          <Text style={{ fontSize: 24 }}>←</Text>
-        </Pressable>
-        <ThemedText style={styles.headerTitle}>Payment Methods</ThemedText>
-        <View style={styles.headerSpacer} />
+      <View style={{ paddingTop: insets.top + Spacing.sm, paddingHorizontal: Spacing.lg }}>
+        <Header type="nav" title="Payment Methods" onBackPress={handleBack} />
       </View>
 
       <ScrollView

@@ -27,7 +27,7 @@ import {
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { useAlarms } from '@/hooks/useAlarms';
-import { getAlarmById } from '@/utils/storage';
+import { getAlarmById, getDefaultPunishments, getPunishmentConfig, PunishmentConfig } from '@/utils/storage';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import Header from '@/components/Header';
@@ -186,12 +186,53 @@ export default function AddAlarmScreen() {
   const [escalatingVolume, setEscalatingVolume] = useState(true);
   const [wakeRecheck, setWakeRecheck] = useState(true);
 
+  // Global punishment config (phone numbers, emails)
+  const [globalPunishmentConfig, setGlobalPunishmentConfig] = useState<PunishmentConfig>({});
+
+  // Load global punishment defaults when creating a new alarm (not editing)
+  useEffect(() => {
+    if (editAlarmId) return; // Skip if editing - we'll load from the alarm itself
+
+    const loadGlobalDefaults = async () => {
+      try {
+        const [defaultPunishments, config] = await Promise.all([
+          getDefaultPunishments(),
+          getPunishmentConfig(),
+        ]);
+
+        // Store the config for later use
+        setGlobalPunishmentConfig(config);
+
+        // Map punishment IDs to toggle states
+        setShameVideo(defaultPunishments.includes('shame_video'));
+        setBuddyNotify(defaultPunishments.includes('buddy_call'));
+        setSocialShame(defaultPunishments.includes('group_chat'));
+        setTextWifesDad(defaultPunishments.includes('wife_dad'));
+        setEmailBoss(defaultPunishments.includes('email_boss'));
+        setTweetBad(defaultPunishments.includes('twitter'));
+        setTextEx(defaultPunishments.includes('text_ex'));
+        setCallBuddy(defaultPunishments.includes('mom')); // mom = auto-call
+        setAntiCharity(defaultPunishments.includes('donate_enemy'));
+        // grandma_call maps to a separate state if needed
+
+        if (__DEV__) console.log('[AddAlarm] Loaded global punishment defaults:', defaultPunishments);
+      } catch (error) {
+        if (__DEV__) console.error('[AddAlarm] Error loading global defaults:', error);
+      }
+    };
+
+    loadGlobalDefaults();
+  }, [editAlarmId]);
 
   // Load alarm data when editing
   useEffect(() => {
     if (!editAlarmId) return;
 
     const loadAlarm = async () => {
+      // Also load global punishment config for phone numbers/emails
+      const config = await getPunishmentConfig();
+      setGlobalPunishmentConfig(config);
+
       const alarm = await getAlarmById(editAlarmId);
       if (!alarm) return;
 
