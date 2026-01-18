@@ -99,24 +99,10 @@ export default function AlarmSoundScreen() {
 
       const { sound } = await Audio.Sound.createAsync(
         soundData.file,
-        { shouldPlay: true, volume: 0.7 }
+        { shouldPlay: true, volume: 0.7, isLooping: true }
       );
       soundRef.current = sound;
       setPlayingSound(soundId);
-
-      // Auto-stop after 3 seconds
-      setTimeout(async () => {
-        if (soundRef.current) {
-          await stopSound();
-        }
-      }, 3000);
-
-      // Listen for playback status
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          stopSound();
-        }
-      });
     } catch (error) {
       console.log('Error playing sound:', error);
     }
