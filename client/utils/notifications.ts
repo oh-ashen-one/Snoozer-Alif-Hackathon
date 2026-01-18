@@ -2,7 +2,6 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Alarm } from './storage';
 import { isAlarmKitAvailable, scheduleAlarmKitAlarm, cancelAlarmKitAlarm } from './alarmKit';
-import { startAlarmCountdown, stopAlarmCountdown } from './liveActivity';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -49,13 +48,6 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
       });
 
       if (success) {
-        // Start Live Activity for Dynamic Island countdown
-        await startAlarmCountdown({
-          alarmId: alarm.id,
-          alarmTime,
-          label: alarm.label || 'Wake Up!',
-        });
-
         if (__DEV__) console.log('[Notifications] Alarm scheduled via AlarmKit:', alarm.id);
         return alarm.id;
       }
@@ -91,15 +83,6 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
         date: alarmTime,
       },
     });
-
-    // Start Live Activity for non-AlarmKit alarms too (if on iOS)
-    if (Platform.OS === 'ios') {
-      await startAlarmCountdown({
-        alarmId: alarm.id,
-        alarmTime,
-        label: alarm.label || 'Wake Up!',
-      });
-    }
 
     if (__DEV__) console.log('[Notifications] Alarm scheduled:', alarm.id, 'at', alarmTime.toLocaleTimeString());
     return identifier;

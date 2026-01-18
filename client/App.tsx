@@ -20,6 +20,7 @@ import { isAlarmKitAvailable, addAlarmKitListener } from "@/utils/alarmKit";
 import { getAlarmById } from "@/utils/storage";
 import { ensureDirectories } from "@/utils/fileSystem";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AlarmProvider } from "@/contexts/AlarmContext";
 import { linkingConfig } from "@/utils/linking";
 
 SplashScreen.preventAutoHideAsync();
@@ -186,16 +187,18 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <SafeAreaProvider>
-            <GestureHandlerRootView style={styles.root}>
-              <KeyboardProvider>
-                <NavigationContainer ref={navigationRef} onReady={onNavigationReady} theme={navTheme} linking={linkingConfig}>
-                  <RootStackNavigator />
-                </NavigationContainer>
-                <StatusBar style="light" />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </SafeAreaProvider>
+          <AlarmProvider>
+            <SafeAreaProvider>
+              <GestureHandlerRootView style={styles.root}>
+                <KeyboardProvider>
+                  <NavigationContainer ref={navigationRef} onReady={onNavigationReady} theme={navTheme} linking={linkingConfig}>
+                    <RootStackNavigator />
+                  </NavigationContainer>
+                  <StatusBar style="light" />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </SafeAreaProvider>
+          </AlarmProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
