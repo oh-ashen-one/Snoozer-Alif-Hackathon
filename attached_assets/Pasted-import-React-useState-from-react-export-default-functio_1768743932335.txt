@@ -1,0 +1,471 @@
+import React, { useState } from 'react';
+
+export default function PunishmentSetup() {
+  const [config, setConfig] = useState({
+    dad: { on: false, phone: '' },
+    mom: { on: false, phone: '' },
+    friend: { on: false, phone: '' },
+    boss: { on: false, email: '' },
+    video: { on: false },
+    buddy: { on: false, phone: '' },
+    group: { on: false, name: '' },
+    tweet: { on: false, handle: '' },
+    grandma: { on: false, phone: '' },
+  });
+
+  const update = (key, field, val) => {
+    setConfig(p => ({ ...p, [key]: { ...p[key], [field]: val } }));
+  };
+
+  const toggle = (key) => update(key, 'on', !config[key].on);
+
+  const count = Object.values(config).filter(c => c.on).length;
+
+  return (
+    <div className="container">
+      <style>{`
+        .container {
+          min-height: 100vh;
+          background: #0C0A09;
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          padding: 20px 16px 120px;
+        }
+        .header {
+          text-align: center;
+          padding: 20px 0 24px;
+        }
+        .header-icon {
+          font-size: 48px;
+          margin-bottom: 12px;
+        }
+        .header-title {
+          font-size: 26px;
+          font-weight: 800;
+          color: #FAFAF9;
+          margin: 0 0 8px;
+        }
+        .header-desc {
+          font-size: 15px;
+          color: #78716C;
+          margin: 0;
+          line-height: 1.4;
+        }
+        .header-desc span {
+          color: #EF4444;
+          font-weight: 600;
+        }
+        .section {
+          margin-top: 24px;
+        }
+        .section-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: #57534E;
+          letter-spacing: 1.5px;
+          margin-bottom: 12px;
+          padding-left: 4px;
+        }
+        .card {
+          background: rgba(28,25,23,0.8);
+          border-radius: 16px;
+          overflow: hidden;
+          margin-bottom: 10px;
+        }
+        .card-on {
+          border: 1px solid rgba(34,197,94,0.4);
+        }
+        .row {
+          display: flex;
+          align-items: center;
+          padding: 14px 16px;
+          gap: 14px;
+        }
+        .emoji {
+          font-size: 26px;
+          width: 36px;
+          text-align: center;
+        }
+        .info {
+          flex: 1;
+        }
+        .title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #FAFAF9;
+          margin-bottom: 2px;
+        }
+        .desc {
+          font-size: 13px;
+          color: #57534E;
+        }
+        .toggle {
+          width: 50px;
+          height: 30px;
+          border-radius: 15px;
+          padding: 2px;
+          cursor: pointer;
+          transition: background 0.2s;
+          flex-shrink: 0;
+        }
+        .toggle-off { background: #292524; }
+        .toggle-on { background: #22C55E; }
+        .knob {
+          width: 26px;
+          height: 26px;
+          border-radius: 13px;
+          background: #fff;
+          transition: transform 0.2s;
+        }
+        .knob-off { transform: translateX(0); }
+        .knob-on { transform: translateX(20px); }
+        .input-row {
+          padding: 0 16px 14px;
+        }
+        .input {
+          width: 100%;
+          padding: 12px 14px;
+          background: rgba(12,10,9,0.6);
+          border: 1px solid #3a3533;
+          border-radius: 10px;
+          font-size: 15px;
+          color: #FAFAF9;
+          outline: none;
+        }
+        .input:focus {
+          border-color: #FB923C;
+        }
+        .input::placeholder {
+          color: #57534E;
+        }
+        .soon-card {
+          background: rgba(28,25,23,0.4);
+          border-radius: 16px;
+          padding: 14px 16px;
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          opacity: 0.5;
+        }
+        .soon-badge {
+          font-size: 11px;
+          font-weight: 600;
+          color: #57534E;
+          background: rgba(41,37,36,0.8);
+          padding: 4px 10px;
+          border-radius: 6px;
+          margin-left: auto;
+        }
+        .footer {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 16px;
+          background: linear-gradient(transparent, #0C0A09 20%);
+        }
+        .btn {
+          width: 100%;
+          padding: 18px;
+          background: #FB923C;
+          border: none;
+          border-radius: 14px;
+          font-size: 17px;
+          font-weight: 700;
+          color: #0C0A09;
+          cursor: pointer;
+        }
+        .footer-hint {
+          display: block;
+          text-align: center;
+          font-size: 13px;
+          color: #57534E;
+          margin-top: 10px;
+        }
+      `}</style>
+
+      {/* Header */}
+      <div className="header">
+        <div className="header-icon">⚙️</div>
+        <h1 className="header-title">Set Up Punishments</h1>
+        <p className="header-desc">
+          Turn on the punishments you want and add contact info. These will trigger if you <span>snooze</span>.
+        </p>
+      </div>
+
+      {/* Contact Punishments */}
+      <div className="section">
+        <div className="section-title">CONTACT PUNISHMENTS</div>
+
+        {/* Text wife's dad */}
+        <div className={`card ${config.dad.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">👴</span>
+            <div className="info">
+              <div className="title">Text your wife's dad</div>
+              <div className="desc">"hey bro what are you wearing"</div>
+            </div>
+            <div className={`toggle ${config.dad.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('dad')}>
+              <div className={`knob ${config.dad.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.dad.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="Phone number"
+                value={config.dad.phone}
+                onChange={e => update('dad', 'phone', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Auto-call mom */}
+        <div className={`card ${config.mom.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">😰</span>
+            <div className="info">
+              <div className="title">Auto-call your mom</div>
+              <div className="desc">At 6am. She'll be worried.</div>
+            </div>
+            <div className={`toggle ${config.mom.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('mom')}>
+              <div className={`knob ${config.mom.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.mom.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="Mom's phone number"
+                value={config.mom.phone}
+                onChange={e => update('mom', 'phone', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Text your ex */}
+        <div className={`card ${config.friend.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">💔</span>
+            <div className="info">
+              <div className="title">Text your ex you miss them</div>
+              <div className="desc">Texts your ex you miss them</div>
+            </div>
+            <div className={`toggle ${config.friend.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('friend')}>
+              <div className={`knob ${config.friend.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.friend.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="Ex's phone number"
+                value={config.friend.phone}
+                onChange={e => update('friend', 'phone', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Auto-call buddy */}
+        <div className={`card ${config.buddy.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">📞</span>
+            <div className="info">
+              <div className="title">Auto-call your buddy</div>
+              <div className="desc">They get woken up too</div>
+            </div>
+            <div className={`toggle ${config.buddy.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('buddy')}>
+              <div className={`knob ${config.buddy.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.buddy.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="Buddy's phone number"
+                value={config.buddy.phone}
+                onChange={e => update('buddy', 'phone', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Auto-call grandma */}
+        <div className={`card ${config.grandma.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">👵</span>
+            <div className="info">
+              <div className="title">Auto-call your grandma</div>
+              <div className="desc">She WILL answer at 6am</div>
+            </div>
+            <div className={`toggle ${config.grandma.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('grandma')}>
+              <div className={`knob ${config.grandma.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.grandma.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="Grandma's phone number"
+                value={config.grandma.phone}
+                onChange={e => update('grandma', 'phone', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Digital Punishments */}
+      <div className="section">
+        <div className="section-title">DIGITAL PUNISHMENTS</div>
+
+        {/* Email boss */}
+        <div className={`card ${config.boss.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">📧</span>
+            <div className="info">
+              <div className="title">Email your boss</div>
+              <div className="desc">"Running late again, sorry"</div>
+            </div>
+            <div className={`toggle ${config.boss.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('boss')}>
+              <div className={`knob ${config.boss.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.boss.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="Boss's email address"
+                value={config.boss.email}
+                onChange={e => update('boss', 'email', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Text group chat */}
+        <div className={`card ${config.group.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">💬</span>
+            <div className="info">
+              <div className="title">Text the group chat</div>
+              <div className="desc">"The boys" on iMessage</div>
+            </div>
+            <div className={`toggle ${config.group.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('group')}>
+              <div className={`knob ${config.group.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.group.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="Group chat name"
+                value={config.group.name}
+                onChange={e => update('group', 'name', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Tweet */}
+        <div className={`card ${config.tweet.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">🐦</span>
+            <div className="info">
+              <div className="title">Tweet something bad</div>
+              <div className="desc">"I overslept again lol"</div>
+            </div>
+            <div className={`toggle ${config.tweet.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('tweet')}>
+              <div className={`knob ${config.tweet.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+          {config.tweet.on && (
+            <div className="input-row">
+              <input 
+                className="input" 
+                placeholder="@yourusername"
+                value={config.tweet.handle}
+                onChange={e => update('tweet', 'handle', e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Shame video */}
+        <div className={`card ${config.video.on ? 'card-on' : ''}`}>
+          <div className="row">
+            <span className="emoji">📹</span>
+            <div className="info">
+              <div className="title">Shame video plays</div>
+              <div className="desc">At max volume, can't stop it</div>
+            </div>
+            <div className={`toggle ${config.video.on ? 'toggle-on' : 'toggle-off'}`} onClick={() => toggle('video')}>
+              <div className={`knob ${config.video.on ? 'knob-on' : 'knob-off'}`} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Coming Soon */}
+      <div className="section">
+        <div className="section-title">COMING SOON</div>
+
+        <div className="soon-card">
+          <span className="emoji">🔥</span>
+          <div className="info">
+            <div className="title">Update Tinder bio</div>
+            <div className="desc">"Can't even wake up on time"</div>
+          </div>
+          <span className="soon-badge">Soon</span>
+        </div>
+
+        <div className="soon-card">
+          <span className="emoji">🤳</span>
+          <div className="info">
+            <div className="title">Like your ex's old photo</div>
+            <div className="desc">From 2019. They'll know.</div>
+          </div>
+          <span className="soon-badge">Soon</span>
+        </div>
+
+        <div className="soon-card">
+          <span className="emoji">💸</span>
+          <div className="info">
+            <div className="title">Venmo your ex $1</div>
+            <div className="desc">Memo: "thinking of u"</div>
+          </div>
+          <span className="soon-badge">Soon</span>
+        </div>
+
+        <div className="soon-card">
+          <span className="emoji">🏛️</span>
+          <div className="info">
+            <div className="title">Donate to a party you hate</div>
+            <div className="desc">Opposite of your politics</div>
+          </div>
+          <span className="soon-badge">Soon</span>
+        </div>
+
+        <div className="soon-card">
+          <span className="emoji">🥶</span>
+          <div className="info">
+            <div className="title">Drop thermostat to 55°F</div>
+            <div className="desc">Smart home integration</div>
+          </div>
+          <span className="soon-badge">Soon</span>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="footer">
+        <button className="btn">
+          {count > 0 ? `Continue with ${count} Punishment${count > 1 ? 's' : ''}` : 'Continue'}
+        </button>
+        <span className="footer-hint">You can change these anytime in Settings</span>
+      </div>
+    </div>
+  );
+}

@@ -352,6 +352,15 @@ export interface PunishmentConfig {
   grandma?: {
     phoneNumber: string;
   };
+  buddy_call?: {
+    phoneNumber: string;
+  };
+  group_chat?: {
+    groupName: string;
+  };
+  twitter?: {
+    handle: string;
+  };
 }
 
 export async function getPunishmentConfig(): Promise<PunishmentConfig> {

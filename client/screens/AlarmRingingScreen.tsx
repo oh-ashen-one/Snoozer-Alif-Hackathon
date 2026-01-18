@@ -767,12 +767,27 @@ export default function AlarmRingingScreen() {
         if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
       }
 
-      // Stop alarm and navigate home
+      // Stop alarm and navigate to shame screen
       await stopAlarm();
+
+      const now = new Date();
+      const currentTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const streak = await getCurrentStreak();
+
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: 'Home' }],
+          routes: [{
+            name: 'ShameSent',
+            params: {
+              buddyName: buddyInfo?.name || 'Your buddy',
+              amount: penaltyAmount,
+              currentTime,
+              previousStreak: streak,
+              executedPunishments: ['anti_charity'],
+              moneyEnabled: true,
+            },
+          }],
         })
       );
     }
@@ -1890,6 +1905,7 @@ const styles = StyleSheet.create({
   payOnlyAmountRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    marginTop: 16,
     marginBottom: 4,
   },
   payOnlyDollarSign: {

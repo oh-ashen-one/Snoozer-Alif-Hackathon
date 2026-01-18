@@ -5,45 +5,126 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
+import {
+  saveDefaultPunishments,
+  savePunishmentConfig,
+  PunishmentConfig,
+} from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const GOALS = [
+// Contact punishments that need phone numbers
+const CONTACT_PUNISHMENTS = [
   {
-    id: 'discipline',
-    emoji: '🎯',
-    title: 'Build discipline',
-    subtitle: 'Be more consistent every day',
+    id: 'wife_dad',
+    emoji: '👴',
+    title: "Text your wife's dad",
+    desc: '"hey bro what are you wearing"',
+    inputType: 'phone' as const,
+    placeholder: 'Phone number',
+    configKey: 'phoneNumber',
   },
   {
-    id: 'productivity',
-    emoji: '⚡',
-    title: 'Be more productive',
-    subtitle: 'Get more done in the morning',
+    id: 'mom',
+    emoji: '😰',
+    title: 'Auto-call your mom',
+    desc: "At 6am. She'll be worried.",
+    inputType: 'phone' as const,
+    placeholder: "Mom's phone number",
+    configKey: 'phoneNumber',
   },
   {
-    id: 'health',
-    emoji: '❤️',
-    title: 'Improve health',
-    subtitle: 'Better sleep, better mornings',
+    id: 'text_ex',
+    emoji: '💔',
+    title: 'Text your ex you miss them',
+    desc: '"imysm" - she knows now.',
+    inputType: 'phone' as const,
+    placeholder: "Ex's phone number",
+    configKey: 'exPhoneNumber',
   },
   {
-    id: 'time',
-    emoji: '🕐',
-    title: 'Stop wasting time',
-    subtitle: 'No more snoozing away hours',
+    id: 'buddy_call',
+    emoji: '📞',
+    title: 'Auto-call your buddy',
+    desc: 'They get woken up too',
+    inputType: 'phone' as const,
+    placeholder: "Buddy's phone number",
+    configKey: 'phoneNumber',
   },
+  {
+    id: 'grandma_call',
+    emoji: '👵',
+    title: 'Auto-call your grandma',
+    desc: 'She WILL answer at 6am',
+    inputType: 'phone' as const,
+    placeholder: "Grandma's phone number",
+    configKey: 'phoneNumber',
+  },
+];
+
+// Digital punishments
+const DIGITAL_PUNISHMENTS = [
+  {
+    id: 'email_boss',
+    emoji: '📧',
+    title: 'Email your boss',
+    desc: '"Running late again, sorry"',
+    inputType: 'email' as const,
+    placeholder: "Boss's email address",
+    configKey: 'bossEmail',
+  },
+  {
+    id: 'group_chat',
+    emoji: '💬',
+    title: 'Text the group chat',
+    desc: '"The boys" on iMessage',
+    inputType: 'text' as const,
+    placeholder: 'Group chat name',
+    configKey: 'groupName',
+  },
+  {
+    id: 'twitter',
+    emoji: '🐦',
+    title: 'Tweet something bad',
+    desc: '"I overslept again lol"',
+    inputType: 'text' as const,
+    placeholder: '@yourusername',
+    configKey: 'handle',
+  },
+  {
+    id: 'shame_video',
+    emoji: '📹',
+    title: 'Shame video plays',
+    desc: "At max volume, can't stop it",
+    inputType: null,
+    placeholder: '',
+    configKey: '',
+  },
+];
+
+// Coming soon punishments
+const COMING_SOON = [
+  { id: 'tinder_bio', emoji: '🔥', title: 'Update Tinder bio', desc: '"Can\'t even wake up on time"' },
+  { id: 'like_ex_photo', emoji: '🤳', title: "Like your ex's old photo", desc: "From 2019. They'll know." },
+  { id: 'venmo_ex', emoji: '💸', title: 'Venmo your ex $1', desc: 'Memo: "thinking of u"' },
+  { id: 'donate_enemy', emoji: '🏛️', title: 'Donate to a party you hate', desc: 'Opposite of your politics' },
+  { id: 'thermostat', emoji: '🥶', title: 'Drop thermostat to 55°F', desc: 'Smart home integration' },
 ];
 
 const HABITS = [
@@ -98,40 +179,90 @@ const ProgressDots = ({ total, active }: ProgressDotsProps) => {
   );
 };
 
-interface GoalCardProps {
-  goal: typeof GOALS[0];
-  isSelected: boolean;
-  onSelect: (id: string) => void;
+interface ToggleProps {
+  value: boolean;
+  onToggle: () => void;
 }
 
-const GoalCard = ({ goal, isSelected, onSelect }: GoalCardProps) => {
-  const handlePress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onSelect(goal.id);
-  }, [goal.id, onSelect]);
+const Toggle = ({ value, onToggle }: ToggleProps) => {
+  const translateX = useSharedValue(value ? 20 : 0);
+
+  React.useEffect(() => {
+    translateX.value = withSpring(value ? 20 : 0, { damping: 15 });
+  }, [value, translateX]);
+
+  const knobStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
 
   return (
     <Pressable
-      onPress={handlePress}
-      style={[styles.card, isSelected && styles.cardSelected]}
+      style={[styles.toggle, value ? styles.toggleOn : styles.toggleOff]}
+      onPress={onToggle}
     >
-      <View style={[styles.iconBox, isSelected && styles.iconBoxSelected]}>
-        <Text style={{ fontSize: 24 }}>{goal.emoji}</Text>
-      </View>
-
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{goal.title}</Text>
-        <Text style={styles.cardSubtitle}>{goal.subtitle}</Text>
-      </View>
-
-      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-        {isSelected ? (
-          <Text style={{ fontSize: 16, color: Colors.text }}>✓</Text>
-        ) : null}
-      </View>
+      <Animated.View style={[styles.toggleKnob, knobStyle]} />
     </Pressable>
   );
 };
+
+interface PunishmentCardProps {
+  item: typeof CONTACT_PUNISHMENTS[0];
+  isEnabled: boolean;
+  configValue: string;
+  onToggle: () => void;
+  onConfigChange: (value: string) => void;
+}
+
+const PunishmentCard = ({ item, isEnabled, configValue, onToggle, onConfigChange }: PunishmentCardProps) => {
+  const handleToggle = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onToggle();
+  }, [onToggle]);
+
+  return (
+    <View style={[styles.punishmentCard, isEnabled && styles.punishmentCardOn]}>
+      <View style={styles.punishmentRow}>
+        <Text style={styles.punishmentEmoji}>{item.emoji}</Text>
+        <View style={styles.punishmentInfo}>
+          <Text style={styles.punishmentTitle}>{item.title}</Text>
+          <Text style={styles.punishmentDesc}>{item.desc}</Text>
+        </View>
+        <Toggle value={isEnabled} onToggle={handleToggle} />
+      </View>
+      {isEnabled && item.inputType && (
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            placeholder={item.placeholder}
+            placeholderTextColor={Colors.textMuted}
+            value={configValue}
+            onChangeText={onConfigChange}
+            keyboardType={item.inputType === 'phone' ? 'phone-pad' : item.inputType === 'email' ? 'email-address' : 'default'}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
+
+interface ComingSoonCardProps {
+  item: typeof COMING_SOON[0];
+}
+
+const ComingSoonCard = ({ item }: ComingSoonCardProps) => (
+  <View style={styles.soonCard}>
+    <Text style={styles.punishmentEmoji}>{item.emoji}</Text>
+    <View style={styles.punishmentInfo}>
+      <Text style={styles.soonTitle}>{item.title}</Text>
+      <Text style={styles.punishmentDesc}>{item.desc}</Text>
+    </View>
+    <View style={styles.soonBadge}>
+      <Text style={styles.soonBadgeText}>Soon</Text>
+    </View>
+  </View>
+);
 
 interface HabitCardProps {
   habit: typeof HABITS[0];
@@ -172,8 +303,8 @@ const HabitCard = ({ habit, isSelected, onSelect }: HabitCardProps) => {
           {isSelected ? <Text style={{ fontSize: 16, color: Colors.text }}>✓</Text> : null}
         </View>
       ) : (
-        <View style={styles.soonPill}>
-          <Text style={styles.soonText}>SOON</Text>
+        <View style={styles.habitSoonPill}>
+          <Text style={styles.habitSoonText}>SOON</Text>
         </View>
       )}
     </Pressable>
@@ -184,16 +315,35 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const [step, setStep] = useState(0);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
 
-  const handleGoalSelect = useCallback((goalId: string) => {
-    setSelectedGoals(prev => 
-      prev.includes(goalId) 
-        ? prev.filter(id => id !== goalId)
-        : [...prev, goalId]
+  // Punishment setup state
+  const [enabledPunishments, setEnabledPunishments] = useState<string[]>([]);
+  const [punishmentConfig, setPunishmentConfig] = useState<PunishmentConfig>({});
+
+  const handleTogglePunishment = useCallback((id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEnabledPunishments(prev =>
+      prev.includes(id)
+        ? prev.filter(p => p !== id)
+        : [...prev, id]
     );
   }, []);
+
+  const handleConfigChange = useCallback((id: string, configKey: string, value: string) => {
+    setPunishmentConfig(prev => ({
+      ...prev,
+      [id]: {
+        ...((prev as Record<string, Record<string, string>>)[id] || {}),
+        [configKey]: value,
+      },
+    }));
+  }, []);
+
+  const getConfigValue = useCallback((id: string, configKey: string): string => {
+    const config = punishmentConfig as Record<string, Record<string, string>>;
+    return config[id]?.[configKey] || '';
+  }, [punishmentConfig]);
 
   const handleHabitSelect = useCallback((habitId: string) => {
     setSelectedHabit(prev => (prev === habitId ? null : habitId));
@@ -204,26 +354,46 @@ export default function OnboardingScreen() {
     setStep(prev => prev - 1);
   }, []);
 
+  // Check if all enabled punishments have required config
+  const isConfigComplete = useCallback(() => {
+    return enabledPunishments.every(id => {
+      if (id === 'shame_video') return true;
+
+      const contactItem = CONTACT_PUNISHMENTS.find(p => p.id === id);
+      if (contactItem) {
+        return getConfigValue(id, contactItem.configKey).trim().length > 0;
+      }
+
+      const digitalItem = DIGITAL_PUNISHMENTS.find(p => p.id === id);
+      if (digitalItem && digitalItem.inputType) {
+        return getConfigValue(id, digitalItem.configKey).trim().length > 0;
+      }
+
+      return true;
+    });
+  }, [enabledPunishments, getConfigValue]);
+
   const handleContinue = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    if (step < 1) {
-      setStep(prev => prev + 1);
-    } else {
-      // Save user data
+    if (step === 0) {
+      // Save punishment config
       try {
-        await AsyncStorage.setItem('@snoozer/user_goals', JSON.stringify(selectedGoals));
+        await saveDefaultPunishments(enabledPunishments);
+        await savePunishmentConfig(punishmentConfig);
       } catch (error) {
-        console.log('Error saving user data:', error);
+        console.log('Error saving punishment config:', error);
       }
-
+      setStep(1);
+    } else {
       // Navigate to alarm setup
       navigation.navigate('AddAlarm', { isOnboarding: true });
     }
-  }, [step, selectedGoals, navigation]);
+  }, [step, enabledPunishments, punishmentConfig, navigation]);
 
+  const enabledCount = enabledPunishments.length;
   const isButtonEnabled =
-    (step === 0 && selectedGoals.length > 0) ||
+    (step === 0 && enabledCount > 0 && isConfigComplete()) ||
     (step === 1 && selectedHabit !== null);
 
   const renderStep = () => {
@@ -233,31 +403,58 @@ export default function OnboardingScreen() {
           <View style={styles.stepContainer}>
             <FadeInView delay={50} direction="up">
               <View style={styles.header}>
-                <View style={styles.pillBadge}>
-                  <Text style={{ fontSize: 14 }}>🎯</Text>
-                  <Text style={styles.pillText}>Your motivation</Text>
-                </View>
-                <Text style={styles.title}>What are your goals?</Text>
-                <Text style={styles.subtitle}>Select all that apply</Text>
+                <Text style={styles.headerIcon}>⚙️</Text>
+                <Text style={styles.title}>Set Up Punishments</Text>
+                <Text style={styles.subtitle}>
+                  Turn on the punishments you want and add contact info. These will trigger if you <Text style={styles.redText}>snooze</Text>.
+                </Text>
               </View>
             </FadeInView>
 
             <ScrollView
               style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
+              contentContainerStyle={styles.punishmentScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.optionsList}>
-                {GOALS.map((goal, index) => (
-                  <FadeInView key={goal.id} delay={100 + index * 50} direction="up">
-                    <GoalCard
-                      goal={goal}
-                      isSelected={selectedGoals.includes(goal.id)}
-                      onSelect={handleGoalSelect}
-                    />
-                  </FadeInView>
+              {/* Contact Punishments */}
+              <FadeInView delay={100} direction="up">
+                <Text style={styles.sectionTitle}>CONTACT PUNISHMENTS</Text>
+                {CONTACT_PUNISHMENTS.map((item) => (
+                  <PunishmentCard
+                    key={item.id}
+                    item={item}
+                    isEnabled={enabledPunishments.includes(item.id)}
+                    configValue={getConfigValue(item.id, item.configKey)}
+                    onToggle={() => handleTogglePunishment(item.id)}
+                    onConfigChange={(value) => handleConfigChange(item.id, item.configKey, value)}
+                  />
                 ))}
-              </View>
+              </FadeInView>
+
+              {/* Digital Punishments */}
+              <FadeInView delay={200} direction="up">
+                <Text style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>DIGITAL PUNISHMENTS</Text>
+                {DIGITAL_PUNISHMENTS.map((item) => (
+                  <PunishmentCard
+                    key={item.id}
+                    item={item}
+                    isEnabled={enabledPunishments.includes(item.id)}
+                    configValue={item.configKey ? getConfigValue(item.id, item.configKey) : ''}
+                    onToggle={() => handleTogglePunishment(item.id)}
+                    onConfigChange={(value) => item.configKey && handleConfigChange(item.id, item.configKey, value)}
+                  />
+                ))}
+              </FadeInView>
+
+              {/* Coming Soon */}
+              <FadeInView delay={300} direction="up">
+                <Text style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>COMING SOON</Text>
+                {COMING_SOON.map((item) => (
+                  <ComingSoonCard key={item.id} item={item} />
+                ))}
+              </FadeInView>
+
+              <View style={{ height: 100 }} />
             </ScrollView>
           </View>
         );
@@ -337,10 +534,19 @@ export default function OnboardingScreen() {
               !isButtonEnabled && styles.continueButtonTextDisabled,
             ]}
           >
-            {step === 1 ? 'Set Up Alarm' : 'Continue'}
+            {step === 0
+              ? enabledCount > 0
+                ? `Continue with ${enabledCount} Punishment${enabledCount > 1 ? 's' : ''}`
+                : 'Select Punishments'
+              : 'Set Up Alarm'}
           </Text>
-          <Text style={{ fontSize: 20, color: isButtonEnabled ? Colors.bg : Colors.textMuted }}>→</Text>
+          {isButtonEnabled && (
+            <Text style={{ fontSize: 20, color: Colors.bg }}>→</Text>
+          )}
         </Pressable>
+        {step === 0 && (
+          <Text style={styles.footerHint}>You can change these anytime in Settings</Text>
+        )}
       </View>
     </View>
   );
@@ -356,7 +562,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   backButton: {
     width: 40,
@@ -385,9 +591,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  headerIcon: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
   },
   pillBadge: {
     flexDirection: 'row',
@@ -405,16 +615,21 @@ const styles = StyleSheet.create({
     color: Colors.orange,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: Colors.text,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 15,
+    color: Colors.textMuted,
     textAlign: 'center',
+    lineHeight: 22,
+  },
+  redText: {
+    color: Colors.red,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
@@ -423,9 +638,126 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xl,
   },
+  punishmentScrollContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xl,
+  },
   optionsList: {
     gap: Spacing.md,
   },
+
+  // Section title
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    letterSpacing: 1.5,
+    marginBottom: Spacing.md,
+    paddingLeft: 4,
+  },
+
+  // Punishment cards
+  punishmentCard: {
+    backgroundColor: 'rgba(28,25,23,0.8)',
+    borderRadius: 16,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  punishmentCardOn: {
+    borderWidth: 1,
+    borderColor: 'rgba(34,197,94,0.4)',
+  },
+  punishmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  punishmentEmoji: {
+    fontSize: 26,
+    width: 36,
+    textAlign: 'center',
+  },
+  punishmentInfo: {
+    flex: 1,
+  },
+  punishmentTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  punishmentDesc: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  toggle: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleOff: {
+    backgroundColor: Colors.border,
+  },
+  toggleOn: {
+    backgroundColor: Colors.green,
+  },
+  toggleKnob: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#fff',
+  },
+  inputRow: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+  },
+  input: {
+    width: '100%',
+    padding: 12,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(12,10,9,0.6)',
+    borderWidth: 1,
+    borderColor: '#3a3533',
+    borderRadius: 10,
+    fontSize: 15,
+    color: Colors.text,
+  },
+
+  // Coming soon cards
+  soonCard: {
+    backgroundColor: 'rgba(28,25,23,0.4)',
+    borderRadius: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    opacity: 0.5,
+  },
+  soonTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  soonBadge: {
+    backgroundColor: 'rgba(41,37,36,0.8)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  soonBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+
+  // Habit cards (kept from original)
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -483,13 +815,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.orange,
     backgroundColor: Colors.orange,
   },
-  soonPill: {
+  habitSoonPill: {
     backgroundColor: Colors.bgCard,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: BorderRadius.pill,
   },
-  soonText: {
+  habitSoonText: {
     fontSize: 10,
     fontWeight: '700',
     color: Colors.textMuted,
@@ -502,7 +834,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   bottomSection: {
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
@@ -530,11 +862,17 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   continueButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: Colors.bg,
   },
   continueButtonTextDisabled: {
     color: Colors.textMuted,
+  },
+  footerHint: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginTop: 10,
   },
 });

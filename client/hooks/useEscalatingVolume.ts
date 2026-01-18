@@ -74,18 +74,51 @@ export function useEscalatingVolume(alarmSoundSource: any) {
       await loadSound();
     }
 
+    // Verify sound is actually loaded before playing
+    if (!soundRef.current) {
+      if (__DEV__) console.log('[EscalatingVolume] Sound still not loaded after loadSound, aborting');
+      return;
+    }
+
+    // Check if the sound is loaded
+    try {
+      const status = await soundRef.current.getStatusAsync();
+      if (!status.isLoaded) {
+        if (__DEV__) console.log('[EscalatingVolume] Sound not loaded, reloading...');
+        await loadSound();
+        if (!soundRef.current) {
+          if (__DEV__) console.log('[EscalatingVolume] Failed to reload sound, aborting');
+          return;
+        }
+      }
+    } catch (error) {
+      if (__DEV__) console.log('[EscalatingVolume] Error checking sound status:', error);
+      return;
+    }
+
     currentVolumeRef.current = START_VOLUME;
     setVolume(START_VOLUME);
     setIsPlaying(true);
 
     try {
       if (__DEV__) console.log('[EscalatingVolume] Setting initial volume to:', START_VOLUME);
-      await soundRef.current?.setVolumeAsync(START_VOLUME);
+      await soundRef.current.setVolumeAsync(START_VOLUME);
       if (__DEV__) console.log('[EscalatingVolume] Playing sound...');
-      await soundRef.current?.playAsync();
+      await soundRef.current.playAsync();
       if (__DEV__) console.log('[EscalatingVolume] Sound playing at volume:', START_VOLUME);
     } catch (error) {
       if (__DEV__) console.error('[EscalatingVolume] Failed to play alarm:', error);
+      // Try to reload and play again
+      try {
+        await loadSound();
+        if (soundRef.current) {
+          await soundRef.current.setVolumeAsync(START_VOLUME);
+          await soundRef.current.playAsync();
+          if (__DEV__) console.log('[EscalatingVolume] Retry successful');
+        }
+      } catch (retryError) {
+        if (__DEV__) console.error('[EscalatingVolume] Retry also failed:', retryError);
+      }
     }
 
     if (__DEV__) console.log('[EscalatingVolume] Starting escalation interval (every', STEP_INTERVAL, 'ms)');

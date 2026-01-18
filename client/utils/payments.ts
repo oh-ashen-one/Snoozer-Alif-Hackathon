@@ -20,8 +20,8 @@ export async function openAppleCashMessage(
   _note: string
 ): Promise<boolean> {
   try {
-    // Apple Cash is triggered by "send you $X" - this prompts Apple Pay in iMessage
-    const message = `send you $${amount}`;
+    // Apple Cash payment message
+    const message = `request $${amount} from me. i owe it to you because i failed myself today and this is my punishment. (tap the $${amount} to just send it)`;
     const url = `sms:${phoneNumber}&body=${encodeURIComponent(message)}`;
     const canOpen = await Linking.canOpenURL(url);
     if (canOpen) {
