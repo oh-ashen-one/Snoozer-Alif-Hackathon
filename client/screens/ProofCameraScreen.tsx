@@ -2,11 +2,12 @@ import React, { useState, useRef } from 'react';
 import { View, StyleSheet, Pressable, Image, Text as RNText, Platform, ActivityIndicator, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, CommonActions, useFocusEffect } from '@react-navigation/native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system/legacy';
 import { successDismissPattern, buttonPress } from '@/utils/haptics';
+import { setCurrentScreen, killAllSounds } from '@/utils/soundKiller';
 
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
@@ -99,6 +100,17 @@ export default function ProofCameraScreen() {
       if (name) setUserName(name);
     });
   }, []);
+
+  // Set current screen for sound control
+  useFocusEffect(
+    React.useCallback(() => {
+      setCurrentScreen('ProofCamera');
+      return () => {
+        // Kill sounds when leaving this screen
+        killAllSounds();
+      };
+    }, [])
+  );
 
   // Auto-verify photo when captured
   const runAIVerification = React.useCallback(async (uri: string) => {

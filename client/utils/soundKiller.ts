@@ -16,9 +16,9 @@ import { Audio } from 'expo-av';
  */
 export const ALLOWED_SOUND_SCREENS = [
   'AlarmRinging',
+  'ProofCamera', // Keep sound while taking proof photo
   'ShamePlayback',
   'Settings', // For testing sounds
-  'PunishmentExecution', // Keep alarm playing during punishments
 ] as const;
 
 export type AllowedSoundScreen = typeof ALLOWED_SOUND_SCREENS[number];
