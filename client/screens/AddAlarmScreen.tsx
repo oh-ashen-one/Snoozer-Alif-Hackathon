@@ -53,25 +53,11 @@ const PROOF_ACTIVITIES = [
     ctaText: () => 'Walk 10 Steps',
   },
   {
-    id: 'scan',
-    name: 'Scan QR Code',
-    description: 'Scan a code in another room',
-    emoji: '📐',
-    ctaText: () => 'Scan QR',
-  },
-  {
     id: 'math',
     name: 'Math Problems',
     description: 'Solve problems to wake your brain',
-    emoji: '🔢',
+    emoji: '🧮',
     ctaText: () => 'Solve Math',
-  },
-  {
-    id: 'shake',
-    name: 'Shake Phone',
-    description: 'Shake vigorously to dismiss',
-    emoji: '📱',
-    ctaText: () => 'Shake 30x',
   },
 ];
 
