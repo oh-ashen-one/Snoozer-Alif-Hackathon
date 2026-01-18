@@ -242,14 +242,14 @@ export default function BuddyDashboardScreen() {
       <View style={styles.statsGrid}>
         <View style={styles.statCard}>
           <Text style={{ fontSize: 28 }}>⚡</Text>
-          <ThemedText style={styles.statValue}>
+          <ThemedText style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
             {stats?.currentStreak || 0}
           </ThemedText>
           <ThemedText style={styles.statLabel}>streak</ThemedText>
         </View>
         <View style={styles.statCard}>
           <Text style={{ fontSize: 28 }}>💵</Text>
-          <ThemedText style={styles.statValue}>
+          <ThemedText style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
             ${stats?.totalReceived || 0}
           </ThemedText>
           <ThemedText style={styles.statLabel}>earned</ThemedText>
