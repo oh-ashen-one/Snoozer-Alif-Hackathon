@@ -8,7 +8,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -28,6 +28,7 @@ import {
 } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RouteProps = RouteProp<RootStackParamList, 'Onboarding'>;
 
 // Contact punishments that need phone numbers
 const CONTACT_PUNISHMENTS = [
