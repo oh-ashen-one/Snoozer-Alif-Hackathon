@@ -19,7 +19,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { logWakeUp, getCurrentStreak, getWakeUpRate } from '@/utils/tracking';
+import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'StepMission'>;
@@ -118,7 +118,10 @@ export default function StepMissionScreen() {
       try {
         await logWakeUp(alarmId, new Date(), false, 0);
         const streak = await getCurrentStreak();
-        const wakeUpRate = await getWakeUpRate();
+        const monthStats = await getMonthStats();
+        const wakeUpRate = monthStats.onTime > 0
+          ? Math.round((monthStats.onTime / (monthStats.onTime + monthStats.late + monthStats.missed)) * 100)
+          : 100;
 
         navigation.navigate('WakeUpSuccess', {
           streak,
