@@ -112,11 +112,22 @@ export function useEscalatingVolume(alarmSoundSource: any) {
     setVolume(START_VOLUME);
     currentVolumeRef.current = START_VOLUME;
 
+    if (!soundRef.current) {
+      if (__DEV__) console.log('[EscalatingVolume] No sound to stop');
+      return;
+    }
+
     try {
-      await soundRef.current?.stopAsync();
-      if (__DEV__) console.log('[EscalatingVolume] Sound stopped');
+      const status = await soundRef.current.getStatusAsync();
+      if (status.isLoaded) {
+        await soundRef.current.stopAsync();
+        if (__DEV__) console.log('[EscalatingVolume] Sound stopped');
+      } else {
+        if (__DEV__) console.log('[EscalatingVolume] Sound not loaded, nothing to stop');
+      }
     } catch (error) {
-      if (__DEV__) console.error('[EscalatingVolume] Failed to stop alarm:', error);
+      // Ignore errors when stopping - sound may already be stopped
+      if (__DEV__) console.log('[EscalatingVolume] Stop skipped (sound not ready)');
     }
   }, []);
 
@@ -129,7 +140,13 @@ export function useEscalatingVolume(alarmSoundSource: any) {
       if (escalateInterval.current) {
         clearInterval(escalateInterval.current);
       }
-      soundRef.current?.unloadAsync();
+      if (soundRef.current) {
+        soundRef.current.getStatusAsync().then(status => {
+          if (status.isLoaded) {
+            soundRef.current?.unloadAsync().catch(() => {});
+          }
+        }).catch(() => {});
+      }
     };
   }, [loadSound]);
 
