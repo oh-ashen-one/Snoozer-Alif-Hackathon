@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useFocusEffect, CommonActions } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -204,15 +204,7 @@ export default function BuddyScreen() {
           const buddy = await getBuddyInfo();
           if (buddy) {
             setHasBuddy(true);
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [
-                  { name: 'Home' },
-                  { name: 'BuddyDashboard' },
-                ],
-              })
-            );
+            navigation.replace('BuddyDashboard');
           } else {
             setHasBuddy(false);
             setIsLoading(false);
