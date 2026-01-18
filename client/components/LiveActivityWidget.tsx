@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing } from '@/constants/theme';
 
 // ════════════════════════════════════════════════════════════════
@@ -35,16 +34,11 @@ interface LargeWidgetProps {
 
 export function SmallWidget({ alarmTime = '6:00 AM', stakeAmount = 5 }: SmallWidgetProps) {
   return (
-    <LinearGradient
-      colors={['#FB923C', '#EA580C']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.smallWidget}
-    >
+    <View style={styles.smallWidget}>
       <Text style={styles.sEmoji}>😴</Text>
       <Text style={styles.sTime}>{alarmTime}</Text>
       <Text style={styles.sStake}>${stakeAmount} at risk</Text>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -63,10 +57,7 @@ export function MediumWidget({
   punishments = DEFAULT_PUNISHMENTS
 }: MediumWidgetProps) {
   return (
-    <LinearGradient
-      colors={['#0c0a09', '#1c1917']}
-      style={styles.mediumWidget}
-    >
+    <View style={styles.mediumWidget}>
       <View style={styles.mMain}>
         <View style={styles.mTimeBlock}>
           <Text style={styles.mTime}>{countdown}</Text>
@@ -81,7 +72,7 @@ export function MediumWidget({
           </View>
         ))}
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -103,10 +94,7 @@ export function LargeWidget({
   const [hours, minutes, seconds] = countdown.split(':');
 
   return (
-    <LinearGradient
-      colors={['#0c0a09', '#1c1917']}
-      style={styles.largeWidget}
-    >
+    <View style={styles.largeWidget}>
       <View style={styles.lHeader}>
         <Text style={styles.lIcon}>😴</Text>
         <Text style={styles.lTitle}>Snoozer</Text>
@@ -134,7 +122,7 @@ export function LargeWidget({
           </View>
         ))}
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -230,6 +218,7 @@ const styles = StyleSheet.create({
     padding: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FB923C',
   },
   sEmoji: {
     fontSize: 36,
@@ -255,6 +244,7 @@ const styles = StyleSheet.create({
     height: 155,
     borderRadius: 22,
     padding: 16,
+    backgroundColor: '#0c0a09',
   },
   mMain: {
     marginBottom: 10,
@@ -296,6 +286,7 @@ const styles = StyleSheet.create({
     height: 345,
     borderRadius: 22,
     padding: 16,
+    backgroundColor: '#0c0a09',
   },
   lHeader: {
     flexDirection: 'row',

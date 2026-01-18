@@ -294,47 +294,30 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
 
       {enabled && punishment.id === 'shame_video' && (
         <View style={styles.shameVideoSection}>
-          {shameVideoUri ? (
-            <>
-              <View style={styles.shameVideoStatus}>
-                <Text style={{ fontSize: 16 }}>✅</Text>
-                <ThemedText style={styles.shameVideoStatusText}>Video recorded</ThemedText>
-              </View>
-              <View style={styles.shameVideoButtons}>
-                <Pressable 
-                  style={styles.shameVideoButton}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onViewShameVideo?.();
-                  }}
-                >
-                  <Text style={{ fontSize: 14 }}>▶️</Text>
-                  <ThemedText style={styles.shameVideoButtonText}>View</ThemedText>
-                </Pressable>
-                <Pressable 
-                  style={styles.shameVideoButton}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onRecordShameVideo?.();
-                  }}
-                >
-                  <Text style={{ fontSize: 14 }}>🔄</Text>
-                  <ThemedText style={styles.shameVideoButtonText}>Re-record</ThemedText>
-                </Pressable>
-              </View>
-            </>
-          ) : (
-            <Pressable 
-              style={styles.recordVideoButton}
+          <View style={styles.shameVideoButtons}>
+            {shameVideoUri && (
+              <Pressable
+                style={[styles.shameVideoButton, styles.shameVideoButtonFlex]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onViewShameVideo?.();
+                }}
+              >
+                <Text style={{ fontSize: 14 }}>▶️</Text>
+                <ThemedText style={styles.shameVideoButtonText}>Play Video</ThemedText>
+              </Pressable>
+            )}
+            <Pressable
+              style={[styles.recordVideoButton, shameVideoUri && styles.recordVideoButtonFlex]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onRecordShameVideo?.();
               }}
             >
               <Text style={{ fontSize: 16 }}>🎥</Text>
-              <ThemedText style={styles.recordVideoButtonText}>Record Shame Video</ThemedText>
+              <ThemedText style={styles.recordVideoButtonText}>Record Video</ThemedText>
             </Pressable>
-          )}
+          </View>
         </View>
       )}
 
@@ -930,6 +913,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.text,
   },
+  shameVideoButtonFlex: {
+    flex: 1,
+  },
   recordVideoButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -943,5 +929,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.text,
+  },
+  recordVideoButtonFlex: {
+    flex: 1,
   },
 });

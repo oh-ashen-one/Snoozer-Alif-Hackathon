@@ -110,13 +110,6 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
 
 const AMOUNT_OPTIONS = [1, 5, 10, 20];
 
-const STEPS = [
-  { title: 'You snooze', desc: 'Alarm detects snooze button pressed' },
-  { title: 'iMessage opens', desc: 'Pre-filled with $X to your buddy' },
-  { title: 'You tap send', desc: 'Apple Cash handles the transfer instantly' },
-  { title: 'Alarm stops', desc: 'Only after payment is sent' },
-];
-
 // ════════════════════════════════════════════════════════════════
 // COMPONENT
 // ════════════════════════════════════════════════════════════════
@@ -480,43 +473,6 @@ export default function PaymentSettingsScreen() {
                 <ThemedText style={styles.editButtonText}>Edit</ThemedText>
                 <Text style={{ fontSize: 16, color: Colors.textMuted }}>›</Text>
               </View>
-            </Pressable>
-          </View>
-        </FadeInView>
-
-        <View style={styles.divider} />
-
-        {/* How It Works Section */}
-        <FadeInView delay={400} direction="up">
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>HOW APPLE CASH WORKS</ThemedText>
-
-            <View style={styles.stepsContainer}>
-              {STEPS.map((step, index) => (
-                <View key={index}>
-                  <View style={styles.step}>
-                    <View style={styles.stepNumber}>
-                      <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
-                    </View>
-                    <View style={styles.stepContent}>
-                      <ThemedText style={styles.stepTitle}>{step.title}</ThemedText>
-                      <ThemedText style={styles.stepDesc}>
-                        {step.desc.replace('$X', `$${displayAmount}`).replace('your buddy', buddy?.name || 'your buddy')}
-                      </ThemedText>
-                    </View>
-                  </View>
-                  {index < STEPS.length - 1 && <View style={styles.stepLine} />}
-                </View>
-              ))}
-            </View>
-
-            {/* Apple Cash setup note */}
-            <Pressable style={styles.noteCard} onPress={handleLearnMore}>
-              <InfoIcon />
-              <ThemedText style={styles.noteText}>
-                Apple Cash must be set up in your Wallet app.{' '}
-                <ThemedText style={styles.noteLink}>Learn how →</ThemedText>
-              </ThemedText>
             </Pressable>
           </View>
         </FadeInView>

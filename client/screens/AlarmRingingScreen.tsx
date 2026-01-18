@@ -1054,18 +1054,18 @@ export default function AlarmRingingScreen() {
             <LiveActivityWidget
               state="ringing"
               punishments={(() => {
-                const items: { emoji: string; shortLabel: string; fullMessage: string }[] = [];
-                if (textWifesDadEnabled) items.push({ emoji: '\u{1F474}', shortLabel: "Text wife's dad", fullMessage: 'Wife\'s dad gets "hey bro what are you wearing"' });
-                if (textExEnabled && exPhoneNumber) items.push({ emoji: '\u{1F494}', shortLabel: 'Text ex "i miss u"', fullMessage: 'Ex gets "i miss u"' });
-                if (emailBossEnabled) items.push({ emoji: '\u{1F4E7}', shortLabel: 'Email your boss', fullMessage: 'Boss gets "running late again"' });
-                if (shameVideoEnabled) items.push({ emoji: '\u{1F3A5}', shortLabel: 'Shame video plays', fullMessage: 'Shame video plays at MAX volume' });
-                if (moneyEnabled && penaltyAmount > 0) items.push({ emoji: '\u{1F4B5}', shortLabel: `Pay $${penaltyAmount}`, fullMessage: `$${penaltyAmount} goes to ${buddyName}` });
-                if (socialShameEnabled) items.push({ emoji: '\u{1F4AC}', shortLabel: 'Group chat shamed', fullMessage: 'You get shamed in group chat' });
-                if (antiCharityEnabled) items.push({ emoji: '\u{1F5F3}', shortLabel: 'Donate to enemy', fullMessage: 'Donation goes to party you hate' });
-                if (callBuddyEnabled) items.push({ emoji: '\u{1F4DE}', shortLabel: 'Call buddy', fullMessage: 'Buddy gets woken up by your failure' });
-                if (momEnabled) items.push({ emoji: '\u{1F469}', shortLabel: 'Call mom', fullMessage: 'Mom gets called at 6am' });
-                if (grandmaEnabled) items.push({ emoji: '\u{1F475}', shortLabel: 'Call grandma', fullMessage: 'Grandma gets called at 6am' });
-                if (buddyNotifyEnabled) items.push({ emoji: '\u{1F4F1}', shortLabel: `Notify ${buddyName}`, fullMessage: `${buddyName} gets notified of your failure` });
+                const items: { emoji: string; label: string; fullText?: string }[] = [];
+                if (textWifesDadEnabled) items.push({ emoji: '\u{1F474}', label: "Text wife's dad", fullText: 'Wife\'s dad gets "hey bro what are you wearing"' });
+                if (textExEnabled && exPhoneNumber) items.push({ emoji: '\u{1F494}', label: 'Text ex "i miss u"', fullText: 'Ex gets "i miss u"' });
+                if (emailBossEnabled) items.push({ emoji: '\u{1F4E7}', label: 'Email your boss', fullText: 'Boss gets "running late again"' });
+                if (shameVideoEnabled) items.push({ emoji: '\\u{1F3A5}', label: 'Shame video plays', fullText: 'Shame video plays at MAX volume' });
+                if (moneyEnabled && penaltyAmount > 0) items.push({ emoji: '\\u{1F4B5}', label: `Pay $${penaltyAmount}`, fullText: `$${penaltyAmount} goes to ${buddyName}` });
+                if (socialShameEnabled) items.push({ emoji: '\\u{1F4AC}', label: 'Group chat shamed', fullText: 'You get shamed in group chat' });
+                if (antiCharityEnabled) items.push({ emoji: '\u{1F5F3}', label: 'Donate to enemy', fullText: 'Donation goes to party you hate' });
+                if (callBuddyEnabled) items.push({ emoji: '\u{1F4DE}', label: 'Call buddy', fullText: 'Buddy gets woken up by your failure' });
+                if (momEnabled) items.push({ emoji: '\\u{1F469}', label: 'Call mom', fullText: 'Mom gets called at 6am' });
+                if (grandmaEnabled) items.push({ emoji: '\u{1F475}', label: 'Call grandma', fullText: 'Grandma gets called at 6am' });
+                if (buddyNotifyEnabled) items.push({ emoji: '\u{1F4F1}', label: `Notify ${buddyName}`, fullText: `${buddyName} gets notified of your failure` });
                 return items.slice(0, 4);
               })()}
             />
