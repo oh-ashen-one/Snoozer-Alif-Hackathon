@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, ScrollView, Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -7,52 +7,122 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-type TimeRange = 'week' | 'month' | 'all';
+type DayStatus = 'success' | 'failed' | 'today' | 'future';
+type ActivityType = 'success' | 'failed' | 'streak';
+
+interface WeekDay {
+  day: string;
+  status: DayStatus;
+}
+
+interface ActivityItem {
+  emoji: string;
+  text: string;
+  time: string;
+  type: ActivityType;
+}
 
 // Mock data
 const MOCK_STATS = {
   currentStreak: 12,
+  bestStreak: 21,
   moneySaved: 48,
-  wakeUpRate: 85,
-  onTimeCount: 23,
-  bestStreak: 15,
-  totalDays: 42,
+  moneyLost: 6,
+  wakeUpRate: 89,
+  wakeUpDays: 25,
+  totalDays: 28,
   weeklyData: [
-    { day: 'M', success: true, time: 6.1 },
-    { day: 'T', success: true, time: 6.0 },
-    { day: 'W', success: false, time: 6.5 },
-    { day: 'T', success: true, time: 6.2 },
-    { day: 'F', success: true, time: 6.0 },
-    { day: 'S', success: null, time: null },
-    { day: 'S', success: null, time: null },
+    { day: 'M', status: 'success' as DayStatus },
+    { day: 'T', status: 'success' as DayStatus },
+    { day: 'W', status: 'failed' as DayStatus },
+    { day: 'T', status: 'success' as DayStatus },
+    { day: 'F', status: 'success' as DayStatus },
+    { day: 'S', status: 'today' as DayStatus },
+    { day: 'S', status: 'future' as DayStatus },
   ],
   recentActivity: [
-    { date: 'Today', time: '6:02 AM', label: 'Wake up', success: true, delta: 'on time' },
-    { date: 'Yesterday', time: '6:00 AM', label: 'Wake up', success: true, delta: 'on time' },
-    { date: 'Wed', time: '6:32 AM', label: 'Wake up', success: false, delta: '32min late' },
-    { date: 'Tue', time: '6:05 AM', label: 'Wake up', success: true, delta: '5min late' },
-    { date: 'Mon', time: '6:00 AM', label: 'Wake up', success: true, delta: 'on time' },
+    { emoji: '✅', text: 'Woke up on time', time: '6:02 AM', type: 'success' as ActivityType },
+    { emoji: '🔥', text: 'New streak record!', time: 'Yesterday', type: 'streak' as ActivityType },
+    { emoji: '😴', text: 'Snoozed once', time: '6:45 AM', type: 'failed' as ActivityType },
   ],
 };
+
+// Day circle component
+function DayCircle({ day, status }: WeekDay) {
+  const getCircleStyle = () => {
+    switch (status) {
+      case 'success':
+        return styles.circleSuccess;
+      case 'failed':
+        return styles.circleFailed;
+      case 'today':
+        return styles.circleToday;
+      case 'future':
+      default:
+        return styles.circleFuture;
+    }
+  };
+
+  const renderContent = () => {
+    switch (status) {
+      case 'success':
+        return <Text style={styles.circleIcon}>✓</Text>;
+      case 'failed':
+        return <Text style={styles.circleIcon}>✕</Text>;
+      case 'today':
+        return <View style={styles.todayDot} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <View style={styles.dayContainer}>
+      <ThemedText style={styles.dayLabel}>{day}</ThemedText>
+      <View style={[styles.dayCircle, getCircleStyle()]}>
+        {renderContent()}
+      </View>
+    </View>
+  );
+}
+
+// Activity item component
+function ActivityRow({ item }: { item: ActivityItem }) {
+  const getBorderColor = () => {
+    switch (item.type) {
+      case 'success':
+        return 'rgba(34, 197, 94, 0.5)';
+      case 'failed':
+        return 'rgba(239, 68, 68, 0.5)';
+      case 'streak':
+        return 'rgba(251, 146, 60, 0.5)';
+      default:
+        return 'transparent';
+    }
+  };
+
+  return (
+    <View style={[styles.activityItem, { borderLeftColor: getBorderColor() }]}>
+      <View style={styles.activityLeft}>
+        <Text style={styles.activityEmoji}>{item.emoji}</Text>
+        <ThemedText style={styles.activityText}>{item.text}</ThemedText>
+      </View>
+      <ThemedText style={styles.activityTime}>{item.time}</ThemedText>
+    </View>
+  );
+}
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
-  const [timeRange, setTimeRange] = useState<TimeRange>('week');
 
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.goBack();
-  };
-
-  const handleTimeRangeChange = (range: TimeRange) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTimeRange(range);
   };
 
   return (
@@ -60,9 +130,9 @@ export default function StatsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Feather name="arrow-left" size={24} color={Colors.text} />
+          <Feather name="arrow-left" size={24} color="#FAFAF9" />
         </Pressable>
-        <ThemedText style={styles.headerTitle}>Stats</ThemedText>
+        <ThemedText style={styles.headerTitle}>Your Stats</ThemedText>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -71,118 +141,56 @@ export default function StatsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Time Range Pills */}
-        <View style={styles.timeRangePills}>
-          {(['week', 'month', 'all'] as TimeRange[]).map((range) => (
-            <Pressable
-              key={range}
-              style={[styles.pill, timeRange === range && styles.pillActive]}
-              onPress={() => handleTimeRangeChange(range)}
-            >
-              <ThemedText style={[styles.pillText, timeRange === range && styles.pillTextActive]}>
-                {range === 'week' ? 'Week' : range === 'month' ? 'Month' : 'All Time'}
-              </ThemedText>
-            </Pressable>
+        {/* Hero Streak Card */}
+        <View style={styles.heroCard}>
+          <Text style={styles.heroEmoji}>🔥</Text>
+          <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
+          <ThemedText style={styles.heroValue}>{MOCK_STATS.currentStreak} days</ThemedText>
+          <ThemedText style={styles.heroBest}>Best: {MOCK_STATS.bestStreak} days</ThemedText>
+        </View>
+
+        {/* Two Column Stats */}
+        <View style={styles.twoColumnRow}>
+          <View style={styles.statCard}>
+            <ThemedText style={styles.statLabel}>💰 Money Saved</ThemedText>
+            <ThemedText style={styles.statValueGreen}>${MOCK_STATS.moneySaved}</ThemedText>
+            <ThemedText style={styles.statSubtext}>this month</ThemedText>
+          </View>
+          <View style={styles.statCard}>
+            <ThemedText style={styles.statLabel}>💸 Money Lost</ThemedText>
+            <ThemedText style={styles.statValueRed}>${MOCK_STATS.moneyLost}</ThemedText>
+            <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
+          </View>
+        </View>
+
+        {/* Wake Up Rate Card */}
+        <View style={styles.wakeUpCard}>
+          <View style={styles.wakeUpHeader}>
+            <ThemedText style={styles.wakeUpTitle}>⏰ Wake Up Rate</ThemedText>
+            <ThemedText style={styles.wakeUpPercent}>{MOCK_STATS.wakeUpRate}%</ThemedText>
+          </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${MOCK_STATS.wakeUpRate}%` }]} />
+          </View>
+          <ThemedText style={styles.wakeUpSubtext}>
+            {MOCK_STATS.wakeUpDays} of {MOCK_STATS.totalDays} days this month
+          </ThemedText>
+        </View>
+
+        {/* This Week Section */}
+        <ThemedText style={styles.sectionTitle}>This Week</ThemedText>
+        <View style={styles.weekGrid}>
+          {MOCK_STATS.weeklyData.map((item, index) => (
+            <DayCircle key={index} day={item.day} status={item.status} />
           ))}
         </View>
 
-        {/* Hero Stats */}
-        <View style={styles.heroRow}>
-          <View style={styles.heroCard}>
-            <ThemedText style={styles.heroEmoji}>🔥</ThemedText>
-            <ThemedText style={styles.heroNumber}>{MOCK_STATS.currentStreak}</ThemedText>
-            <ThemedText style={styles.heroLabel}>day streak</ThemedText>
-          </View>
-          <View style={styles.heroCard}>
-            <ThemedText style={styles.heroEmoji}>💰</ThemedText>
-            <ThemedText style={styles.heroNumber}>${MOCK_STATS.moneySaved}</ThemedText>
-            <ThemedText style={styles.heroLabel}>saved</ThemedText>
-          </View>
-        </View>
-
-        {/* Weekly Chart */}
-        <View style={styles.chartCard}>
-          <View style={styles.chartHeader}>
-            <ThemedText style={styles.chartEmoji}>📊</ThemedText>
-            <ThemedText style={styles.chartTitle}>This Week</ThemedText>
-          </View>
-          <View style={styles.chartBars}>
-            {MOCK_STATS.weeklyData.map((item, index) => {
-              const barHeight = item.success === null ? 8 : item.success ? 60 : 40;
-              const barColor = item.success === null
-                ? Colors.border
-                : item.success
-                  ? Colors.green
-                  : Colors.red;
-
-              return (
-                <View key={index} style={styles.chartBarContainer}>
-                  <View
-                    style={[
-                      styles.chartBar,
-                      { height: barHeight, backgroundColor: barColor },
-                      item.success === null && styles.chartBarEmpty,
-                    ]}
-                  />
-                  <ThemedText style={styles.chartDayLabel}>{item.day}</ThemedText>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <ThemedText style={styles.statEmoji}>✅</ThemedText>
-            <ThemedText style={styles.statNumber}>{MOCK_STATS.wakeUpRate}%</ThemedText>
-            <ThemedText style={styles.statLabel}>Wake Rate</ThemedText>
-          </View>
-          <View style={styles.statCard}>
-            <ThemedText style={styles.statEmoji}>⏰</ThemedText>
-            <ThemedText style={styles.statNumber}>{MOCK_STATS.onTimeCount}</ThemedText>
-            <ThemedText style={styles.statLabel}>On Time</ThemedText>
-          </View>
-          <View style={styles.statCard}>
-            <ThemedText style={styles.statEmoji}>🏆</ThemedText>
-            <ThemedText style={styles.statNumber}>{MOCK_STATS.bestStreak}</ThemedText>
-            <ThemedText style={styles.statLabel}>Best Streak</ThemedText>
-          </View>
-          <View style={styles.statCard}>
-            <ThemedText style={styles.statEmoji}>📅</ThemedText>
-            <ThemedText style={styles.statNumber}>{MOCK_STATS.totalDays}</ThemedText>
-            <ThemedText style={styles.statLabel}>Total Days</ThemedText>
-          </View>
-        </View>
-
         {/* Recent Activity */}
-        <View style={styles.activitySection}>
-          <ThemedText style={styles.sectionTitle}>Recent Activity</ThemedText>
-          <View style={styles.activityList}>
-            {MOCK_STATS.recentActivity.map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.activityItem,
-                  index === MOCK_STATS.recentActivity.length - 1 && styles.activityItemLast,
-                ]}
-              >
-                <View style={styles.activityIcon}>
-                  <ThemedText style={styles.activityIconText}>
-                    {item.success ? '✅' : '🔴'}
-                  </ThemedText>
-                </View>
-                <View style={styles.activityContent}>
-                  <ThemedText style={styles.activityDate}>
-                    {item.date}, {item.time}
-                  </ThemedText>
-                  <ThemedText style={styles.activityLabel}>
-                    {item.label} · {item.delta}
-                  </ThemedText>
-                </View>
-              </View>
-            ))}
-          </View>
+        <ThemedText style={styles.activityTitle}>Recent Activity</ThemedText>
+        <View style={styles.activityList}>
+          {MOCK_STATS.recentActivity.map((item, index) => (
+            <ActivityRow key={index} item={item} />
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -192,7 +200,7 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: '#0C0A09',
   },
 
   // Header
@@ -200,8 +208,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
   },
   backButton: {
     width: 44,
@@ -212,7 +220,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.text,
+    color: '#FAFAF9',
   },
   headerSpacer: {
     width: 44,
@@ -223,194 +231,201 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: 24,
   },
 
-  // Time Range Pills
-  timeRangePills: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl,
-  },
-  pill: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.pill,
-    alignItems: 'center',
-  },
-  pillActive: {
-    backgroundColor: Colors.orange,
-  },
-  pillText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textMuted,
-  },
-  pillTextActive: {
-    color: Colors.text,
-  },
-
-  // Hero Stats
-  heroRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
+  // Hero Card
   heroCard: {
-    flex: 1,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: '#1C1917',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.xl,
+    borderColor: '#292524',
+    padding: 24,
     alignItems: 'center',
+    marginTop: 16,
   },
   heroEmoji: {
-    fontSize: 24,
-    marginBottom: Spacing.sm,
-  },
-  heroNumber: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: Colors.text,
+    fontSize: 48,
+    marginBottom: 8,
   },
   heroLabel: {
     fontSize: 14,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
+    color: '#78716C',
+    marginBottom: 4,
+  },
+  heroValue: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#FB923C',
+  },
+  heroBest: {
+    fontSize: 13,
+    color: '#57534E',
+    marginTop: 8,
   },
 
-  // Weekly Chart
-  chartCard: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.xl,
-    marginBottom: Spacing.lg,
-  },
-  chartHeader: {
+  // Two Column Stats
+  twoColumnRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl,
-  },
-  chartEmoji: {
-    fontSize: 18,
-  },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  chartBars: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 80,
-  },
-  chartBarContainer: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  chartBar: {
-    width: 24,
-    borderRadius: 6,
-    marginBottom: Spacing.sm,
-  },
-  chartBarEmpty: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  chartDayLabel: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    fontWeight: '500',
-  },
-
-  // Stats Grid
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
+    gap: 12,
+    marginTop: 24,
   },
   statCard: {
-    width: '47%',
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.lg,
+    flex: 1,
+    backgroundColor: '#1C1917',
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
   },
-  statEmoji: {
-    fontSize: 20,
-    marginBottom: Spacing.sm,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-  },
   statLabel: {
+    fontSize: 13,
+    color: '#78716C',
+    marginBottom: 8,
+  },
+  statValueGreen: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#22C55E',
+  },
+  statValueRed: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#EF4444',
+  },
+  statSubtext: {
     fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
+    color: '#57534E',
+    marginTop: 4,
   },
 
-  // Recent Activity
-  activitySection: {
-    marginBottom: Spacing.xl,
+  // Wake Up Rate Card
+  wakeUpCard: {
+    backgroundColor: '#1C1917',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 24,
   },
+  wakeUpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  wakeUpTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FAFAF9',
+  },
+  wakeUpPercent: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#22C55E',
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#292524',
+    borderRadius: 100,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#22C55E',
+    borderRadius: 100,
+  },
+  wakeUpSubtext: {
+    fontSize: 13,
+    color: '#78716C',
+    marginTop: 12,
+  },
+
+  // This Week Section
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
-    marginBottom: Spacing.lg,
+    color: '#FAFAF9',
+    marginTop: 24,
   },
-  activityList: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-  },
-  activityItem: {
+  weekGrid: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  dayContainer: {
+    width: 40,
     alignItems: 'center',
-    padding: Spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
-  activityItemLast: {
-    borderBottomWidth: 0,
+  dayLabel: {
+    fontSize: 12,
+    color: '#57534E',
+    marginBottom: 8,
   },
-  activityIcon: {
+  dayCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
   },
-  activityIconText: {
+  circleSuccess: {
+    backgroundColor: '#22C55E',
+  },
+  circleFailed: {
+    backgroundColor: '#EF4444',
+  },
+  circleToday: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#FB923C',
+  },
+  circleFuture: {
+    backgroundColor: '#292524',
+  },
+  circleIcon: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  todayDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FB923C',
+  },
+
+  // Recent Activity
+  activityTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  activityList: {
+    gap: 8,
+  },
+  activityItem: {
+    backgroundColor: '#1C1917',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderLeftWidth: 3,
+  },
+  activityLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  activityEmoji: {
     fontSize: 16,
   },
-  activityContent: {
-    flex: 1,
-  },
-  activityDate: {
+  activityText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 2,
+    color: '#FAFAF9',
   },
-  activityLabel: {
-    fontSize: 13,
-    color: Colors.textMuted,
+  activityTime: {
+    fontSize: 14,
+    color: '#78716C',
   },
 });
