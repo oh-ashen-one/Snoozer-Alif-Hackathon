@@ -202,10 +202,12 @@ export default function BuddyScreen() {
       const checkBuddyStatus = async () => {
         try {
           const buddy = await getBuddyInfo();
-          if (buddy) {
+          if (buddy && buddy.status === 'linked') {
+            // Has a linked buddy - go to dashboard
             setHasBuddy(true);
             navigation.replace('BuddyDashboard');
           } else {
+            // No buddy or not linked - show mode selection
             setHasBuddy(false);
             setIsLoading(false);
           }
