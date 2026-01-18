@@ -619,29 +619,29 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 16,
+    padding: 14,
     alignItems: 'center',
+    gap: 2,
   },
   statCardDashed: {
     borderStyle: 'dashed',
   },
   statIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   statLabel: {
     fontSize: 12,
     color: '#78716C',
   },
   statValueGray: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#57534E',
-    marginTop: 4,
   },
   statSubLabel: {
     fontSize: 12,
@@ -649,9 +649,8 @@ const styles = StyleSheet.create({
   },
   addBuddyText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#78716C',
-    marginTop: 4,
+    fontWeight: '600',
+    color: Colors.orange,
   },
 
   // Section Header

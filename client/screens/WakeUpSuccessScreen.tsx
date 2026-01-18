@@ -324,7 +324,7 @@ export default function WakeUpSuccessScreen() {
             🔥
           </Animated.Text>
           <Text style={styles.streakLabel}>Current Streak</Text>
-          <Text style={styles.streakNumber}>{stats.streak}</Text>
+          <Text style={styles.streakNumber} numberOfLines={1} adjustsFontSizeToFit>{stats.streak}</Text>
           <Text style={styles.streakSubtext}>days in a row</Text>
 
           {isNewRecord && (
@@ -348,13 +348,13 @@ export default function WakeUpSuccessScreen() {
         >
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>💰 Saved</Text>
-            <Text style={styles.statValueGreen}>${stats.moneySaved}</Text>
+            <Text style={styles.statValueGreen} numberOfLines={1} adjustsFontSizeToFit>${stats.moneySaved}</Text>
             <Text style={styles.statSubtext}>this month</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>⏰ Wake Rate</Text>
-            <Text style={styles.statValue}>{stats.wakeUpRate}%</Text>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{stats.wakeUpRate}%</Text>
             <Text style={styles.statSubtext}>on time</Text>
           </View>
         </Animated.View>
