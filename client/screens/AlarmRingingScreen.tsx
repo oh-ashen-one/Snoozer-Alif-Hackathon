@@ -242,9 +242,10 @@ export default function AlarmRingingScreen() {
   const handleDismiss = async () => {
     buttonPress('primary');
     await stopAlarm();
-    navigation.navigate('ProofCamera', {
+    navigation.navigate('StepMission', {
       alarmId: alarmData.alarmId,
       referencePhotoUri: alarmData.referencePhotoUri,
+      onComplete: 'ProofCamera',
     });
   };
 
