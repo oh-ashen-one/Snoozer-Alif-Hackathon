@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-// AlarmKit is only available on iOS 26+
+// AlarmKit is only available on iOS 26+ with native build (not Expo Go)
 const ALARMKIT_MIN_VERSION = 26;
 
 // Check if AlarmKit is available
@@ -22,11 +22,16 @@ async function getAlarmKit() {
     try {
       AlarmKit = await import('@raphckrman/react-native-alarm-kit');
     } catch (error) {
-      if (__DEV__) console.error('[AlarmKit] Failed to import:', error);
+      if (__DEV__) console.log('[AlarmKit] Not available in Expo Go');
       return null;
     }
   }
   return AlarmKit;
+}
+
+// Check if a function exists and is callable
+function isFunctionAvailable(obj: any, funcName: string): boolean {
+  return obj && typeof obj[funcName] === 'function';
 }
 
 export type AlarmKitPermissionStatus = 'granted' | 'denied' | 'undetermined';
@@ -39,19 +44,25 @@ export async function getAlarmKitPermissionStatus(): Promise<AlarmKitPermissionS
   if (!kit) return 'undetermined';
 
   try {
-    // Try to get authorization status if the API exists
-    if ('getAuthorizationStatus' in kit) {
+    // Check if getAuthorizationStatus exists
+    if (isFunctionAvailable(kit, 'getAuthorizationStatus')) {
       const status = await (kit as any).getAuthorizationStatus();
       if (status === 'authorized' || status === true) return 'granted';
       if (status === 'denied' || status === false) return 'denied';
       return 'undetermined';
     }
 
-    // Fallback: try requesting permission (will return cached result if already granted)
-    const granted = await kit.requestAlarmPermission();
-    return granted ? 'granted' : 'undetermined';
+    // Check if requestAlarmPermission exists
+    if (isFunctionAvailable(kit, 'requestAlarmPermission')) {
+      const granted = await kit.requestAlarmPermission();
+      return granted ? 'granted' : 'undetermined';
+    }
+
+    // Functions not available (Expo Go)
+    if (__DEV__) console.log('[AlarmKit] Permission functions not available');
+    return 'undetermined';
   } catch (error) {
-    if (__DEV__) console.error('[AlarmKit] Status check error:', error);
+    if (__DEV__) console.log('[AlarmKit] Not supported in this environment');
     return 'undetermined';
   }
 }
@@ -65,11 +76,16 @@ export async function requestAlarmKitPermission(): Promise<boolean> {
   if (!kit) return false;
 
   try {
+    if (!isFunctionAvailable(kit, 'requestAlarmPermission')) {
+      if (__DEV__) console.log('[AlarmKit] requestAlarmPermission not available');
+      return false;
+    }
+
     const granted = await kit.requestAlarmPermission();
     if (__DEV__) console.log('[AlarmKit] Permission granted:', granted);
     return granted;
   } catch (error) {
-    if (__DEV__) console.error('[AlarmKit] Permission error:', error);
+    if (__DEV__) console.log('[AlarmKit] Permission not supported');
     return false;
   }
 }
@@ -97,11 +113,17 @@ function dayToWeekday(day: number): AlarmWeekday {
 export async function scheduleAlarmKitAlarm(params: ScheduleAlarmParams): Promise<boolean> {
   const kit = await getAlarmKit();
   if (!kit) {
-    if (__DEV__) console.warn('[AlarmKit] Not available, falling back to notifications');
+    if (__DEV__) console.log('[AlarmKit] Not available, falling back to notifications');
     return false;
   }
 
   try {
+    // Check if required functions are available
+    if (!isFunctionAvailable(kit, 'createAlarmButton') || !isFunctionAvailable(kit, 'scheduleRelativeAlarm')) {
+      if (__DEV__) console.log('[AlarmKit] Schedule functions not available');
+      return false;
+    }
+
     // Create Stop button (red)
     const stopButton = await kit.createAlarmButton(
       'Stop',
@@ -141,7 +163,7 @@ export async function scheduleAlarmKitAlarm(params: ScheduleAlarmParams): Promis
     }
     return true;
   } catch (error) {
-    if (__DEV__) console.error('[AlarmKit] Schedule error:', error);
+    if (__DEV__) console.log('[AlarmKit] Schedule not supported');
     return false;
   }
 }
@@ -176,14 +198,13 @@ export async function addAlarmKitListener(
   if (!kit) return null;
 
   try {
-    // Note: The actual API may differ - check package docs
-    if ('addAlarmListener' in kit) {
+    if (isFunctionAvailable(kit, 'addAlarmListener')) {
       const subscription = (kit as any).addAlarmListener(callback);
       return () => subscription?.remove?.();
     }
     return null;
   } catch (error) {
-    if (__DEV__) console.error('[AlarmKit] Listener error:', error);
+    if (__DEV__) console.log('[AlarmKit] Listener not supported');
     return null;
   }
 }
