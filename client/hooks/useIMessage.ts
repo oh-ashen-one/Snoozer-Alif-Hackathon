@@ -116,9 +116,8 @@ export function useIMessage() {
       return { success: false, error: 'No phone number provided' };
     }
 
-    // Apple Cash is triggered by sending a message with just "$X"
-    // iMessage auto-converts this to a payment request
-    const message = `$${amount}`;
+    // Apple Cash is triggered by "send you $X" - this prompts Apple Pay in iMessage
+    const message = `send you $${amount}`;
 
     try {
       // Method 1: Use SMS API
