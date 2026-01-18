@@ -15,6 +15,8 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { FadeInView } from '@/components/FadeInView';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AddAlarm'>;
