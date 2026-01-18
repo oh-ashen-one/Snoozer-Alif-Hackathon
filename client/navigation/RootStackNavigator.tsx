@@ -44,7 +44,7 @@ import { Colors } from '@/constants/theme';
 export type RootStackParamList = {
   SplashLoading: undefined;
   Intro: undefined;
-  Onboarding: undefined;
+  Onboarding: { shameVideoUri?: string } | undefined;
   Home: undefined;
   Settings: undefined;
   Stats: undefined;
@@ -106,6 +106,7 @@ export type RootStackParamList = {
     alarmLabel: string;
     referencePhotoUri: string;
     isOnboarding: boolean;
+    returnTo?: 'Onboarding';  // Return to onboarding after recording
     punishment?: number;
     extraPunishments?: string[];
     days?: number[];

@@ -167,7 +167,9 @@ export function useEscalatingVolume(alarmSoundSource: any) {
       const status = await soundRef.current.getStatusAsync();
       if (status.isLoaded) {
         await soundRef.current.stopAsync();
-        if (__DEV__) console.log('[EscalatingVolume] Sound stopped');
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+        if (__DEV__) console.log('[EscalatingVolume] Sound stopped and unloaded');
       } else {
         if (__DEV__) console.log('[EscalatingVolume] Sound not loaded, nothing to stop');
       }

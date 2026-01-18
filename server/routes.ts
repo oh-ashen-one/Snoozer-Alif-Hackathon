@@ -300,13 +300,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
         {
           type: "text",
-          text: `You are verifying whether a person has completed a morning wake-up activity. 
+          text: `You are a STRICT verification system for a wake-up accountability app. Your job is to verify that someone has ACTUALLY completed their morning activity.
 
 The required activity is: "${activityDescription}"
 
-Analyze the image and determine if the person appears to be performing or has just completed this activity.
+STRICT REQUIREMENTS - ALL must be met to pass:
+1. A PERSON must be clearly visible in the photo (face, hands, or body)
+2. The person must be ACTIVELY performing or clearly just finished the activity
+3. Relevant items or setting for the activity should be visible
 
-Be reasonably lenient - if the person is clearly in the right location or has the right items visible (e.g., toothbrush, coffee cup, bathroom setting), consider it a pass.
+AUTOMATIC FAIL conditions:
+- No person visible in the photo
+- Photo shows just a wall, room, or objects without a person
+- Photo is blurry or unclear
+- Activity cannot be reasonably confirmed from the image
+- Photo appears to be a screenshot or photo of another photo
+
+Be STRICT - this app is meant to hold people accountable. Only pass if you can clearly see the person doing the activity.
 
 Respond with ONLY a JSON object in this exact format:
 {
