@@ -27,6 +27,7 @@ import {
   WakeEvent,
   BuddyAlarm,
 } from '@/utils/storage';
+import { notifyBuddyPoked } from '@/utils/buddyNotifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -81,8 +82,26 @@ export default function BuddyDashboardScreen() {
     }
   };
 
-  const handlePoke = () => {
+  const [pokeLoading, setPokeLoading] = useState(false);
+  const [pokeSent, setPokeSent] = useState(false);
+
+  const handlePoke = async () => {
+    if (pokeLoading || pokeSent) return;
+    
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPokeLoading(true);
+    
+    try {
+      await notifyBuddyPoked('You', buddy?.name || 'Buddy');
+      setPokeSent(true);
+      if (__DEV__) console.log('[BuddyDashboard] Poke sent to buddy');
+      
+      setTimeout(() => setPokeSent(false), 5000);
+    } catch (error) {
+      console.error('[BuddyDashboard] Error sending poke:', error);
+    } finally {
+      setPokeLoading(false);
+    }
   };
 
   const handleViewLeaderboard = () => {
@@ -277,9 +296,19 @@ export default function BuddyDashboardScreen() {
           <Text style={{ fontSize: 20 }}>💬</Text>
           <ThemedText style={styles.messageButtonText}>Message {buddy.name}</ThemedText>
         </Pressable>
-        <Pressable style={styles.pokeButton} onPress={handlePoke}>
-          <Text style={{ fontSize: 20 }}>🔔</Text>
-          <ThemedText style={styles.pokeButtonText}>Poke</ThemedText>
+        <Pressable
+          style={[
+            styles.pokeButton,
+            pokeSent && styles.pokeButtonSent,
+            pokeLoading && styles.pokeButtonLoading,
+          ]}
+          onPress={handlePoke}
+          disabled={pokeLoading || pokeSent}
+        >
+          <Text style={{ fontSize: 20 }}>{pokeSent ? '✓' : '👋'}</Text>
+          <ThemedText style={styles.pokeButtonText}>
+            {pokeSent ? 'Sent!' : pokeLoading ? 'Sending...' : 'Poke'}
+          </ThemedText>
         </Pressable>
       </View>
     </ScrollView>
@@ -557,6 +586,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
+  },
+  pokeButtonSent: {
+    backgroundColor: Colors.green,
+    shadowColor: Colors.green,
+  },
+  pokeButtonLoading: {
+    opacity: 0.7,
   },
   pokeButtonText: {
     fontSize: 15,
