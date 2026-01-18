@@ -18,7 +18,8 @@
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:github.com)",
       "Bash(npm install:*)",
-      "WebFetch(domain:nilcoalescing.com)"
+      "WebFetch(domain:nilcoalescing.com)",
+      "Bash(npm run check:types:*)"
     ]
   }
 }

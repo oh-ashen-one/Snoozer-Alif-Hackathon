@@ -93,7 +93,19 @@ type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
 
 type SnoozeStep = 0 | 1 | 2;
 
-const SNOOZE_CONFIRMATION = "im fuch a fat chud";
+const SNOOZE_INSULTS = [
+  "im such a fat chud",
+  "i have no self control",
+  "im a lazy piece of garbage",
+  "i disappoint everyone",
+  "winners wake up losers snooze",
+  "i choose comfort over success",
+  "my alarm deserves better than me",
+  "i am the problem",
+  "i let myself down again",
+  "pathetic snooze addict",
+];
+
 const VIBRATION_PATTERN = [500, 500, 500, 500];
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -139,6 +151,9 @@ export default function AlarmRingingScreen() {
   const [showShame, setShowShame] = useState(false);
   const [motivationalQuote] = useState(() => 
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]
+  );
+  const [snoozeInsult] = useState(() =>
+    SNOOZE_INSULTS[Math.floor(Math.random() * SNOOZE_INSULTS.length)]
   );
 
   // Use actual buddy info or defaults
@@ -379,7 +394,7 @@ export default function AlarmRingingScreen() {
   };
 
   const handleSnoozeConfirm = async () => {
-    if (snoozeText.trim().toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase()) {
+    if (snoozeText.trim().toLowerCase() === snoozeInsult.toLowerCase()) {
       if (__DEV__) console.log('ALARM: User chose snooze - showing payment prompt');
       shameTriggerPattern();
 
@@ -570,7 +585,7 @@ export default function AlarmRingingScreen() {
         {snoozeStep === 2 && (
           <View style={styles.inputCard}>
             <ThemedText style={styles.inputLabel}>
-              Type <Text style={styles.redText}>"{SNOOZE_CONFIRMATION}"</Text> to confirm
+              Type <Text style={styles.redText}>"{snoozeInsult}"</Text> to confirm
             </ThemedText>
 
             <TextInput
@@ -592,16 +607,16 @@ export default function AlarmRingingScreen() {
               <Pressable
                 style={[
                   styles.confirmSnoozeButton,
-                  snoozeText.trim().toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonActive,
+                  snoozeText.trim().toLowerCase() === snoozeInsult.toLowerCase() && styles.confirmSnoozeButtonActive,
                 ]}
                 onPress={handleSnoozeConfirm}
-                disabled={snoozeText.trim().toLowerCase() !== SNOOZE_CONFIRMATION.toLowerCase()}
+                disabled={snoozeText.trim().toLowerCase() !== snoozeInsult.toLowerCase()}
                 testID="button-confirm-snooze"
               >
                 <ThemedText
                   style={[
                     styles.confirmSnoozeButtonText,
-                    snoozeText.trim().toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonTextActive,
+                    snoozeText.trim().toLowerCase() === snoozeInsult.toLowerCase() && styles.confirmSnoozeButtonTextActive,
                   ]}
                 >
                   Confirm

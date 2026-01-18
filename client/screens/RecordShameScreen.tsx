@@ -14,6 +14,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
+import { Feather } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { ProgressDots } from '@/components/ProgressDots';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
@@ -251,6 +252,11 @@ export default function RecordShameScreen() {
     });
   };
 
+  const handleChoosePunishment = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('Punishments');
+  };
+
   // Preview state after recording
   if (videoUri) {
     return (
@@ -291,9 +297,7 @@ export default function RecordShameScreen() {
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <ThemedText style={styles.headerTitle}>Shame video</ThemedText>
-          <Pressable onPress={handleSkip} hitSlop={8}>
-            <ThemedText style={styles.skipButton}>Skip</ThemedText>
-          </Pressable>
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Progress dots */}
@@ -369,6 +373,12 @@ export default function RecordShameScreen() {
               <View style={styles.recordButtonInner} />
             </View>
           )}
+        </Pressable>
+
+        {/* Alternative punishment link */}
+        <Pressable style={styles.alternativeButton} onPress={handleChoosePunishment}>
+          <Feather name="settings" size={16} color={Colors.orange} />
+          <Text style={styles.alternativeText}>Choose a different punishment</Text>
         </Pressable>
       </View>
     </View>
@@ -609,5 +619,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
+  },
+
+  // Alternative punishment button
+  alternativeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: Spacing.lg,
+  },
+  alternativeText: {
+    fontSize: 15,
+    color: Colors.orange,
+    fontWeight: '500',
   },
 });

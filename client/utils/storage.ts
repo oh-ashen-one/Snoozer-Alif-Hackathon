@@ -9,6 +9,8 @@ const KEYS = {
   PROOF_ACTIVITY: '@snoozer/proof_activity',
   BUDDY: '@snoozer/buddy',
   SHAME_CONTACTS: '@snoozer/shame_contacts',
+  DEFAULT_PUNISHMENTS: '@snoozer/default_punishments',
+  DEFAULT_AMOUNT: '@snoozer/default_amount',
 };
 
 export interface Alarm {
@@ -191,6 +193,46 @@ export async function saveShameContacts(contacts: ShameContact[]): Promise<void>
     await AsyncStorage.setItem(KEYS.SHAME_CONTACTS, JSON.stringify(contacts));
   } catch (error) {
     console.error('Error saving shame contacts:', error);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEFAULT PUNISHMENT SETTINGS
+// ═══════════════════════════════════════════════════════════════
+
+export async function getDefaultPunishments(): Promise<string[]> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.DEFAULT_PUNISHMENTS);
+    return data ? JSON.parse(data) : ['shame_video'];
+  } catch (error) {
+    console.error('Error getting default punishments:', error);
+    return ['shame_video'];
+  }
+}
+
+export async function saveDefaultPunishments(punishments: string[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.DEFAULT_PUNISHMENTS, JSON.stringify(punishments));
+  } catch (error) {
+    console.error('Error saving default punishments:', error);
+  }
+}
+
+export async function getDefaultAmount(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.DEFAULT_AMOUNT);
+    return data ? parseInt(data, 10) : 5;
+  } catch (error) {
+    console.error('Error getting default amount:', error);
+    return 5;
+  }
+}
+
+export async function saveDefaultAmount(amount: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.DEFAULT_AMOUNT, amount.toString());
+  } catch (error) {
+    console.error('Error saving default amount:', error);
   }
 }
 

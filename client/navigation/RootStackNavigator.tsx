@@ -24,11 +24,12 @@ import HelpScreen from '@/screens/HelpScreen';
 import NotificationSetupScreen from '@/screens/NotificationSetupScreen';
 import LegalScreen from '@/screens/LegalScreen';
 import WakeUpSuccessScreen from '@/screens/WakeUpSuccessScreen';
-import PaymentMethodScreen from '@/screens/PaymentMethodScreen';
+import PaymentSettingsScreen from '@/screens/PaymentSettingsScreen';
 import SplashLoadingScreen from '@/screens/SplashLoadingScreen';
 import AlarmSoundScreen from '@/screens/AlarmSoundScreen';
 import JoinCodeScreen from '@/screens/JoinCodeScreen';
 import InviteBuddyScreen from '@/screens/InviteBuddyScreen';
+import PunishmentsScreen from '@/screens/PunishmentsScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
@@ -49,6 +50,7 @@ export type RootStackParamList = {
   InviteBuddyiMessage: {
     returnTo?: string;
   };
+  Punishments: undefined;
   Help: undefined;
   NotificationSetup: undefined;
   Legal: { type: 'terms' | 'privacy' };
@@ -226,6 +228,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="InviteBuddyiMessage"
         component={InviteBuddyScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Punishments"
+        component={PunishmentsScreen}
         options={{
           headerShown: false,
         }}

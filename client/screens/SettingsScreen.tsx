@@ -295,6 +295,10 @@ export default function SettingsScreen() {
     navigation.navigate('PaymentMethod');
   }, [navigation]);
 
+  const handleManagePunishments = useCallback(() => {
+    navigation.navigate('Punishments');
+  }, [navigation]);
+
   // Alarm sound handler - navigate to dedicated screen
   const handleChangeAlarmSound = useCallback(() => {
     navigation.navigate('AlarmSound');
@@ -545,6 +549,15 @@ export default function SettingsScreen() {
                 label="Payment method"
                 value={paymentMethod}
                 onPress={handleChangePayment}
+              />
+              <View style={styles.rowDivider} />
+              <SettingsRow
+                icon="zap"
+                iconColor="#FB923C"
+                iconBg={ICON_COLORS.orange}
+                label="Manage punishments"
+                showChevron={true}
+                onPress={handleManagePunishments}
               />
             </View>
           </View>
