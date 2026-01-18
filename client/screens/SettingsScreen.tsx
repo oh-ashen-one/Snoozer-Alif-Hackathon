@@ -9,8 +9,6 @@ import {
   Share,
   Platform,
   ActionSheetIOS,
-  Text,
-  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -48,7 +46,8 @@ const ICON_COLORS = {
 
 // Reusable Settings Row Component
 interface SettingsRowProps {
-  emoji: string;
+  icon: string;
+  iconColor: string;
   iconBg: string;
   label: string;
   value?: string;
@@ -59,7 +58,8 @@ interface SettingsRowProps {
 }
 
 function SettingsRow({
-  emoji,
+  icon,
+  iconColor,
   iconBg,
   label,
   value,
@@ -77,7 +77,7 @@ function SettingsRow({
     <>
       <View style={styles.rowLeft}>
         <View style={[styles.iconCircle, { backgroundColor: iconBg }]}>
-          <Text style={styles.rowEmoji}>{emoji}</Text>
+          <Feather name={icon as any} size={18} color={iconColor} />
         </View>
         <ThemedText style={[styles.rowText, isDestructive && styles.dangerText]}>
           {label}
@@ -283,7 +283,7 @@ export default function SettingsScreen() {
   }, [navigation]);
 
   const handleContact = useCallback(() => {
-    Linking.openURL('mailto:support@snoozer.app?subject=Snoozer Support');
+    Linking.openURL('https://twitter.com/ashen_one');
   }, []);
 
   const handleRateApp = useCallback(() => {
@@ -417,7 +417,8 @@ export default function SettingsScreen() {
           <ThemedText style={styles.sectionLabel}>ACCOUNT</ThemedText>
           <View style={styles.card}>
             <SettingsRow
-              emoji="👤"
+              icon="user"
+              iconColor="#FB923C"
               iconBg={ICON_COLORS.orange}
               label="Your name"
               value={userName}
@@ -431,7 +432,8 @@ export default function SettingsScreen() {
           <ThemedText style={styles.sectionLabel}>PROOF PHOTO</ThemedText>
           <View style={styles.card}>
             <SettingsRow
-              emoji="📍"
+              icon="map-pin"
+              iconColor="#FB923C"
               iconBg={ICON_COLORS.orange}
               label="Update proof location"
               onPress={handleUpdateProofLocation}
@@ -444,7 +446,8 @@ export default function SettingsScreen() {
           <ThemedText style={styles.sectionLabel}>SHAME VIDEO</ThemedText>
           <View style={styles.card}>
             <SettingsRow
-              emoji="🎬"
+              icon="video"
+              iconColor="#9333EA"
               iconBg={ICON_COLORS.purple}
               label="Re-record shame video"
               onPress={handleRerecordShameVideo}
@@ -457,7 +460,8 @@ export default function SettingsScreen() {
           <ThemedText style={styles.sectionLabel}>PUNISHMENT</ThemedText>
           <View style={styles.card}>
             <SettingsRow
-              emoji="💰"
+              icon="dollar-sign"
+              iconColor="#22C55E"
               iconBg={ICON_COLORS.green}
               label="Default amount"
               value={`$${defaultPunishment}`}
@@ -465,7 +469,8 @@ export default function SettingsScreen() {
             />
             <View style={styles.rowDivider} />
             <SettingsRow
-              emoji="💳"
+              icon="credit-card"
+              iconColor="#3B82F6"
               iconBg={ICON_COLORS.blue}
               label="Payment method"
               value={paymentMethod}
@@ -479,7 +484,8 @@ export default function SettingsScreen() {
           <ThemedText style={styles.sectionLabel}>NOTIFICATIONS</ThemedText>
           <View style={styles.card}>
             <SettingsRow
-              emoji="🔔"
+              icon="bell"
+              iconColor="#3B82F6"
               iconBg={ICON_COLORS.blue}
               label="Alarm sound"
               value="Default"
@@ -487,7 +493,8 @@ export default function SettingsScreen() {
             />
             <View style={styles.rowDivider} />
             <SettingsRow
-              emoji="📳"
+              icon="smartphone"
+              iconColor="#22C55E"
               iconBg={ICON_COLORS.green}
               label="Vibration"
               showChevron={false}
@@ -503,28 +510,32 @@ export default function SettingsScreen() {
           <ThemedText style={styles.sectionLabel}>SUPPORT</ThemedText>
           <View style={styles.card}>
             <SettingsRow
-              emoji="❓"
+              icon="help-circle"
+              iconColor="#3B82F6"
               iconBg={ICON_COLORS.blue}
               label="Help & FAQ"
               onPress={handleHelp}
             />
             <View style={styles.rowDivider} />
             <SettingsRow
-              emoji="💬"
+              icon="message-circle"
+              iconColor="#9333EA"
               iconBg={ICON_COLORS.purple}
               label="Contact support"
               onPress={handleContact}
             />
             <View style={styles.rowDivider} />
             <SettingsRow
-              emoji="⭐"
+              icon="star"
+              iconColor="#FB923C"
               iconBg={ICON_COLORS.orange}
               label="Rate Snoozer"
               onPress={handleRateApp}
             />
             <View style={styles.rowDivider} />
             <SettingsRow
-              emoji="📤"
+              icon="share-2"
+              iconColor="#22C55E"
               iconBg={ICON_COLORS.green}
               label="Share with friends"
               onPress={handleShare}
@@ -537,14 +548,16 @@ export default function SettingsScreen() {
           <ThemedText style={styles.sectionLabel}>ABOUT</ThemedText>
           <View style={styles.card}>
             <SettingsRow
-              emoji="📄"
+              icon="file-text"
+              iconColor="#78716C"
               iconBg={ICON_COLORS.gray}
               label="Terms of Service"
               onPress={handleTerms}
             />
             <View style={styles.rowDivider} />
             <SettingsRow
-              emoji="🔒"
+              icon="lock"
+              iconColor="#78716C"
               iconBg={ICON_COLORS.gray}
               label="Privacy Policy"
               onPress={handlePrivacy}
@@ -557,7 +570,8 @@ export default function SettingsScreen() {
           <ThemedText style={styles.dangerLabel}>DANGER ZONE</ThemedText>
           <View style={styles.dangerCard}>
             <SettingsRow
-              emoji="🔄"
+              icon="refresh-cw"
+              iconColor="#EF4444"
               iconBg={ICON_COLORS.red}
               label="Start over"
               onPress={handleStartOver}
@@ -566,7 +580,8 @@ export default function SettingsScreen() {
             />
             <View style={styles.rowDivider} />
             <SettingsRow
-              emoji="🗑️"
+              icon="trash-2"
+              iconColor="#EF4444"
               iconBg={ICON_COLORS.red}
               label="Delete all data"
               onPress={handleDeleteAllData}
@@ -580,7 +595,10 @@ export default function SettingsScreen() {
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <ThemedText style={styles.versionText}>Snoozer v1.0</ThemedText>
-        <ThemedText style={styles.madeWithText}>Made with ❤️</ThemedText>
+        <View style={styles.madeWithRow}>
+          <ThemedText style={styles.madeWithText}>Made with </ThemedText>
+          <Feather name="heart" size={12} color="#EF4444" />
+        </View>
       </View>
     </View>
   );

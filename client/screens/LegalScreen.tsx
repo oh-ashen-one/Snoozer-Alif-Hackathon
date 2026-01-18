@@ -50,7 +50,7 @@ We reserve the right to modify these terms at any time. Continued use of the App
 
 7. Contact
 
-For questions about these terms, contact us at support@snoozer.app`;
+For questions about these terms, DM us at @ashen_one on Twitter.`;
 
 const PRIVACY_CONTENT = `Privacy Policy
 
@@ -96,7 +96,7 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 
 8. Contact Us
 
-If you have questions about this Privacy Policy, contact us at support@snoozer.app`;
+If you have questions about this Privacy Policy, DM us at @ashen_one on Twitter.`;
 
 export default function LegalScreen() {
   const insets = useSafeAreaInsets();

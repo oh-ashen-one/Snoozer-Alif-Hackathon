@@ -143,8 +143,8 @@ export default function HelpScreen() {
                 Can't find what you're looking for? Reach out to our support
                 team and we'll get back to you as soon as possible.
               </ThemedText>
-              <ThemedText style={styles.emailText}>
-                support@snoozer.app
+              <ThemedText style={styles.twitterText}>
+                DM us at @ashen_one on Twitter
               </ThemedText>
             </View>
           </View>
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginBottom: Spacing.md,
   },
-  emailText: {
+  twitterText: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.orange,

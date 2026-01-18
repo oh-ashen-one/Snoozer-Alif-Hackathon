@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -20,7 +20,8 @@ interface WeekDay {
 }
 
 interface ActivityItem {
-  emoji: string;
+  icon: string;
+  iconColor: string;
   text: string;
   time: string;
   type: ActivityType;
@@ -45,9 +46,9 @@ const MOCK_STATS = {
     { day: 'S', status: 'future' as DayStatus },
   ],
   recentActivity: [
-    { emoji: '✅', text: 'Woke up on time', time: '6:02 AM', type: 'success' as ActivityType },
-    { emoji: '🔥', text: 'New streak record!', time: 'Yesterday', type: 'streak' as ActivityType },
-    { emoji: '😴', text: 'Snoozed once', time: '6:45 AM', type: 'failed' as ActivityType },
+    { icon: 'check-circle', iconColor: '#22C55E', text: 'Woke up on time', time: '6:02 AM', type: 'success' as ActivityType },
+    { icon: 'award', iconColor: '#FB923C', text: 'New streak record!', time: 'Yesterday', type: 'streak' as ActivityType },
+    { icon: 'moon', iconColor: '#EF4444', text: 'Snoozed once', time: '6:45 AM', type: 'failed' as ActivityType },
   ],
 };
 
@@ -70,9 +71,9 @@ function DayCircle({ day, status }: WeekDay) {
   const renderContent = () => {
     switch (status) {
       case 'success':
-        return <Text style={styles.circleIcon}>✓</Text>;
+        return <Feather name="check" size={18} color="#FFFFFF" />;
       case 'failed':
-        return <Text style={styles.circleIcon}>✕</Text>;
+        return <Feather name="x" size={18} color="#FFFFFF" />;
       case 'today':
         return <View style={styles.todayDot} />;
       default:
@@ -105,10 +106,25 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     }
   };
 
+  const getIconBg = () => {
+    switch (item.type) {
+      case 'success':
+        return 'rgba(34, 197, 94, 0.15)';
+      case 'failed':
+        return 'rgba(239, 68, 68, 0.15)';
+      case 'streak':
+        return 'rgba(251, 146, 60, 0.15)';
+      default:
+        return 'rgba(120, 113, 108, 0.15)';
+    }
+  };
+
   return (
     <View style={[styles.activityItem, { borderLeftColor: getBorderColor() }]}>
       <View style={styles.activityLeft}>
-        <Text style={styles.activityEmoji}>{item.emoji}</Text>
+        <View style={[styles.activityIconCircle, { backgroundColor: getIconBg() }]}>
+          <Feather name={item.icon as any} size={14} color={item.iconColor} />
+        </View>
         <ThemedText style={styles.activityText}>{item.text}</ThemedText>
       </View>
       <ThemedText style={styles.activityTime}>{item.time}</ThemedText>
@@ -143,7 +159,9 @@ export default function StatsScreen() {
       >
         {/* Hero Streak Card */}
         <View style={styles.heroCard}>
-          <Text style={styles.heroEmoji}>🔥</Text>
+          <View style={styles.heroIconCircle}>
+            <Feather name="zap" size={32} color="#FB923C" />
+          </View>
           <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
           <ThemedText style={styles.heroValue}>{MOCK_STATS.currentStreak} days</ThemedText>
           <ThemedText style={styles.heroBest}>Best: {MOCK_STATS.bestStreak} days</ThemedText>
@@ -152,12 +170,18 @@ export default function StatsScreen() {
         {/* Two Column Stats */}
         <View style={styles.twoColumnRow}>
           <View style={styles.statCard}>
-            <ThemedText style={styles.statLabel}>💰 Money Saved</ThemedText>
+            <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+              <Feather name="dollar-sign" size={18} color="#22C55E" />
+            </View>
+            <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
             <ThemedText style={styles.statValueGreen}>${MOCK_STATS.moneySaved}</ThemedText>
             <ThemedText style={styles.statSubtext}>this month</ThemedText>
           </View>
           <View style={styles.statCard}>
-            <ThemedText style={styles.statLabel}>💸 Money Lost</ThemedText>
+            <View style={[styles.statIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+              <Feather name="trending-down" size={18} color="#EF4444" />
+            </View>
+            <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
             <ThemedText style={styles.statValueRed}>${MOCK_STATS.moneyLost}</ThemedText>
             <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
           </View>
@@ -166,7 +190,12 @@ export default function StatsScreen() {
         {/* Wake Up Rate Card */}
         <View style={styles.wakeUpCard}>
           <View style={styles.wakeUpHeader}>
-            <ThemedText style={styles.wakeUpTitle}>⏰ Wake Up Rate</ThemedText>
+            <View style={styles.wakeUpTitleRow}>
+              <View style={[styles.wakeUpIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                <Feather name="clock" size={14} color="#22C55E" />
+              </View>
+              <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
+            </View>
             <ThemedText style={styles.wakeUpPercent}>{MOCK_STATS.wakeUpRate}%</ThemedText>
           </View>
           <View style={styles.progressBar}>
@@ -244,9 +273,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  heroEmoji: {
-    fontSize: 48,
-    marginBottom: 8,
+  heroIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   heroLabel: {
     fontSize: 14,
@@ -277,10 +311,18 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
+  statIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
   statLabel: {
     fontSize: 13,
     color: '#78716C',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   statValueGreen: {
     fontSize: 32,
@@ -310,6 +352,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  wakeUpTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  wakeUpIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   wakeUpTitle: {
     fontSize: 16,
@@ -380,11 +434,6 @@ const styles = StyleSheet.create({
   circleFuture: {
     backgroundColor: '#292524',
   },
-  circleIcon: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
   todayDot: {
     width: 8,
     height: 8,
@@ -417,8 +466,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  activityEmoji: {
-    fontSize: 16,
+  activityIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activityText: {
     fontSize: 14,
