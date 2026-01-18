@@ -10,12 +10,13 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { setCurrentScreen, killAllSounds } from '@/utils/soundKiller';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type WakeUpSuccessRouteProp = RouteProp<RootStackParamList, 'WakeUpSuccess'>;
@@ -96,6 +97,14 @@ export default function WakeUpSuccessScreen() {
   const todaysFact = useMemo(() =>
     FACTS[Math.floor(Math.random() * FACTS.length)],
   []);
+
+  // Stop alarm sound when this screen is shown
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentScreen('WakeUpSuccess');
+      killAllSounds();
+    }, [])
+  );
 
   const isNewRecord = stats.streak > stats.previousStreak && stats.streak % 5 === 0;
   const onTime = stats.wakeTime <= stats.targetTime;

@@ -389,24 +389,30 @@ export default function OnboardingScreen() {
     });
   }, [navigation]);
 
-  // Check if all enabled punishments have required config
-  const isConfigComplete = useCallback(() => {
-    return enabledPunishments.every(id => {
-      if (id === 'shame_video') return !!shameVideoUri;
+  // Count how many punishments are fully configured
+  const getConfiguredCount = useCallback(() => {
+    let count = 0;
+    for (const id of enabledPunishments) {
+      if (id === 'shame_video') {
+        if (shameVideoUri) count++;
+        continue;
+      }
 
       const contactItem = CONTACT_PUNISHMENTS.find(p => p.id === id);
       if (contactItem) {
-        return getConfigValue(id, contactItem.configKey).trim().length > 0;
+        if (getConfigValue(id, contactItem.configKey).trim().length > 0) count++;
+        continue;
       }
 
       const digitalItem = DIGITAL_PUNISHMENTS.find(p => p.id === id);
       if (digitalItem && digitalItem.inputType) {
-        return getConfigValue(id, digitalItem.configKey).trim().length > 0;
+        if (getConfigValue(id, digitalItem.configKey).trim().length > 0) count++;
       }
-
-      return true;
-    });
+    }
+    return count;
   }, [enabledPunishments, getConfigValue, shameVideoUri]);
+
+  const configuredCount = getConfiguredCount();
 
   const handleContinue = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -427,8 +433,9 @@ export default function OnboardingScreen() {
   }, [step, enabledPunishments, punishmentConfig, navigation]);
 
   const enabledCount = enabledPunishments.length;
+  const MIN_CONFIGURED = 2;
   const isButtonEnabled =
-    (step === 0 && enabledCount > 0 && isConfigComplete()) ||
+    (step === 0 && configuredCount >= MIN_CONFIGURED) ||
     (step === 1 && selectedHabit !== null);
 
   const renderStep = () => {
@@ -573,9 +580,11 @@ export default function OnboardingScreen() {
             ]}
           >
             {step === 0
-              ? enabledCount > 0
-                ? `Continue with ${enabledCount} Punishment${enabledCount > 1 ? 's' : ''}`
-                : 'Select Punishments'
+              ? configuredCount >= MIN_CONFIGURED
+                ? `Continue with ${configuredCount} Punishment${configuredCount > 1 ? 's' : ''}`
+                : configuredCount > 0
+                  ? `Set up ${MIN_CONFIGURED - configuredCount} more`
+                  : 'Set up 2 Punishments'
               : 'Set Up Alarm'}
           </Text>
           {isButtonEnabled && (
