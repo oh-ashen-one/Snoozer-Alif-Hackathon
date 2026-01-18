@@ -33,7 +33,7 @@ const isWeb = Platform.OS === 'web';
 const useMockCamera = isDev || isWeb;
 
 const PROMPTS = [
-  '"I\'m a pathetic snooze addict..."',
+  '"im fuch a fat chud"',
   '"I broke my promise to myself again..."',
   '"This is what a lazy person looks like..."',
 ];

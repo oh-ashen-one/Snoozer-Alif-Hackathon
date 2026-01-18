@@ -46,6 +46,7 @@ export type RootStackParamList = {
   BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
   JoinCode: undefined;
   Help: undefined;
+  NotificationSetup: undefined;
   Legal: { type: 'terms' | 'privacy' };
   PaymentMethod: undefined;
   AlarmSound: undefined;
@@ -293,6 +294,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="Help"
         component={HelpScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="NotificationSetup"
+        component={NotificationSetupScreen}
         options={{
           headerShown: false,
         }}

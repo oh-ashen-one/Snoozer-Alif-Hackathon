@@ -512,45 +512,14 @@ export default function SettingsScreen() {
                 onPress={handleChangeAlarmSound}
               />
               <View style={styles.rowDivider} />
-              <View style={styles.guideInlineSection}>
-                <View style={styles.guideInlineHeader}>
-                  <Feather name="info" size={16} color="#FB923C" />
-                  <ThemedText style={styles.guideInlineTitle}>
-                    Setup Guide
-                  </ThemedText>
-                </View>
-                <ThemedText style={styles.guideInlineSubtitle}>
-                  For reliable alarms, ensure these are enabled:
-                </ThemedText>
-
-                <View style={styles.guideInlineSteps}>
-                  <ThemedText style={styles.guideInlineStep}>
-                    1. Settings → Snoozer → Alarms & Timers
-                  </ThemedText>
-                  <ThemedText style={styles.guideInlineStep}>
-                    2. Settings → Snoozer → Notifications → Time Sensitive
-                  </ThemedText>
-                  <ThemedText style={styles.guideInlineStep}>
-                    3. Settings → Focus → [Mode] → Apps → Add Snoozer
-                  </ThemedText>
-                  <ThemedText style={styles.guideInlineStep}>
-                    4. Settings → Notifications → Scheduled Summary → Off
-                  </ThemedText>
-                </View>
-
-                <Pressable
-                  style={styles.guideInlineButton}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Linking.openSettings();
-                  }}
-                >
-                  <Feather name="external-link" size={14} color="#FB923C" />
-                  <ThemedText style={styles.guideInlineButtonText}>
-                    Open Settings
-                  </ThemedText>
-                </Pressable>
-              </View>
+              <SettingsRow
+                icon="info"
+                iconColor="#FB923C"
+                iconBg={ICON_COLORS.orange}
+                label="Setup Guide"
+                value="Focus & DND"
+                onPress={() => navigation.navigate('NotificationSetup')}
+              />
               <View style={styles.rowDivider} />
               <SettingsRow
                 icon="smartphone"
