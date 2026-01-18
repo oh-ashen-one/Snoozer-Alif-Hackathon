@@ -380,16 +380,14 @@ export default function HomeScreen() {
       >
         <Header onDebugModeActivate={handleDebugModeActivate} onSettingsPress={handleSettingsPress} />
 
-        {debugMode && (
-          <Pressable
-            testID="button-test-alarm"
-            style={styles.debugButton}
-            onPress={handleTestAlarmNow}
-          >
-            <Feather name="zap" size={20} color={Colors.text} />
-            <ThemedText style={styles.debugButtonText}>Test Alarm Now</ThemedText>
-          </Pressable>
-        )}
+        <Pressable
+          testID="button-test-alarm"
+          style={styles.testAlarmButton}
+          onPress={handleTestAlarmNow}
+        >
+          <Feather name="zap" size={18} color="#FB923C" />
+          <ThemedText style={styles.testAlarmButtonText}>Test Alarm</ThemedText>
+        </Pressable>
 
         {nextAlarm ? (
           <>
@@ -805,6 +803,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FAFAF9',
+  },
+
+  // Test Alarm Button
+  testAlarmButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(251, 146, 60, 0.12)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 100,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 146, 60, 0.2)',
+  },
+  testAlarmButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FB923C',
   },
 
   // Debug Mode
