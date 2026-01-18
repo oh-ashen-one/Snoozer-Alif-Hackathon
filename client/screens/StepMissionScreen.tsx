@@ -19,11 +19,12 @@ import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { logWakeUp, getCurrentStreak, getWakeUpRate } from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'StepMission'>;
 
-const STEP_GOAL = 10;
+const DEFAULT_STEP_GOAL = 10;
 const SHAKE_THRESHOLD = 5;
 
 const isWeb = Platform.OS === 'web';
@@ -32,7 +33,10 @@ export default function StepMissionScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmId, referencePhotoUri, onComplete } = route.params;
+  const { alarmId, referencePhotoUri, onComplete, stepGoal: paramStepGoal } = route.params;
+
+  // Use configurable step goal or default
+  const stepGoal = paramStepGoal || DEFAULT_STEP_GOAL;
 
   const [steps, setSteps] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -44,11 +48,11 @@ export default function StepMissionScreen() {
   const circleScale = useSharedValue(1);
 
   useEffect(() => {
-    progressWidth.value = withSpring(Math.min(steps / STEP_GOAL, 1) * 100, {
+    progressWidth.value = withSpring(Math.min(steps / stepGoal, 1) * 100, {
       damping: 15,
       stiffness: 100,
     });
-  }, [steps, progressWidth]);
+  }, [steps, progressWidth, stepGoal]);
 
   useEffect(() => {
     if (isWeb) {
@@ -83,7 +87,7 @@ export default function StepMissionScreen() {
         setLastStepCount(result.steps);
         setSteps(prev => {
           const newSteps = prev + stepDiff;
-          if (newSteps >= STEP_GOAL && !isComplete) {
+          if (newSteps >= stepGoal && !isComplete) {
             setIsComplete(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Vibration.vibrate(200);
@@ -100,9 +104,9 @@ export default function StepMissionScreen() {
         subscription.remove();
       }
     };
-  }, [lastStepTime, lastStepCount, isComplete]);
+  }, [lastStepTime, lastStepCount, isComplete, stepGoal]);
 
-  const handleContinue = useCallback(() => {
+  const handleContinue = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (onComplete === 'ProofCamera') {
       navigation.navigate('ProofCamera', {
@@ -110,7 +114,23 @@ export default function StepMissionScreen() {
         referencePhotoUri,
       });
     } else {
-      navigation.goBack();
+      // Step-only activity complete - log and go to success screen
+      try {
+        await logWakeUp(alarmId, new Date(), false, 0);
+        const streak = await getCurrentStreak();
+        const wakeUpRate = await getWakeUpRate();
+
+        navigation.navigate('WakeUpSuccess', {
+          streak,
+          moneySaved: streak * 5, // Example calculation
+          wakeUpRate,
+          wakeTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+          targetTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        });
+      } catch (error) {
+        console.error('[StepMission] Error logging wake up:', error);
+        navigation.navigate('Home' as any);
+      }
     }
   }, [navigation, alarmId, referencePhotoUri, onComplete]);
 
@@ -127,24 +147,35 @@ export default function StepMissionScreen() {
     transform: [{ scale: circleScale.value }],
   }));
 
+  // Check if this is a step-only (walk around) mission
+  const isStepOnlyMission = onComplete === 'Home';
+
   if (isComplete) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <BackgroundGlow color="green" />
-        <Animated.View 
+        <Animated.View
           style={styles.content}
           entering={FadeIn.duration(400)}
         >
           <View style={styles.successIcon}>
             <Feather name="check" size={64} color={Colors.green} />
           </View>
-          <ThemedText style={styles.title}>Mission Complete</ThemedText>
-          <ThemedText style={styles.subtitle}>You're moving. Good.</ThemedText>
+          <ThemedText style={styles.title}>
+            {isStepOnlyMission ? 'You Did It!' : 'Mission Complete'}
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            {isStepOnlyMission
+              ? `${stepGoal} steps complete. You're awake!`
+              : "You're moving. Good."}
+          </ThemedText>
         </Animated.View>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
           <Pressable style={styles.primaryButton} onPress={handleContinue}>
-            <ThemedText style={styles.primaryButtonText}>Continue</ThemedText>
+            <ThemedText style={styles.primaryButtonText}>
+              {isStepOnlyMission ? 'See Your Stats' : 'Continue'}
+            </ThemedText>
             <Feather name="arrow-right" size={20} color={Colors.bg} />
           </Pressable>
         </View>
@@ -159,11 +190,11 @@ export default function StepMissionScreen() {
         <View style={styles.missionIcon}>
           <Feather name="navigation" size={48} color={Colors.orange} />
         </View>
-        <ThemedText style={styles.title}>Walk {STEP_GOAL} Steps</ThemedText>
+        <ThemedText style={styles.title}>Walk {stepGoal} Steps</ThemedText>
 
         <Animated.View style={[styles.stepCircle, circleStyle]}>
           <ThemedText style={styles.stepCount}>{steps}</ThemedText>
-          <ThemedText style={styles.stepLabel}>/ {STEP_GOAL} steps</ThemedText>
+          <ThemedText style={styles.stepLabel}>/ {stepGoal} steps</ThemedText>
         </Animated.View>
 
         <View style={styles.progressBarBg}>

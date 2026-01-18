@@ -48,6 +48,10 @@ const PRESETS: ActivityPreset[] = [
   { label: 'Walk around', icon: 'navigation' },
 ];
 
+// Step-only activities don't require a reference photo
+const STEP_ONLY_ACTIVITIES = ['Walk around'];
+const STEP_GOAL_WALK = 50;
+
 const MockCameraView = () => (
   <View style={styles.mockCamera}>
     <Feather name="camera" size={48} color={Colors.textMuted} />
@@ -86,10 +90,18 @@ export default function ProofSetupScreen() {
     setActivityIcon(preset.icon);
   };
 
+  const isStepOnly = STEP_ONLY_ACTIVITIES.includes(activity);
+
   const handleContinue = () => {
     if (!activity.trim()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setStep('camera');
+    // Step-only activities skip the camera and go straight to confirm
+    if (STEP_ONLY_ACTIVITIES.includes(activity)) {
+      setPhotoUri('step-only://no-photo');
+      setStep('confirm');
+    } else {
+      setStep('camera');
+    }
   };
 
   const handleCapture = async () => {
@@ -137,15 +149,23 @@ export default function ProofSetupScreen() {
 
       let savedUri = photoUri;
 
-      if (!photoUri.startsWith('mock://')) {
+      // Only save actual photos, not step-only or mock URIs
+      if (!photoUri.startsWith('mock://') && !photoUri.startsWith('step-only://')) {
         const result = await saveReferencePhoto(photoUri);
         if (result) savedUri = result;
       }
 
-      // Save activity to AsyncStorage
+      // For step-only activities, use empty string as reference photo
+      if (photoUri.startsWith('step-only://')) {
+        savedUri = '';
+      }
+
+      // Save activity to AsyncStorage with step-only flag
       await AsyncStorage.setItem(KEYS.PROOF_ACTIVITY, JSON.stringify({
         activity: activity.trim(),
         activityIcon,
+        isStepOnly: STEP_ONLY_ACTIVITIES.includes(activity),
+        stepGoal: STEP_ONLY_ACTIVITIES.includes(activity) ? STEP_GOAL_WALK : 10,
         createdAt: Date.now(),
       }));
 
@@ -304,10 +324,54 @@ export default function ProofSetupScreen() {
   }
 
   if (step === 'confirm') {
+    // Different confirm UI for step-only activities
+    if (isStepOnly) {
+      return (
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+          <BackgroundGlow color="green" />
+          <Animated.View
+            style={styles.confirmContent}
+            entering={FadeIn.duration(400)}
+          >
+            <View style={styles.successIcon}>
+              <Feather name="navigation" size={40} color={Colors.green} />
+            </View>
+
+            <ThemedText style={styles.confirmTitle}>Walk to wake up!</ThemedText>
+            <ThemedText style={styles.confirmSubtitle}>
+              Your morning proof will be walking{'\n'}{STEP_GOAL_WALK} steps measured by your phone.
+            </ThemedText>
+
+            <View style={styles.stepPreviewContainer}>
+              <View style={styles.stepCircle}>
+                <ThemedText style={styles.stepNumber}>{STEP_GOAL_WALK}</ThemedText>
+                <ThemedText style={styles.stepLabel}>steps</ThemedText>
+              </View>
+              <View style={styles.activityTag}>
+                <Feather name={activityIcon} size={14} color={Colors.green} />
+                <ThemedText style={styles.activityTagText}>{activity}</ThemedText>
+              </View>
+            </View>
+          </Animated.View>
+
+          <View style={[styles.confirmButtons, { paddingBottom: insets.bottom + 24 }]}>
+            <Pressable testID="button-change" style={styles.secondaryButton} onPress={() => setStep('activity')}>
+              <ThemedText style={styles.secondaryButtonText}>Change activity</ThemedText>
+            </Pressable>
+
+            <Pressable testID="button-save" style={styles.greenButton} onPress={handleSave}>
+              <ThemedText style={styles.greenButtonText}>Let's go</ThemedText>
+              <Feather name="check" size={20} color={Colors.text} />
+            </Pressable>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <BackgroundGlow color="green" />
-        <Animated.View 
+        <Animated.View
           style={styles.confirmContent}
           entering={FadeIn.duration(400)}
         >
@@ -652,6 +716,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 40,
     elevation: 8,
+  },
+  stepPreviewContainer: {
+    width: 200,
+    height: 200,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: Colors.green,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 40,
+    elevation: 8,
+  },
+  stepCircle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumber: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: Colors.green,
+  },
+  stepLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.textMuted,
+    marginTop: -4,
   },
   previewImage: {
     flex: 1,

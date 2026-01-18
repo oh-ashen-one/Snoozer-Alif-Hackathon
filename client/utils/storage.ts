@@ -114,6 +114,8 @@ export interface ProofActivity {
   activity: string;
   activityIcon: string;
   createdAt: number;
+  isStepOnly?: boolean;
+  stepGoal?: number;
 }
 
 export async function getProofActivity(): Promise<ProofActivity | null> {

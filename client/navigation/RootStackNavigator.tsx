@@ -113,6 +113,7 @@ export type RootStackParamList = {
     alarmId: string;
     referencePhotoUri: string;
     onComplete: 'ProofCamera' | 'Home';
+    stepGoal?: number;
   };
   ShamePlayback: {
     alarmId: string;

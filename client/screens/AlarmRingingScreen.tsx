@@ -370,10 +370,16 @@ export default function AlarmRingingScreen() {
   const handleDismiss = async () => {
     buttonPress('primary');
     await stopAlarm();
+
+    // Check if activity is step-only (like "Walk around")
+    const isStepOnly = proofActivity?.isStepOnly === true;
+    const stepGoal = proofActivity?.stepGoal || (isStepOnly ? 50 : 10);
+
     navigation.navigate('StepMission', {
       alarmId: alarmData.alarmId,
       referencePhotoUri: alarmData.referencePhotoUri,
-      onComplete: 'ProofCamera',
+      onComplete: isStepOnly ? 'Home' : 'ProofCamera',
+      stepGoal,
     });
   };
 
@@ -524,11 +530,13 @@ export default function AlarmRingingScreen() {
         {/* ACTIVITY CARD */}
         <View style={styles.activityCard}>
           <View style={styles.activityIconWrapper}>
-            <Feather name="star" size={22} color={Colors.orange} />
+            <Feather name={proofActivity?.isStepOnly ? 'navigation' : 'star'} size={22} color={Colors.orange} />
           </View>
           <View style={styles.activityTextContainer}>
             <ThemedText style={styles.activityText}>
-              {proofActivity ? proofActivity.activity : 'Take a photo at your wake-up spot'}
+              {proofActivity?.isStepOnly
+                ? `Walk ${proofActivity?.stepGoal || 50} steps`
+                : (proofActivity ? proofActivity.activity : 'Take a photo at your wake-up spot')}
             </ThemedText>
             <ThemedText style={styles.activityLabel}>to dismiss alarm</ThemedText>
           </View>
@@ -636,7 +644,9 @@ export default function AlarmRingingScreen() {
           onPress={handleDismiss}
           testID="button-dismiss-alarm"
         >
-          <ThemedText style={styles.wakeUpButtonText}>I'M UP — TAKE PHOTO</ThemedText>
+          <ThemedText style={styles.wakeUpButtonText}>
+            {proofActivity?.isStepOnly ? "I'M UP — START WALKING" : "I'M UP — TAKE PHOTO"}
+          </ThemedText>
         </Pressable>
 
         {snoozeStep === 0 && (

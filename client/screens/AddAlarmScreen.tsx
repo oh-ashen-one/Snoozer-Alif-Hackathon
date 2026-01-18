@@ -5,12 +5,18 @@ import {
   ScrollView,
   Pressable,
   Text,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
 import {
   hapticForPunishment,
   getPunishmentLevel,
@@ -23,49 +29,53 @@ import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
-import { AnimatedPressable } from '@/components/AnimatedPressable';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AddAlarm'>;
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const PUNISHMENT_OPTIONS = [0, 1, 2, 5, 10];
+const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const AMOUNTS = [1, 5, 10, 20];
 
-const EXTRA_PUNISHMENT_OPTIONS = [
-  { id: 'shame_video', label: 'Shame video plays', description: 'At max volume', icon: '🎬', color: '#EF4444' },
-  { id: 'buddy_call', label: 'Auto-call your buddy', description: 'Jake gets woken up too', icon: '📞', color: '#FB923C' },
-  { id: 'group_chat', label: 'Text the group chat', description: '"The boys" on iMessage', icon: '💬', color: '#7C3AED' },
-  { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444' },
-  { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899' },
-  { id: 'linkedin', label: 'Post on LinkedIn', description: '"I overslept again. Hiring?"', icon: '💼', color: '#0A66C2' },
-  { id: 'text_ex', label: 'Text your ex "I miss u"', description: 'From your actual number', icon: '💔', color: '#EF4444' },
-  { id: 'like_ex_photo', label: "Like your ex's old photo", description: "From 2019. They'll know.", icon: '📸', color: '#E4405F' },
-  { id: 'donate_enemy', label: 'Donate to a party you hate', description: 'Opposite of your politics', icon: '🗳️', color: '#EF4444' },
-  { id: 'email_boss', label: 'Email your boss', description: '"Running late again, sorry"', icon: '📧', color: '#EA4335' },
-  { id: 'venmo_ex', label: 'Venmo your ex $1', description: 'With memo: "thinking of u"', icon: '💸', color: '#008CFF' },
-  { id: 'slack_company', label: 'Post in #general', description: '"I couldn\'t wake up today"', icon: '🏢', color: '#4A154B' },
-  { id: 'grandma_call', label: 'Auto-call your grandma', description: 'She WILL answer at 6am', icon: '👵', color: '#EC4899' },
-  { id: 'tinder_bio', label: 'Update Tinder bio', description: '"Can\'t even wake up on time"', icon: '🔥', color: '#FE3C72' },
-  { id: 'thermostat', label: 'Drop thermostat to 55°F', description: 'Smart home integration', icon: '🥶', color: '#22C55E' },
-  { id: 'book_dentist', label: 'Book a dentist appointment', description: 'For next week. Auto-confirmed.', icon: '🦷', color: '#78716C' },
+const PROOF_ACTIVITIES = [
+  {
+    id: 'photo_activity',
+    name: 'Photo of Activity',
+    description: 'Take a pic doing your morning task',
+    icon: 'camera',
+    ctaText: (activity: string) => `${activity} Photo`,
+  },
+  {
+    id: 'steps',
+    name: 'Walk Steps',
+    description: 'Get moving to dismiss',
+    icon: 'activity',
+    ctaText: () => 'Walk 10 Steps',
+  },
+  {
+    id: 'scan',
+    name: 'Scan QR Code',
+    description: 'Scan a code in another room',
+    icon: 'maximize',
+    ctaText: () => 'Scan QR',
+  },
+  {
+    id: 'math',
+    name: 'Math Problems',
+    description: 'Solve problems to wake your brain',
+    icon: 'hash',
+    ctaText: () => 'Solve Math',
+  },
+  {
+    id: 'shake',
+    name: 'Shake Phone',
+    description: 'Shake vigorously to dismiss',
+    icon: 'smartphone',
+    ctaText: () => 'Shake 30x',
+  },
 ];
 
-// Icons
-const FlameIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M12 2C12 2 7 7 7 12C7 14.5 8.5 17 12 17C15.5 17 17 14.5 17 12C17 9 14 6 14 6C14 6 14 9 12 11C10 9 10 6 12 2Z"
-      fill="rgba(251, 146, 60, 0.2)"
-    />
-    <Path
-      d="M12 2C12 2 7 7 7 12C7 14.5 8.5 17 12 17C15.5 17 17 14.5 17 12C17 9 14 6 14 6C14 6 14 9 12 11C10 9 10 6 12 2Z"
-      stroke="#FB923C"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
+const ACTIVITY_SUGGESTIONS = ['Brush teeth', 'Make coffee', 'At gym', 'Outside'];
 
 const ChevronUp = ({ color = '#78716C' }: { color?: string }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
@@ -79,25 +89,60 @@ const ChevronDown = ({ color = '#78716C' }: { color?: string }) => (
   </Svg>
 );
 
-const ArrowIcon = ({ color = '#FAFAF9' }: { color?: string }) => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 12H19M19 12L13 6M19 12L13 18" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
+interface ToggleProps {
+  value: boolean;
+  onToggle: () => void;
+}
 
-const WarningIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Circle cx={12} cy={12} r={9} stroke="#EF4444" strokeWidth={2} fill="rgba(239, 68, 68, 0.1)" />
-    <Path d="M12 7V13" stroke="#EF4444" strokeWidth={2.5} strokeLinecap="round" />
-    <Circle cx={12} cy={16.5} r={1.25} fill="#EF4444" />
-  </Svg>
-);
+function Toggle({ value, onToggle }: ToggleProps) {
+  const translateX = useSharedValue(value ? 20 : 0);
+  
+  React.useEffect(() => {
+    translateX.value = withSpring(value ? 20 : 0, { damping: 15 });
+  }, [value]);
 
-const CheckIcon = ({ color = '#FAFAF9' }: { color?: string }) => (
-  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 12.5L10 17.5L19 7" stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
+  const knobStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  return (
+    <Pressable
+      style={[styles.toggle, { backgroundColor: value ? Colors.green : Colors.border }]}
+      onPress={onToggle}
+    >
+      <Animated.View style={[styles.toggleKnob, knobStyle]} />
+    </Pressable>
+  );
+}
+
+interface PunishmentCardProps {
+  icon: string;
+  title: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+  children?: React.ReactNode;
+}
+
+function PunishmentCard({ icon, title, description, enabled, onToggle, children }: PunishmentCardProps) {
+  return (
+    <View style={styles.punishmentCard}>
+      <View style={styles.punishmentHeader}>
+        <View style={styles.punishmentIconContainer}>
+          <Feather name={icon as any} size={20} color={enabled ? Colors.orange : Colors.textMuted} />
+        </View>
+        <View style={styles.punishmentInfo}>
+          <Text style={styles.punishmentTitle}>{title}</Text>
+          <Text style={styles.punishmentDesc}>{description}</Text>
+        </View>
+        <Toggle value={enabled} onToggle={onToggle} />
+      </View>
+      {enabled && children ? (
+        <View style={styles.punishmentExpanded}>{children}</View>
+      ) : null}
+    </View>
+  );
+}
 
 export default function AddAlarmScreen() {
   const insets = useSafeAreaInsets();
@@ -107,320 +152,451 @@ export default function AddAlarmScreen() {
 
   const [hour, setHour] = useState(6);
   const [minute, setMinute] = useState(0);
-  const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
-  const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  const [punishment, setPunishment] = useState(1);
-  const [extraPunishments, setExtraPunishments] = useState<string[]>(['shame_video']);
-  const [showAllPunishments, setShowAllPunishments] = useState(false);
+  const [isPM, setIsPM] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
+
+  const [selectedProof, setSelectedProof] = useState('photo_activity');
+  const [activityName, setActivityName] = useState('Brush teeth');
+  const [showProofPicker, setShowProofPicker] = useState(false);
+
+  const [moneyEnabled, setMoneyEnabled] = useState(true);
+  const [amount, setAmount] = useState(5);
+  const [shameVideo, setShameVideo] = useState(true);
+  const [buddyNotify, setBuddyNotify] = useState(true);
+  const [socialShame, setSocialShame] = useState(false);
+  const [antiCharity, setAntiCharity] = useState(false);
+
+  const [escalatingVolume, setEscalatingVolume] = useState(true);
+  const [wakeRecheck, setWakeRecheck] = useState(true);
+
+  const buddy = { name: 'Jake', phone: '+1 (555) 123-4567' };
+
+  const toggleDay = useCallback((index: number) => {
+    buttonPress('secondary');
+    setSelectedDays(prev => {
+      if (prev.includes(index)) {
+        if (prev.length > 1) {
+          return prev.filter(d => d !== index);
+        }
+        return prev;
+      }
+      return [...prev, index].sort();
+    });
+  }, []);
+
+  const getRepeatLabel = () => {
+    if (selectedDays.length === 0) return 'Once';
+    if (selectedDays.length === 7) return 'Every day';
+    if (JSON.stringify(selectedDays) === JSON.stringify([1, 2, 3, 4, 5])) return 'Weekdays';
+    if (JSON.stringify(selectedDays) === JSON.stringify([0, 6])) return 'Weekends';
+    return selectedDays.map(d => DAY_NAMES[d]).join(', ');
+  };
 
   const incrementHour = useCallback(() => {
     selectionChanged();
-    setHour(h => (h === 12 ? 1 : h + 1));
+    setHour(h => (h >= 12 ? 1 : h + 1));
   }, []);
 
   const decrementHour = useCallback(() => {
     selectionChanged();
-    setHour(h => (h === 1 ? 12 : h - 1));
+    setHour(h => (h <= 1 ? 12 : h - 1));
   }, []);
 
   const incrementMinute = useCallback(() => {
     selectionChanged();
-    setMinute(m => (m === 55 ? 0 : m + 5));
+    setMinute(m => (m >= 55 ? 0 : m + 5));
   }, []);
 
   const decrementMinute = useCallback(() => {
     selectionChanged();
-    setMinute(m => (m === 0 ? 55 : m - 5));
+    setMinute(m => (m <= 0 ? 55 : m - 5));
   }, []);
 
-  const toggleDay = useCallback((day: string) => {
-    buttonPress('secondary');
-    setSelectedDays(prev => {
-      if (prev.includes(day)) {
-        if (prev.length > 1) {
-          return prev.filter(d => d !== day);
-        }
-        return prev;
-      }
-      return [...prev, day];
-    });
-  }, []);
-
-  const togglePeriod = useCallback((p: 'AM' | 'PM') => {
-    if (p !== period) {
-      buttonPress('secondary');
-      setPeriod(p);
-    }
-  }, [period]);
-
-  const toggleExtraPunishment = useCallback((id: string) => {
-    const hasShameVideo = id === 'shame_video' ? !extraPunishments.includes(id) : extraPunishments.includes('shame_video');
-    const level = getPunishmentLevel(punishment, hasShameVideo);
-    hapticForPunishment(level);
-    setExtraPunishments(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    );
-  }, [punishment, extraPunishments]);
+  const selectedProofData = PROOF_ACTIVITIES.find(p => p.id === selectedProof);
+  const ctaPreview = selectedProofData?.ctaText(activityName) || 'Dismiss';
 
   const formatMinute = (m: number) => m.toString().padStart(2, '0');
 
-  const handleContinue = () => {
-    const hasShameVideo = extraPunishments.includes('shame_video');
-    const level = getPunishmentLevel(punishment, hasShameVideo);
+  const handleSave = () => {
+    const hasShameVideo = shameVideo;
+    const level = getPunishmentLevel(amount, hasShameVideo);
     alarmCreatedPattern(level);
-    const hour24 = period === 'PM' ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
+    
+    const hour24 = isPM ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
     const timeString = `${hour24.toString().padStart(2, '0')}:${formatMinute(minute)}`;
-    const dayIndices = selectedDays.map(day => DAYS.indexOf(day));
+
+    const extraPunishments: string[] = [];
+    if (shameVideo) extraPunishments.push('shame_video');
+    if (buddyNotify) extraPunishments.push('buddy_call');
+    if (socialShame) extraPunishments.push('group_chat');
+    if (antiCharity) extraPunishments.push('donate_enemy');
 
     navigation.navigate('ProofSetup', {
       alarmTime: timeString,
-      alarmLabel: 'Wake up',
+      alarmLabel: activityName || 'Wake up',
       isOnboarding,
-      punishment,
+      punishment: moneyEnabled ? amount : 0,
       extraPunishments,
-      days: dayIndices,
+      days: selectedDays,
     });
   };
 
-  const visiblePunishments = showAllPunishments
-    ? EXTRA_PUNISHMENT_OPTIONS
-    : EXTRA_PUNISHMENT_OPTIONS.slice(0, 4);
+  const punishmentCount = [moneyEnabled, shameVideo, buddyNotify, socialShame, antiCharity].filter(Boolean).length;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
+
+      <View style={styles.header}>
+        <Pressable style={styles.headerButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.cancelText}>Cancel</Text>
+        </Pressable>
+        <Text style={styles.headerTitle}>New Alarm</Text>
+        <Pressable style={styles.headerButton} onPress={handleSave}>
+          <Text style={styles.saveText}>Save</Text>
+        </Pressable>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Progress Dots */}
         <FadeInView delay={50} direction="up">
-          <View style={styles.progressDots}>
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-            <View style={[styles.dot, styles.dotActive]} />
-            <View style={styles.dotInactive} />
-          </View>
-        </FadeInView>
+          <View style={styles.timeSection}>
+            <View style={styles.timePickerCard}>
+              <View style={styles.timeColumn}>
+                <Pressable style={styles.timeArrow} onPress={incrementHour}>
+                  <ChevronUp />
+                </Pressable>
+                <Text style={styles.timeDigit}>{hour.toString().padStart(2, '0')}</Text>
+                <Pressable style={styles.timeArrow} onPress={decrementHour}>
+                  <ChevronDown />
+                </Pressable>
+              </View>
 
-        {/* Header */}
-        <FadeInView delay={100} direction="up">
-          <View style={styles.header}>
-            <View style={styles.pillBadge}>
-              <FlameIcon />
-              <Text style={styles.pillText}>Wake up on time</Text>
-            </View>
-            <Text style={styles.title}>Set your first alarm</Text>
-            <Text style={styles.subtitle}>When do you need to wake up?</Text>
-          </View>
-        </FadeInView>
+              <Text style={styles.timeColon}>:</Text>
 
-        {/* Time Picker */}
-        <FadeInView delay={150} direction="up">
-          <View style={styles.timePickerCard}>
-          <View style={styles.timePickerRow}>
-            {/* Hour */}
-            <View style={styles.timeColumn}>
-              <Pressable style={styles.chevronButton} onPress={incrementHour}>
-                <ChevronUp />
-              </Pressable>
-              <Text style={styles.timeText}>{hour}</Text>
-              <Pressable style={styles.chevronButton} onPress={decrementHour}>
-                <ChevronDown />
-              </Pressable>
-            </View>
+              <View style={styles.timeColumn}>
+                <Pressable style={styles.timeArrow} onPress={incrementMinute}>
+                  <ChevronUp />
+                </Pressable>
+                <Text style={styles.timeDigit}>{formatMinute(minute)}</Text>
+                <Pressable style={styles.timeArrow} onPress={decrementMinute}>
+                  <ChevronDown />
+                </Pressable>
+              </View>
 
-            <Text style={styles.colon}>:</Text>
-
-            {/* Minute */}
-            <View style={styles.timeColumn}>
-              <Pressable style={styles.chevronButton} onPress={incrementMinute}>
-                <ChevronUp />
-              </Pressable>
-              <Text style={styles.timeText}>{formatMinute(minute)}</Text>
-              <Pressable style={styles.chevronButton} onPress={decrementMinute}>
-                <ChevronDown />
-              </Pressable>
+              <View style={styles.periodColumn}>
+                <Pressable
+                  style={[styles.periodOption, !isPM && styles.periodOptionActive]}
+                  onPress={() => { selectionChanged(); setIsPM(false); }}
+                >
+                  <Text style={[styles.periodText, !isPM && styles.periodTextActive]}>AM</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.periodOption, isPM && styles.periodOptionActive]}
+                  onPress={() => { selectionChanged(); setIsPM(true); }}
+                >
+                  <Text style={[styles.periodText, isPM && styles.periodTextActive]}>PM</Text>
+                </Pressable>
+              </View>
             </View>
 
-            {/* AM/PM */}
-            <View style={styles.periodContainer}>
-              <Pressable
-                style={[styles.periodButton, period === 'AM' && styles.periodButtonActive]}
-                onPress={() => togglePeriod('AM')}
-              >
-                <Text style={[styles.periodText, period === 'AM' && styles.periodTextActive]}>AM</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.periodButton, period === 'PM' && styles.periodButtonActive]}
-                onPress={() => togglePeriod('PM')}
-              >
-                <Text style={[styles.periodText, period === 'PM' && styles.periodTextActive]}>PM</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-        </FadeInView>
-
-        {/* Days */}
-        <FadeInView delay={200} direction="up">
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>REPEAT</Text>
-            <View style={styles.daysRow}>
-              {DAYS.map(day => {
-                const isSelected = selectedDays.includes(day);
-                return (
+            <View style={styles.repeatSection}>
+              <View style={styles.daysRow}>
+                {DAYS.map((day, index) => (
                   <Pressable
-                    key={day}
-                    style={[styles.dayPill, isSelected && styles.dayPillSelected]}
-                    onPress={() => toggleDay(day)}
+                    key={index}
+                    style={[styles.dayButton, selectedDays.includes(index) && styles.dayButtonActive]}
+                    onPress={() => toggleDay(index)}
                   >
-                    <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
-                      {day.charAt(0)}
+                    <Text style={[styles.dayText, selectedDays.includes(index) && styles.dayTextActive]}>
+                      {day}
                     </Text>
                   </Pressable>
-                );
-              })}
+                ))}
+              </View>
+              <Text style={styles.repeatLabel}>{getRepeatLabel()}</Text>
             </View>
           </View>
         </FadeInView>
 
-        {/* Money Punishment */}
-        <FadeInView delay={250} direction="up">
+        <View style={styles.divider} />
+
+        <FadeInView delay={100} direction="up">
           <View style={styles.section}>
-          <View style={styles.sectionLabelRow}>
-            <WarningIcon />
-            <Text style={styles.sectionLabel}>IF YOU SNOOZE, YOU PAY</Text>
-          </View>
-          <View style={styles.punishmentRow}>
-            {PUNISHMENT_OPTIONS.map(amount => {
-              const isSelected = punishment === amount;
-              const isLater = amount === 0;
-              return (
-                <Pressable
-                  key={amount}
-                  style={[
-                    styles.punishmentButton,
-                    isLater && styles.punishmentButtonLater,
-                    isSelected && (isLater ? styles.punishmentButtonLaterSelected : styles.punishmentButtonSelected),
-                  ]}
-                  onPress={() => {
-                    const hasShameVideo = extraPunishments.includes('shame_video');
-                    const level = getPunishmentLevel(amount, hasShameVideo);
-                    hapticForPunishment(level);
-                    setPunishment(amount);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.punishmentText,
-                      isLater && styles.punishmentTextLater,
-                      isSelected && (isLater ? styles.punishmentTextLaterSelected : styles.punishmentTextSelected),
-                    ]}
+            <Text style={styles.sectionTitle}>PROOF OF WAKE</Text>
+            <Text style={styles.sectionSub}>What you must do to dismiss</Text>
+
+            <Pressable
+              style={styles.proofSelector}
+              onPress={() => setShowProofPicker(!showProofPicker)}
+            >
+              <View style={styles.proofIconContainer}>
+                <Feather name={selectedProofData?.icon as any} size={22} color={Colors.orange} />
+              </View>
+              <View style={styles.proofSelectorInfo}>
+                <Text style={styles.proofSelectorName}>{selectedProofData?.name}</Text>
+                <Text style={styles.proofSelectorDesc}>{selectedProofData?.description}</Text>
+              </View>
+              <Feather name={showProofPicker ? 'chevron-up' : 'chevron-right'} size={20} color={Colors.textMuted} />
+            </Pressable>
+
+            {showProofPicker ? (
+              <View style={styles.proofOptions}>
+                {PROOF_ACTIVITIES.map((proof) => (
+                  <Pressable
+                    key={proof.id}
+                    style={[styles.proofOption, selectedProof === proof.id && styles.proofOptionActive]}
+                    onPress={() => {
+                      setSelectedProof(proof.id);
+                      setShowProofPicker(false);
+                      selectionChanged();
+                    }}
                   >
-                    {isLater ? 'Later' : `$${amount}`}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={styles.helperText}>
-            {punishment === 0 ? 'You can add payment stakes in settings anytime' : 'Higher stakes = stronger motivation'}
-          </Text>
-          </View>
-        </FadeInView>
-
-        {/* Extra Consequences */}
-        <FadeInView delay={300} direction="up">
-          <View style={styles.section}>
-          <Text style={styles.sectionLabel}>EXTRA CONSEQUENCES (OPTIONAL)</Text>
-          <View style={styles.consequencesList}>
-            {visiblePunishments.map(option => {
-              const isSelected = extraPunishments.includes(option.id);
-              return (
-                <Pressable
-                  key={option.id}
-                  style={[
-                    styles.consequenceItem,
-                    isSelected && { backgroundColor: `${option.color}15`, borderColor: `${option.color}40` },
-                  ]}
-                  onPress={() => toggleExtraPunishment(option.id)}
-                >
-                  <View style={[styles.consequenceIcon, isSelected && { backgroundColor: `${option.color}20` }]}>
-                    <Text style={styles.consequenceEmoji}>{option.icon}</Text>
-                  </View>
-                  <View style={styles.consequenceText}>
-                    <Text style={[styles.consequenceLabel, isSelected && styles.consequenceLabelSelected]}>
-                      {option.label}
+                    <Feather name={proof.icon as any} size={18} color={selectedProof === proof.id ? Colors.orange : Colors.textMuted} />
+                    <Text style={[styles.proofOptionName, selectedProof === proof.id && styles.proofOptionNameActive]}>
+                      {proof.name}
                     </Text>
-                    <Text style={styles.consequenceDescription}>{option.description}</Text>
-                  </View>
-                  <View style={[styles.checkbox, isSelected && { backgroundColor: option.color, borderWidth: 0 }]}>
-                    {isSelected && <CheckIcon />}
-                  </View>
+                    {selectedProof === proof.id ? (
+                      <Feather name="check" size={18} color={Colors.orange} />
+                    ) : null}
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {selectedProof === 'photo_activity' ? (
+              <View style={styles.activityInput}>
+                <Text style={styles.inputLabel}>Activity name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={activityName}
+                  onChangeText={setActivityName}
+                  placeholder="Brush teeth"
+                  placeholderTextColor={Colors.textMuted}
+                />
+                <View style={styles.suggestions}>
+                  {ACTIVITY_SUGGESTIONS.map(s => (
+                    <Pressable
+                      key={s}
+                      style={[styles.suggestionChip, activityName === s && styles.suggestionChipActive]}
+                      onPress={() => setActivityName(s)}
+                    >
+                      <Text style={[styles.suggestionText, activityName === s && styles.suggestionTextActive]}>
+                        {s}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.ctaPreviewBox}>
+              <Text style={styles.ctaPreviewLabel}>Dismiss button:</Text>
+              <View style={styles.ctaPreviewButton}>
+                <Text style={styles.ctaPreviewText}>I'M UP - {ctaPreview}</Text>
+              </View>
+            </View>
+          </View>
+        </FadeInView>
+
+        <View style={styles.divider} />
+
+        <FadeInView delay={150} direction="up">
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>PUNISHMENT</Text>
+            <Text style={styles.sectionSub}>What happens when you snooze</Text>
+
+            <PunishmentCard
+              icon="dollar-sign"
+              title="Money Stakes"
+              description="Pay your buddy via Apple Cash"
+              enabled={moneyEnabled}
+              onToggle={() => {
+                hapticForPunishment(getPunishmentLevel(amount, shameVideo));
+                setMoneyEnabled(!moneyEnabled);
+              }}
+            >
+              <View style={styles.amountRow}>
+                {AMOUNTS.map((amt) => (
+                  <Pressable
+                    key={amt}
+                    style={[styles.amountButton, amount === amt && styles.amountButtonActive]}
+                    onPress={() => {
+                      hapticForPunishment(getPunishmentLevel(amt, shameVideo));
+                      setAmount(amt);
+                    }}
+                  >
+                    <Text style={[styles.amountText, amount === amt && styles.amountTextActive]}>
+                      ${amt}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={styles.recipientCard}>
+                <View style={styles.recipientAvatar}>
+                  <Text style={styles.recipientAvatarText}>{buddy.name[0]}</Text>
+                </View>
+                <View style={styles.recipientInfo}>
+                  <Text style={styles.recipientLabel}>Paid to</Text>
+                  <Text style={styles.recipientName}>{buddy.name}</Text>
+                </View>
+                <Pressable style={styles.changeBtn}>
+                  <Text style={styles.changeBtnText}>Change</Text>
                 </Pressable>
-              );
-            })}
-          </View>
+              </View>
+            </PunishmentCard>
 
-          <Pressable
-            style={styles.showMoreButton}
-            onPress={() => {
-              buttonPress('secondary');
-              setShowAllPunishments(!showAllPunishments);
-            }}
-          >
-            <Text style={styles.showMoreText}>
-              {showAllPunishments ? 'Show less' : `Show ${EXTRA_PUNISHMENT_OPTIONS.length - 4} more unhinged options 😈`}
-            </Text>
-          </Pressable>
+            <PunishmentCard
+              icon="video"
+              title="Shame Video"
+              description="Plays embarrassing video at MAX volume"
+              enabled={shameVideo}
+              onToggle={() => {
+                hapticForPunishment(getPunishmentLevel(amount, !shameVideo));
+                setShameVideo(!shameVideo);
+              }}
+            >
+              <Pressable style={styles.recordVideoBtn}>
+                <Feather name="film" size={18} color={Colors.text} />
+                <Text style={styles.recordVideoBtnText}>Record Shame Video</Text>
+                <Feather name="chevron-right" size={18} color={Colors.textMuted} />
+              </Pressable>
+            </PunishmentCard>
 
-          <Text style={styles.helperText}>The more consequences, the more likely you'll get up</Text>
+            <PunishmentCard
+              icon="message-circle"
+              title="Buddy Notification"
+              description="Text your buddy that you failed"
+              enabled={buddyNotify}
+              onToggle={() => {
+                buttonPress('secondary');
+                setBuddyNotify(!buddyNotify);
+              }}
+            >
+              <View style={styles.messagePreview}>
+                <Text style={styles.messagePreviewLabel}>They'll receive:</Text>
+                <View style={styles.messagePreviewBubble}>
+                  <Text style={styles.messagePreviewText}>
+                    {buddy.name}, your buddy snoozed at {hour}:{formatMinute(minute)} {isPM ? 'PM' : 'AM'}! They owe you.
+                  </Text>
+                </View>
+              </View>
+            </PunishmentCard>
+
+            <PunishmentCard
+              icon="users"
+              title="Social Shame"
+              description="Post to group chat or social media"
+              enabled={socialShame}
+              onToggle={() => {
+                buttonPress('secondary');
+                setSocialShame(!socialShame);
+              }}
+            >
+              <Pressable style={styles.selectGroupBtn}>
+                <Feather name="message-square" size={18} color={Colors.text} />
+                <Text style={styles.selectGroupBtnText}>Select Group Chat</Text>
+                <Feather name="chevron-right" size={18} color={Colors.textMuted} />
+              </Pressable>
+            </PunishmentCard>
+
+            <PunishmentCard
+              icon="heart"
+              title="Anti-Charity"
+              description="Donate to a cause you hate"
+              enabled={antiCharity}
+              onToggle={() => {
+                buttonPress('secondary');
+                setAntiCharity(!antiCharity);
+              }}
+            >
+              <Pressable style={styles.selectCharityBtn}>
+                <Text style={styles.selectCharityBtnText}>Choose organization...</Text>
+                <Feather name="chevron-right" size={18} color={Colors.textMuted} />
+              </Pressable>
+            </PunishmentCard>
+
+            <View style={styles.stakesHint}>
+              <Feather name="info" size={16} color={Colors.orange} />
+              <Text style={styles.stakesHintText}>
+                <Text style={styles.stakesHintBold}>More punishments = more motivation.</Text> Users with 3+ punishments enabled wake up 4x more consistently.
+              </Text>
+            </View>
+
+            {punishmentCount === 0 ? (
+              <View style={styles.noPunishmentWarning}>
+                <Feather name="alert-triangle" size={18} color={Colors.orange} />
+                <Text style={styles.warningText}>
+                  No punishments? You might as well use the default alarm app
+                </Text>
+              </View>
+            ) : null}
           </View>
         </FadeInView>
 
-        {/* Summary Card */}
-        <FadeInView delay={350} direction="up">
+        <View style={styles.divider} />
+
+        <FadeInView delay={200} direction="up">
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>ESCALATION</Text>
+            <Text style={styles.sectionSub}>Extra pressure to wake up</Text>
+
+            <View style={styles.toggleRow}>
+              <Feather name="volume-2" size={20} color={escalatingVolume ? Colors.orange : Colors.textMuted} />
+              <View style={styles.toggleInfo}>
+                <Text style={styles.toggleTitle}>Escalating Volume</Text>
+                <Text style={styles.toggleSubtitle}>Starts soft, gets louder over time</Text>
+              </View>
+              <Toggle value={escalatingVolume} onToggle={() => setEscalatingVolume(!escalatingVolume)} />
+            </View>
+
+            <View style={styles.toggleRow}>
+              <Feather name="clock" size={20} color={wakeRecheck ? Colors.orange : Colors.textMuted} />
+              <View style={styles.toggleInfo}>
+                <Text style={styles.toggleTitle}>5-Min Recheck</Text>
+                <Text style={styles.toggleSubtitle}>Verify you're still awake after 5 min</Text>
+              </View>
+              <Toggle value={wakeRecheck} onToggle={() => setWakeRecheck(!wakeRecheck)} />
+            </View>
+          </View>
+        </FadeInView>
+
+        <FadeInView delay={250} direction="up">
           <View style={styles.summaryCard}>
-          <View style={styles.summaryTop}>
-            <View>
-              <Text style={styles.summaryLabel}>Your alarm</Text>
+            <Text style={styles.summaryTitle}>Summary</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Time</Text>
               <Text style={styles.summaryValue}>
-                {hour}:{formatMinute(minute)} {period} · {selectedDays.length} days
+                {hour}:{formatMinute(minute)} {isPM ? 'PM' : 'AM'}
               </Text>
             </View>
-            <View style={[styles.moneyBadge, punishment === 0 && styles.moneyBadgeGray]}>
-              <Text style={[styles.moneyBadgeText, punishment === 0 && styles.moneyBadgeTextGray]}>
-                {punishment === 0 ? 'No $ set' : `-$${punishment}`}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Repeat</Text>
+              <Text style={styles.summaryValue}>{getRepeatLabel()}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Dismiss</Text>
+              <Text style={styles.summaryValue}>{selectedProofData?.name}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Penalty</Text>
+              <Text style={styles.summaryValue}>
+                {[
+                  moneyEnabled && `$${amount}`,
+                  shameVideo && 'Video',
+                  buddyNotify && 'Text',
+                  socialShame && 'Social',
+                  antiCharity && 'Charity',
+                ].filter(Boolean).join(' + ') || 'None'}
               </Text>
             </View>
           </View>
-
-          {extraPunishments.length > 0 && (
-            <View style={styles.selectedPunishments}>
-              {extraPunishments.map(id => {
-                const option = EXTRA_PUNISHMENT_OPTIONS.find(o => o.id === id);
-                if (!option) return null;
-                return (
-                  <View key={id} style={[styles.punishmentPill, { backgroundColor: `${option.color}15` }]}>
-                    <Text style={styles.punishmentPillIcon}>{option.icon}</Text>
-                    <Text style={[styles.punishmentPillText, { color: option.color }]}>{option.label}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-          </View>
         </FadeInView>
 
-        {/* Continue Button */}
-        <FadeInView delay={400} direction="up">
-          <Pressable testID="button-continue" style={styles.continueButton} onPress={handleContinue}>
-            <Text style={styles.continueText}>Continue</Text>
-            <ArrowIcon />
-          </Pressable>
-        </FadeInView>
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
@@ -431,352 +607,522 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  headerButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  saveText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.orange,
+  },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing['3xl'],
-  },
-  progressDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingTop: Spacing.xl,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.orange,
-  },
-  dotActive: {
-    width: 24,
-  },
-  dotInactive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.border,
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: Spacing['2xl'],
-    paddingBottom: Spacing.xl,
-  },
-  pillBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: 'rgba(251, 146, 60, 0.1)',
-    borderRadius: BorderRadius.pill,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.xl,
+    paddingTop: Spacing.lg,
   },
-  pillText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.orange,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: Spacing.sm,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: Colors.textMuted,
+  timeSection: {
+    marginBottom: Spacing.lg,
   },
   timePickerCard: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    marginBottom: Spacing.xl,
-  },
-  timePickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
   timeColumn: {
     alignItems: 'center',
-    gap: Spacing.sm,
   },
-  chevronButton: {
+  timeArrow: {
     width: 48,
-    height: 44,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.sm,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timeText: {
-    fontSize: 64,
+  timeDigit: {
+    fontSize: 56,
     fontWeight: '600',
     color: Colors.text,
     minWidth: 80,
     textAlign: 'center',
   },
-  colon: {
-    fontSize: 56,
+  timeColon: {
+    fontSize: 48,
     fontWeight: '300',
     color: Colors.textMuted,
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
-  periodContainer: {
+  periodColumn: {
     marginLeft: Spacing.md,
     gap: Spacing.sm,
   },
-  periodButton: {
+  periodOption: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: Colors.bgCard,
     borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  periodButtonActive: {
+  periodOptionActive: {
     backgroundColor: Colors.orange,
+    borderColor: Colors.orange,
   },
   periodText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: Colors.textMuted,
   },
   periodTextActive: {
-    color: Colors.text,
+    color: Colors.bg,
   },
-  section: {
-    marginBottom: Spacing.xl,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.textMuted,
-    letterSpacing: 1,
-    marginBottom: Spacing.md,
-  },
-  sectionLabelRow: {
-    flexDirection: 'row',
+  repeatSection: {
     alignItems: 'center',
+    marginTop: Spacing.lg,
     gap: Spacing.sm,
-    marginBottom: Spacing.md,
   },
   daysRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
   },
-  dayPill: {
-    flex: 1,
-    paddingVertical: 14,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.sm,
+  dayButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.bgCard,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  dayPillSelected: {
+  dayButtonActive: {
     backgroundColor: 'rgba(251, 146, 60, 0.15)',
     borderColor: 'rgba(251, 146, 60, 0.3)',
   },
   dayText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.textMuted,
   },
-  dayTextSelected: {
+  dayTextActive: {
     color: Colors.orange,
   },
-  punishmentRow: {
+  repeatLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: Spacing.lg,
+  },
+  section: {
+    marginBottom: Spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  sectionSub: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    marginBottom: Spacing.md,
+  },
+  proofSelector: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    gap: Spacing.md,
+  },
+  proofIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  proofSelectorInfo: {
+    flex: 1,
+  },
+  proofSelectorName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  proofSelectorDesc: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  proofOptions: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+    overflow: 'hidden',
+  },
+  proofOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  proofOptionActive: {
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+  },
+  proofOptionName: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textSecondary,
+  },
+  proofOptionNameActive: {
+    color: Colors.orange,
+    fontWeight: '600',
+  },
+  activityInput: {
+    marginTop: Spacing.md,
+  },
+  inputLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginBottom: Spacing.sm,
+  },
+  textInput: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    fontSize: 16,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  suggestions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  suggestionChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  suggestionChipActive: {
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderColor: 'rgba(251, 146, 60, 0.3)',
+  },
+  suggestionText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  suggestionTextActive: {
+    color: Colors.orange,
+  },
+  ctaPreviewBox: {
+    marginTop: Spacing.lg,
+    alignItems: 'center',
     gap: Spacing.sm,
   },
-  punishmentButton: {
-    flex: 1,
-    paddingVertical: Spacing.lg,
+  ctaPreviewLabel: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  ctaPreviewButton: {
+    backgroundColor: Colors.green,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+  },
+  ctaPreviewText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.bg,
+  },
+  punishmentCard: {
     backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
+  },
+  punishmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    gap: Spacing.md,
+  },
+  punishmentIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  punishmentInfo: {
+    flex: 1,
+  },
+  punishmentTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  punishmentDesc: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  punishmentExpanded: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
+  },
+  toggle: {
+    width: 52,
+    height: 32,
+    borderRadius: 16,
+    padding: 3,
+  },
+  toggleKnob: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.text,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  amountButton: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.bgCard,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  punishmentButtonLater: {
-    flex: 1.2,
-  },
-  punishmentButtonSelected: {
+  amountButtonActive: {
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderColor: 'rgba(239, 68, 68, 0.4)',
   },
-  punishmentButtonLaterSelected: {
-    backgroundColor: 'rgba(120, 113, 108, 0.15)',
-    borderColor: 'rgba(120, 113, 108, 0.4)',
-  },
-  punishmentText: {
+  amountText: {
     fontSize: 18,
     fontWeight: '700',
     color: Colors.textMuted,
   },
-  punishmentTextLater: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  punishmentTextSelected: {
+  amountTextActive: {
     color: Colors.red,
   },
-  punishmentTextLaterSelected: {
-    color: Colors.textSecondary,
-  },
-  helperText: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
-  consequencesList: {
-    gap: Spacing.sm,
-  },
-  consequenceItem: {
+  recipientCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    padding: 14,
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: Colors.bgCard,
     borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    padding: Spacing.md,
+    gap: Spacing.md,
   },
-  consequenceIcon: {
+  recipientAvatar: {
     width: 40,
     height: 40,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.bgElevated,
+    borderRadius: 20,
+    backgroundColor: Colors.orange,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  consequenceEmoji: {
-    fontSize: 20,
-  },
-  consequenceText: {
-    flex: 1,
-  },
-  consequenceLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: 2,
-  },
-  consequenceLabelSelected: {
+  recipientAvatarText: {
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.text,
   },
-  consequenceDescription: {
+  recipientInfo: {
+    flex: 1,
+  },
+  recipientLabel: {
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+  recipientName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  changeBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.border,
+    borderRadius: BorderRadius.sm,
+  },
+  changeBtnText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  recordVideoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  recordVideoBtnText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  messagePreview: {
+    gap: Spacing.sm,
+  },
+  messagePreviewLabel: {
     fontSize: 12,
     color: Colors.textMuted,
   },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: Colors.border,
-    borderWidth: 2,
-    borderColor: '#3F3A36',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  showMoreButton: {
-    marginTop: Spacing.md,
+  messagePreviewBubble: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
     padding: Spacing.md,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
   },
-  showMoreText: {
+  messagePreviewText: {
     fontSize: 14,
-    fontWeight: '500',
     color: Colors.textSecondary,
+  },
+  selectGroupBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  selectGroupBtnText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  selectCharityBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+  },
+  selectCharityBtnText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  stakesHint: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  stakesHintText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+  stakesHintBold: {
+    fontWeight: '700',
+  },
+  noPunishmentWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.orange,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+  },
+  toggleInfo: {
+    flex: 1,
+  },
+  toggleTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  toggleSubtitle: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
   },
   summaryCard: {
     backgroundColor: Colors.bgElevated,
-    borderRadius: 14,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
-    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  summaryTop: {
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  summaryRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: Spacing.sm,
   },
   summaryLabel: {
     fontSize: 14,
     color: Colors.textMuted,
-    marginBottom: 2,
   },
   summaryValue: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  moneyBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: Spacing.sm,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: BorderRadius.pill,
-  },
-  moneyBadgeGray: {
-    backgroundColor: 'rgba(120, 113, 108, 0.1)',
-  },
-  moneyBadgeText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.red,
-  },
-  moneyBadgeTextGray: {
-    color: Colors.textSecondary,
-  },
-  selectedPunishments: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    paddingTop: Spacing.md,
-    marginTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  punishmentPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.pill,
-  },
-  punishmentPillIcon: {
-    fontSize: 12,
-  },
-  punishmentPillText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  continueButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.orange,
-    borderRadius: 14,
-    paddingVertical: 18,
-    paddingHorizontal: Spacing.xl,
-    shadowColor: Colors.orange,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  continueText: {
-    fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
   },
