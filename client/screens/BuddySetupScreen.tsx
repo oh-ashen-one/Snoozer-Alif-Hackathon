@@ -21,6 +21,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { useInvite } from '@/hooks/useInvite';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BuddySetup'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -50,15 +51,6 @@ const CHARITIES = [
   { id: 'dnc', name: 'Democratic Party', emoji: '' },
   { id: 'custom', name: 'Custom charity...', emoji: '' },
 ];
-
-function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
 
 function PulsingDot({ color }: { color: string }) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -161,10 +153,22 @@ export default function BuddySetupScreen({ route }: Props) {
   const modeInfo = MODE_INFO[mode];
 
   const [step, setStep] = useState(1);
-  const [inviteCode] = useState(() => generateInviteCode());
   const [isWaiting, setIsWaiting] = useState(false);
   const [buddyName, setBuddyName] = useState('');
   const [copied, setCopied] = useState(false);
+
+  const {
+    code: inviteCode,
+    isLoading: isCreatingInvite,
+    createInvite,
+  } = useInvite(mode);
+
+  // Create invite when component mounts
+  useEffect(() => {
+    if (!inviteCode && !isCreatingInvite) {
+      createInvite();
+    }
+  }, [inviteCode, isCreatingInvite, createInvite]);
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [groupName, setGroupName] = useState('');
@@ -178,7 +182,7 @@ export default function BuddySetupScreen({ route }: Props) {
   const [amountPerSnooze, setAmountPerSnooze] = useState<number | null>(null);
 
   const totalSteps = 3;
-  const inviteLink = `snoozer.app/join/${inviteCode}`;
+  const inviteLink = inviteCode ? `https://snoozer.replit.app/join/${inviteCode}` : '';
 
   const handleBack = useCallback(() => {
     if (step === 1) {
@@ -223,16 +227,28 @@ export default function BuddySetupScreen({ route }: Props) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
 
-  const handleSimulateBuddyJoin = useCallback(() => {
-    setIsWaiting(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setTimeout(() => {
-      setBuddyName('Alex');
-      setIsWaiting(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setStep(2);
-    }, 2000);
-  }, []);
+  const handleWaitForBuddy = useCallback(async () => {
+    if (!inviteCode) {
+      // Create invite first if we don't have one
+      const code = await createInvite();
+      if (!code) return;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      navigation.navigate('WaitingForBuddy', {
+        mode,
+        isHost: true,
+        code,
+        buddyName: 'Buddy',
+      });
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      navigation.navigate('WaitingForBuddy', {
+        mode,
+        isHost: true,
+        code: inviteCode,
+        buddyName: 'Buddy',
+      });
+    }
+  }, [inviteCode, createInvite, navigation, mode]);
 
   const handleStep2Continue = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -298,7 +314,7 @@ export default function BuddySetupScreen({ route }: Props) {
       <View style={styles.card}>
         <ThemedText style={styles.cardLabel}>Your invite link</ThemedText>
         <View style={styles.linkRow}>
-          <ThemedText style={styles.linkText}>{inviteLink}</ThemedText>
+          <ThemedText style={styles.linkText}>{inviteLink || 'Creating link...'}</ThemedText>
           <Pressable
             style={[styles.copyButton, copied && { backgroundColor: '#22C55E' }]}
             onPress={handleCopyLink}
@@ -344,16 +360,16 @@ export default function BuddySetupScreen({ route }: Props) {
         <ThemedText style={styles.qrLabel}>Scan for in-person</ThemedText>
       </View>
 
-      {isWaiting ? (
+      {isCreatingInvite ? (
         <View style={styles.waitingCard}>
           <PulsingDot color={modeInfo.color} />
-          <ThemedText style={styles.waitingText}>Waiting for buddy...</ThemedText>
+          <ThemedText style={styles.waitingText}>Creating invite...</ThemedText>
         </View>
       ) : (
         <Pressable
           style={[styles.primaryButton, { backgroundColor: modeInfo.color, shadowColor: modeInfo.color }]}
-          onPress={handleSimulateBuddyJoin}
-          testID="button-simulate-join"
+          onPress={handleWaitForBuddy}
+          testID="button-wait-for-buddy"
         >
           <ThemedText style={styles.primaryButtonText}>
             {mode === 'group' || mode === 'survivor' ? 'Start waiting for members' : 'Wait for buddy to join'}

@@ -8,6 +8,7 @@ import {
   Linking,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,26 +16,15 @@ import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { useInvite } from '@/hooks/useInvite';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Invite'>;
 type NavigationProp = NativeStackScreenProps<RootStackParamList, 'Invite'>['navigation'];
-
-const STORAGE_KEY = '@snoozer/invite_code';
-
-function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
 
 function validateCode(code: string): boolean {
   const validChars = /^[A-Z0-9]{6}$/;
@@ -46,34 +36,27 @@ export default function InviteScreen({ route }: Props) {
   const navigation = useNavigation<NavigationProp>();
   const { mode, buddyName } = route.params;
 
-  const [inviteCode, setInviteCode] = useState('');
   const [friendCode, setFriendCode] = useState('');
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [localError, setLocalError] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
-  const inviteLink = `snoozer.app/join/${inviteCode}`;
+  const {
+    code: inviteCode,
+    isLoading,
+    error: inviteError,
+    createInvite,
+    joinInvite,
+  } = useInvite(mode);
 
+  const inviteLink = inviteCode ? `https://snoozer.replit.app/join/${inviteCode}` : '';
+
+  // Create invite when screen loads
   useEffect(() => {
-    const loadOrCreateCode = async () => {
-      try {
-        const savedCode = await AsyncStorage.getItem(STORAGE_KEY);
-        if (savedCode) {
-          setInviteCode(savedCode);
-        } else {
-          const newCode = generateInviteCode();
-          await AsyncStorage.setItem(STORAGE_KEY, newCode);
-          setInviteCode(newCode);
-        }
-      } catch (e) {
-        const newCode = generateInviteCode();
-        setInviteCode(newCode);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadOrCreateCode();
-  }, []);
+    if (!inviteCode && !isLoading) {
+      createInvite();
+    }
+  }, [inviteCode, isLoading, createInvite]);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -121,44 +104,68 @@ export default function InviteScreen({ route }: Props) {
   const handleFriendCodeChange = useCallback((text: string) => {
     const formatted = text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     setFriendCode(formatted);
-    setError('');
+    setLocalError('');
   }, []);
 
-  const handleJoinWithCode = useCallback(() => {
+  const handleJoinWithCode = useCallback(async () => {
     if (!friendCode) {
-      setError('Please enter a code');
+      setLocalError('Please enter a code');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     if (!validateCode(friendCode)) {
-      setError('Invalid code format. Codes are 6 characters.');
+      setLocalError('Invalid code format. Codes are 6 characters.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('WaitingForBuddy', {
-      mode,
-      isHost: false,
-      code: friendCode,
-      buddyName: buddyName || 'Friend',
-    });
-  }, [friendCode, navigation, mode, buddyName]);
 
-  const handleShareAndWait = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('WaitingForBuddy', {
-      mode,
-      isHost: true,
-      code: inviteCode,
-      buddyName: buddyName || 'Buddy',
-    });
-  }, [navigation, mode, inviteCode, buddyName]);
+    setIsJoining(true);
+    try {
+      const result = await joinInvite(friendCode);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Navigate directly to BuddyJoined since we successfully joined
+      navigation.navigate('BuddyJoined', {
+        mode: result.mode,
+        buddyName: result.buddyName,
+        stakes: result.mode === 'accountability' ? 'Free' : '$10/week',
+      });
+    } catch (err: any) {
+      setLocalError(err.message || 'Failed to join. Check the code and try again.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsJoining(false);
+    }
+  }, [friendCode, navigation, joinInvite]);
 
-  if (isLoading) {
+  const handleShareAndWait = useCallback(async () => {
+    if (!inviteCode) {
+      // Create invite first if we don't have one
+      const code = await createInvite();
+      if (!code) return;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      navigation.navigate('WaitingForBuddy', {
+        mode,
+        isHost: true,
+        code,
+        buddyName: buddyName || 'Buddy',
+      });
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      navigation.navigate('WaitingForBuddy', {
+        mode,
+        isHost: true,
+        code: inviteCode,
+        buddyName: buddyName || 'Buddy',
+      });
+    }
+  }, [navigation, mode, inviteCode, buddyName, createInvite]);
+
+  if (isLoading || (!inviteCode && !inviteError)) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.loadingContainer}>
-          <ThemedText style={styles.loadingText}>Generating code...</ThemedText>
+          <ActivityIndicator size="large" color="#FB923C" />
+          <ThemedText style={styles.loadingText}>Creating invite...</ThemedText>
         </View>
       </View>
     );
@@ -183,7 +190,7 @@ export default function InviteScreen({ route }: Props) {
           <ThemedText style={styles.sectionLabel}>Your invite code</ThemedText>
           <View style={styles.codeCard}>
             <Pressable style={styles.codeDisplay} onPress={handleCopyCode} testID="button-copy-code">
-              <ThemedText style={styles.codeText}>{inviteCode}</ThemedText>
+              <ThemedText style={styles.codeText}>{inviteCode || '------'}</ThemedText>
               <View style={[styles.copyBadge, copied && styles.copyBadgeSuccess]}>
                 <Feather name={copied ? 'check' : 'copy'} size={16} color="#FAFAF9" />
               </View>
@@ -240,7 +247,7 @@ export default function InviteScreen({ route }: Props) {
           <ThemedText style={styles.sectionLabel}>Enter friend's code</ThemedText>
           <View style={styles.inputRow}>
             <TextInput
-              style={[styles.codeInput, error ? styles.codeInputError : null]}
+              style={[styles.codeInput, localError ? styles.codeInputError : null]}
               value={friendCode}
               onChangeText={handleFriendCodeChange}
               placeholder="ABC123"
@@ -253,20 +260,24 @@ export default function InviteScreen({ route }: Props) {
             <Pressable
               style={[
                 styles.joinButton,
-                friendCode.length === 6 && styles.joinButtonActive,
+                friendCode.length === 6 && !isJoining && styles.joinButtonActive,
               ]}
               onPress={handleJoinWithCode}
-              disabled={friendCode.length !== 6}
+              disabled={friendCode.length !== 6 || isJoining}
               testID="button-join"
             >
-              <Feather
-                name="arrow-right"
-                size={20}
-                color={friendCode.length === 6 ? '#FAFAF9' : '#57534E'}
-              />
+              {isJoining ? (
+                <ActivityIndicator size="small" color="#FAFAF9" />
+              ) : (
+                <Feather
+                  name="arrow-right"
+                  size={20}
+                  color={friendCode.length === 6 ? '#FAFAF9' : '#57534E'}
+                />
+              )}
             </Pressable>
           </View>
-          {error ? <ThemedText style={styles.errorText}>{error}</ThemedText> : null}
+          {localError ? <ThemedText style={styles.errorText}>{localError}</ThemedText> : null}
         </View>
       </View>
 

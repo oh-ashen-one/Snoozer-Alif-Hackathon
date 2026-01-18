@@ -10,7 +10,8 @@
       "Bash(wc:*)",
       "Bash(find:*)",
       "Bash(tree:*)",
-      "Bash(npx expo install:*)"
+      "Bash(npx expo install:*)",
+      "Bash(npx drizzle-kit push:*)"
     ]
   }
 }

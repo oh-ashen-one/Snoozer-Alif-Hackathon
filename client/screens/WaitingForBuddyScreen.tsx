@@ -15,6 +15,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { useInvite } from '@/hooks/useInvite';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WaitingForBuddy'>;
 type NavigationProp = NativeStackScreenProps<RootStackParamList, 'WaitingForBuddy'>['navigation'];
@@ -77,8 +78,42 @@ export default function WaitingForBuddyScreen({ route }: Props) {
   const { mode, isHost, code, buddyName } = route.params;
 
   const [waitTime, setWaitTime] = useState(0);
+  const [expired, setExpired] = useState(false);
   const dotAnim = useRef(new Animated.Value(0)).current;
+  const hasNavigated = useRef(false);
 
+  const {
+    status,
+    buddyName: joinedBuddyName,
+    startPolling,
+    stopPolling,
+    cancelInvite,
+  } = useInvite(mode);
+
+  // Start polling when screen mounts (only if host)
+  useEffect(() => {
+    if (isHost && code) {
+      startPolling(code);
+    }
+    return () => stopPolling();
+  }, [isHost, code, startPolling, stopPolling]);
+
+  // Navigate to BuddyJoined when buddy joins
+  useEffect(() => {
+    if (status === 'accepted' && !hasNavigated.current) {
+      hasNavigated.current = true;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.navigate('BuddyJoined', {
+        mode,
+        buddyName: joinedBuddyName || buddyName || 'Buddy',
+        stakes: mode === 'accountability' ? 'Free' : '$10/week',
+      });
+    } else if (status === 'expired') {
+      setExpired(true);
+    }
+  }, [status, navigation, mode, joinedBuddyName, buddyName]);
+
+  // Wait time counter
   useEffect(() => {
     const timer = setInterval(() => {
       setWaitTime(t => t + 1);
@@ -86,6 +121,7 @@ export default function WaitingForBuddyScreen({ route }: Props) {
     return () => clearInterval(timer);
   }, []);
 
+  // Dot animation
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -103,22 +139,14 @@ export default function WaitingForBuddyScreen({ route }: Props) {
     ).start();
   }, [dotAnim]);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.navigate('BuddyJoined', {
-        mode,
-        buddyName: buddyName || 'Alex',
-        stakes: mode === 'accountability' ? 'Free' : '$10/week',
-      });
-    }, 4000);
-    return () => clearTimeout(timeout);
-  }, [navigation, mode, buddyName]);
-
-  const handleCancel = useCallback(() => {
+  const handleCancel = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    stopPolling();
+    if (isHost) {
+      await cancelInvite();
+    }
     navigation.goBack();
-  }, [navigation]);
+  }, [navigation, stopPolling, cancelInvite, isHost]);
 
   const formatWaitTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -202,7 +230,9 @@ export default function WaitingForBuddyScreen({ route }: Props) {
         </View>
 
         <ThemedText style={styles.hintText}>
-          {isHost
+          {expired
+            ? 'Invite expired. Please create a new one.'
+            : isHost
             ? "We'll notify you when they join"
             : 'Connecting to your buddy...'}
         </ThemedText>

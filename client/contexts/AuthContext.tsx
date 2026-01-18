@@ -79,6 +79,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return unsubscribe;
   }, []);
 
+  // Sync user to backend when authenticated
+  useEffect(() => {
+    const syncUser = async () => {
+      if (!user) return;
+
+      try {
+        const baseUrl = process.env.EXPO_PUBLIC_DOMAIN
+          ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+          : '';
+
+        if (!baseUrl) return;
+
+        await fetch(`${baseUrl}/api/users/sync`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.uid,
+          },
+          body: JSON.stringify({
+            email: user.email,
+            displayName: user.displayName,
+          }),
+        });
+      } catch (error) {
+        // Silently fail - user sync is not critical for app function
+      }
+    };
+
+    syncUser();
+  }, [user]);
+
   // Apple Sign-In
   const signInWithApple = useCallback(async () => {
     if (Platform.OS !== 'ios') {
