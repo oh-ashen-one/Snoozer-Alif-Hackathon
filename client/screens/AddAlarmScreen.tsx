@@ -163,15 +163,15 @@ export default function AddAlarmScreen() {
   const [activityName, setActivityName] = useState('Brush teeth');
   const [showProofPicker, setShowProofPicker] = useState(false);
 
-  const [moneyEnabled, setMoneyEnabled] = useState(true);
+  const [moneyEnabled, setMoneyEnabled] = useState(false);
   const [amount, setAmount] = useState(5);
-  const [shameVideo, setShameVideo] = useState(true);
-  const [buddyNotify, setBuddyNotify] = useState(true);
+  const [shameVideo, setShameVideo] = useState(false);
+  const [buddyNotify, setBuddyNotify] = useState(false);
   const [socialShame, setSocialShame] = useState(false);
   const [antiCharity, setAntiCharity] = useState(false);
 
-  const [escalatingVolume, setEscalatingVolume] = useState(true);
-  const [wakeRecheck, setWakeRecheck] = useState(true);
+  const [escalatingVolume, setEscalatingVolume] = useState(false);
+  const [wakeRecheck, setWakeRecheck] = useState(false);
 
   const buddy = { name: 'Jake', phone: '+1 (555) 123-4567' };
 
