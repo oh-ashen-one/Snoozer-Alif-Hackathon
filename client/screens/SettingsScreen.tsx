@@ -427,22 +427,6 @@ export default function SettingsScreen() {
           </View>
         </FadeInView>
 
-        {/* Proof Activity Section */}
-        <FadeInView delay={100} direction="up">
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionLabel}>PROOF ACTIVITY</ThemedText>
-            <View style={styles.card}>
-              <SettingsRow
-                icon="map-pin"
-                iconColor="#FB923C"
-                iconBg={ICON_COLORS.orange}
-                label="Update Proof Activity"
-                onPress={handleUpdateProofLocation}
-              />
-            </View>
-          </View>
-        </FadeInView>
-
         {/* Calendar Section */}
         <FadeInView delay={175} direction="up">
           <View style={styles.section}>
@@ -505,6 +489,14 @@ export default function SettingsScreen() {
                 iconBg={ICON_COLORS.purple}
                 label="Re-record shame video"
                 onPress={handleRerecordShameVideo}
+              />
+              <View style={styles.rowDivider} />
+              <SettingsRow
+                icon="map-pin"
+                iconColor="#FB923C"
+                iconBg={ICON_COLORS.orange}
+                label="Update proof activity"
+                onPress={handleUpdateProofLocation}
               />
             </View>
           </View>
