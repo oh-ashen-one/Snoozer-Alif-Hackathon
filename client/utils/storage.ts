@@ -338,7 +338,9 @@ export interface PunishmentConfig {
   email_boss?: {
     bossEmail: string;
   };
-  // Future punishments can add their config here
+  text_ex?: {
+    exPhoneNumber: string;
+  };
 }
 
 export async function getPunishmentConfig(): Promise<PunishmentConfig> {

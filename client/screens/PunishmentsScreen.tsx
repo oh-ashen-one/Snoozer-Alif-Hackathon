@@ -25,6 +25,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import * as SMS from 'expo-sms';
+
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
@@ -58,7 +60,7 @@ const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444' },
   { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899' },
   { id: 'twitter', label: 'Tweet something bad', description: '"I overslept again lol"', icon: '🐦', color: '#1DA1F2' },
-  { id: 'text_ex', label: 'Text your ex "I miss u"', description: 'From your actual number', icon: '💔', color: '#EF4444' },
+  { id: 'text_ex', label: 'Text your ex "I miss u"', description: 'From your actual number', icon: '💔', color: '#EF4444', configurable: true },
   { id: 'email_boss', label: 'Email your boss', description: '"Running late again, sorry"', icon: '📧', color: '#EA4335', configurable: true },
   { id: 'grandma_call', label: 'Auto-call your grandma', description: 'She WILL answer at 6am', icon: '👵', color: '#EC4899' },
   { id: 'tinder_bio', label: 'Update Tinder bio', description: '"Can\'t even wake up on time"', icon: '🔥', color: '#FE3C72' },
@@ -104,11 +106,15 @@ interface PunishmentRowProps {
 
 function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand }: PunishmentRowProps) {
   const [bossEmail, setBossEmail] = useState(config.email_boss?.bossEmail || '');
+  const [exPhoneNumber, setExPhoneNumber] = useState(config.text_ex?.exPhoneNumber || '');
 
   // Sync local state when config changes
   useEffect(() => {
     if (punishment.id === 'email_boss') {
       setBossEmail(config.email_boss?.bossEmail || '');
+    }
+    if (punishment.id === 'text_ex') {
+      setExPhoneNumber(config.text_ex?.exPhoneNumber || '');
     }
   }, [config, punishment.id]);
 
@@ -136,6 +142,23 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
       email_boss: { bossEmail },
     });
   }, [bossEmail, config, onSaveConfig]);
+
+  const handleTestTextEx = useCallback(async () => {
+    if (!exPhoneNumber) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const isAvailable = await SMS.isAvailableAsync();
+    if (isAvailable) {
+      await SMS.sendSMSAsync([exPhoneNumber], 'I miss you');
+    }
+  }, [exPhoneNumber]);
+
+  const handleSaveTextExConfig = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSaveConfig({
+      ...config,
+      text_ex: { exPhoneNumber },
+    });
+  }, [exPhoneNumber, config, onSaveConfig]);
 
   const content = (
     <View style={styles.punishmentLeft}>
@@ -199,6 +222,49 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
               style={[styles.saveButton, !bossEmail && styles.buttonDisabled]}
               onPress={handleSaveEmailConfig}
               disabled={!bossEmail}
+            >
+              <ThemedText style={styles.saveButtonText}>Save</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Show saved phone number when configured and not expanded */}
+      {enabled && punishment.id === 'text_ex' && config.text_ex?.exPhoneNumber && !expanded && (
+        <Pressable style={styles.savedConfigRow} onPress={onExpand}>
+          <ThemedText style={styles.savedConfigText}>
+            📱 {config.text_ex.exPhoneNumber}
+          </ThemedText>
+          <ThemedText style={styles.editText}>Edit</ThemedText>
+        </Pressable>
+      )}
+
+      {/* Text Ex Configuration */}
+      {expanded && punishment.id === 'text_ex' && (
+        <View style={styles.configSection}>
+          <ThemedText style={styles.configLabel}>Enter their number</ThemedText>
+          <TextInput
+            style={styles.configInput}
+            placeholder="+1 555 123 4567"
+            placeholderTextColor={Colors.textMuted}
+            value={exPhoneNumber}
+            onChangeText={setExPhoneNumber}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.configButtons}>
+            <Pressable
+              style={[styles.testButton, !exPhoneNumber && styles.buttonDisabled]}
+              onPress={handleTestTextEx}
+              disabled={!exPhoneNumber}
+            >
+              <ThemedText style={styles.testButtonText}>Test</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[styles.saveButton, !exPhoneNumber && styles.buttonDisabled]}
+              onPress={handleSaveTextExConfig}
+              disabled={!exPhoneNumber}
             >
               <ThemedText style={styles.saveButtonText}>Save</ThemedText>
             </Pressable>
@@ -311,6 +377,7 @@ export default function PunishmentsScreen() {
                   expanded={expandedPunishment === punishment.id}
                   config={punishmentConfig}
                   onSaveConfig={handleSaveConfig}
+                  onExpand={() => setExpandedPunishment(punishment.id)}
                 />
               ))}
             </View>
@@ -509,5 +576,39 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
+  },
+
+  // Saved config display
+  savedConfigRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    backgroundColor: 'rgba(234, 67, 53, 0.05)',
+  },
+  savedConfigText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    flex: 1,
+  },
+  savedConfigButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  savedConfigButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  testLinkText: {
+    fontSize: 13,
+    color: Colors.green,
+    fontWeight: '500',
+  },
+  editText: {
+    fontSize: 13,
+    color: Colors.orange,
+    fontWeight: '500',
   },
 });
