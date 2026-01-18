@@ -42,9 +42,18 @@ import { getAlarms } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 
 // Import local alarm sounds
-const nuclearAlarmSound = require('@/assets/sounds/nuclear-alarm.wav');
-const classicAlarmSound = { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' };
+const ALARM_SOUND_FILES: Record<string, any> = {
+  nuclear: require('@/assets/sounds/nuclear-alarm.wav'),
+  mosquito: require('@/assets/sounds/mosquito-swarm.wav'),
+  emp: require('@/assets/sounds/emp-blast.wav'),
+  siren: require('@/assets/sounds/siren-from-hell.wav'),
+  chaos: require('@/assets/sounds/chaos-engine.wav'),
+  escalator: require('@/assets/sounds/the-escalator.wav'),
+  'ear-shatter': require('@/assets/sounds/ear-shatter.wav'),
+  'high-pitch': require('@/assets/sounds/high-pitch.wav'),
+};
 
+const ALARM_SOUND_IDS = Object.keys(ALARM_SOUND_FILES);
 const ALARM_SOUND_KEY = '@snoozer/alarm_sound';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -169,16 +178,17 @@ export default function AlarmRingingScreen() {
           shouldDuckAndroid: false,
         });
 
-        // Get selected alarm sound from storage
-        let soundSource = nuclearAlarmSound; // Default to nuclear
+        // Get selected alarm sound from storage (or random default)
+        let soundId = ALARM_SOUND_IDS[Math.floor(Math.random() * ALARM_SOUND_IDS.length)];
         try {
           const savedSound = await AsyncStorage.getItem(ALARM_SOUND_KEY);
-          if (savedSound === 'default') {
-            soundSource = classicAlarmSound;
+          if (savedSound && ALARM_SOUND_FILES[savedSound]) {
+            soundId = savedSound;
           }
         } catch {
-          // Use default if error
+          // Use random default if error
         }
+        const soundSource = ALARM_SOUND_FILES[soundId];
 
         const { sound } = await Audio.Sound.createAsync(
           soundSource,

@@ -39,8 +39,14 @@ const STORAGE_KEYS = {
 };
 
 export const ALARM_SOUNDS = [
-  { id: 'nuclear', name: 'Nuclear Alarm', description: 'Intense warning siren' },
-  { id: 'default', name: 'Classic', description: 'Standard alarm tone' },
+  { id: 'nuclear', name: 'Nuclear Alarm' },
+  { id: 'mosquito', name: 'Mosquito Swarm' },
+  { id: 'emp', name: 'EMP Blast' },
+  { id: 'siren', name: 'Siren From Hell' },
+  { id: 'chaos', name: 'Chaos Engine' },
+  { id: 'escalator', name: 'The Escalator' },
+  { id: 'ear-shatter', name: 'Ear Shatter' },
+  { id: 'high-pitch', name: 'High Pitch' },
 ] as const;
 
 export type AlarmSoundId = typeof ALARM_SOUNDS[number]['id'];
@@ -150,7 +156,11 @@ export default function SettingsScreen() {
   const [defaultPunishment, setDefaultPunishment] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState('Venmo');
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
-  const [alarmSound, setAlarmSound] = useState<AlarmSoundId>('nuclear');
+  // Random default alarm sound
+  const [alarmSound, setAlarmSound] = useState<AlarmSoundId>(() => {
+    const randomIndex = Math.floor(Math.random() * ALARM_SOUNDS.length);
+    return ALARM_SOUNDS[randomIndex].id;
+  });
 
   // Load settings on mount
   useEffect(() => {
