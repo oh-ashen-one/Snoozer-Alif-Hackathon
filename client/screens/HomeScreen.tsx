@@ -299,10 +299,23 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
 
   // Check if alarm has stakes
   const money = alarm.punishment ?? 0;
-  const hasMoneyStake = (alarmAny.moneyEnabled && money > 0) || 
+  const hasMoneyStake = (alarmAny.moneyEnabled && money > 0) ||
     (!alarmAny.hasOwnProperty('moneyEnabled') && money > 0);
   const buddyName = alarmAny.buddyName || 'Buddy';
-  const hasStakes = hasMoneyStake;
+
+  // Check if alarm has ANY stakes (money or punishments)
+  const hasStakes = hasMoneyStake ||
+    alarmAny.shameVideoEnabled ||
+    alarmAny.buddyNotifyEnabled ||
+    alarmAny.socialShameEnabled ||
+    alarmAny.emailBossEnabled ||
+    alarmAny.tweetBadEnabled ||
+    alarmAny.callBuddyEnabled ||
+    alarmAny.textWifesDadEnabled ||
+    alarmAny.textExEnabled ||
+    extras.includes('shame_video') ||
+    extras.includes('buddy_call') ||
+    extras.includes('group_chat');
 
   // Get stake text for chip
   const getStakeText = (): string | null => {

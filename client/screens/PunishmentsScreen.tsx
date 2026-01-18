@@ -123,6 +123,32 @@ const EMBARRASSING_TEXTS = [
 
 const getRandomEmbarrassingText = () => EMBARRASSING_TEXTS[Math.floor(Math.random() * EMBARRASSING_TEXTS.length)];
 
+// Embarrassing tweets for Twitter punishment
+const EMBARRASSING_TWEETS = [
+  "im gay",
+  "i like butt",
+  "i just mass sharted myself at work",
+  "does anyone know how to get poop stains out of khakis asking for myself",
+  "i still sleep with a stuffed animal im 28",
+  "just googled 'how to make friends' at 2am",
+  "i cry during pixar movies every single time",
+  "my mom still does my laundry",
+  "i talk to my plants and they dont even respond",
+  "just got rejected by a bot on a dating app",
+  "i eat cereal for dinner 5 nights a week",
+  "i once lied on my resume and got the job and i still dont know what im doing",
+  "i practice conversations in the mirror before social events",
+  "i flinch at my own reflection sometimes",
+  "just realized ive been pronouncing 'quinoa' wrong for 6 years",
+  "i clapped when the plane landed last week",
+  "i wave back at people who werent waving at me on a daily basis",
+  "my screen time report made me question my life choices",
+  "i sniff my clothes to check if theyre clean enough to rewear",
+  "i still dont know the difference between affect and effect",
+];
+
+const getRandomEmbarrassingTweet = () => EMBARRASSING_TWEETS[Math.floor(Math.random() * EMBARRASSING_TWEETS.length)];
+
 // Toggle Component
 function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () => void }) {
   const translateX = useSharedValue(value ? 23 : 3);
@@ -290,6 +316,13 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
       grandma: { phoneNumber: grandmaPhone },
     });
   }, [grandmaPhone, config, onSaveConfig]);
+
+  const handleTestTweet = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const randomTweet = getRandomEmbarrassingTweet();
+    const tweetUrl = `https://twitter.com/intent/post?text=${encodeURIComponent(randomTweet)}`;
+    await Linking.openURL(tweetUrl);
+  }, []);
 
   const content = (
     <View style={styles.punishmentLeft}>
@@ -564,6 +597,18 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
               <ThemedText style={styles.saveButtonText}>Save</ThemedText>
             </Pressable>
           </View>
+        </View>
+      )}
+
+      {/* Twitter Test row - no config needed, just Test button */}
+      {enabled && punishment.id === 'twitter' && (
+        <View style={styles.savedConfigRow}>
+          <ThemedText style={styles.savedConfigText}>
+            🐦 Random embarrassing tweet
+          </ThemedText>
+          <Pressable style={styles.savedConfigButton} onPress={handleTestTweet}>
+            <ThemedText style={styles.testLinkText}>Test</ThemedText>
+          </Pressable>
         </View>
       )}
 

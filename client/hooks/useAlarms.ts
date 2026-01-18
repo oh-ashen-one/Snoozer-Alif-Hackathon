@@ -142,18 +142,15 @@ export function useAlarms() {
         notificationId = await scheduleAlarm({ ...alarm, enabled: newEnabled });
       }
 
-      // Update in storage first
+      // Update in storage
       const updates = { enabled: newEnabled, notificationId };
       await updateAlarmInStorage(id, updates);
-      
-      // Then update local state
-      setAlarms(prev => {
-        const updated = prev.map(a => a.id === id ? { ...a, ...updates } : a);
-        if (__DEV__) console.log('[useAlarms] State updated, alarm count:', updated.length);
-        return updated;
-      });
-      
-      if (__DEV__) console.log('[useAlarms] Alarm toggled:', id, 'enabled:', newEnabled);
+
+      // RELOAD from storage to ensure state is in sync (prevents race conditions)
+      const freshAlarms = await getAlarms();
+      setAlarms(freshAlarms);
+
+      if (__DEV__) console.log('[useAlarms] Alarm toggled:', id, 'enabled:', newEnabled, 'total alarms:', freshAlarms.length);
     } catch (e) {
       if (__DEV__) console.error('[useAlarms] Error toggling alarm:', e);
       Alert.alert('Error', 'Failed to update alarm. Please try again.');
@@ -162,18 +159,24 @@ export function useAlarms() {
 
   const deleteAlarm = useCallback(async (id: string) => {
     try {
-      const alarm = alarms.find(a => a.id === id);
+      // Get fresh alarm from storage (not from stale closure)
+      const alarm = await getAlarmByIdFromStorage(id);
       if (alarm?.notificationId) {
         await cancelAlarm(alarm.notificationId);
       }
-      
+
       await deleteAlarmFromStorage(id);
-      setAlarms(prev => prev.filter(a => a.id !== id));
+
+      // RELOAD from storage to ensure state is in sync (prevents race conditions)
+      const freshAlarms = await getAlarms();
+      setAlarms(freshAlarms);
+
+      if (__DEV__) console.log('[useAlarms] Alarm deleted:', id, 'remaining alarms:', freshAlarms.length);
     } catch (e) {
       console.error('Error deleting alarm:', e);
       throw e;
     }
-  }, [alarms]);
+  }, []);
 
   const getAlarmById = useCallback((id: string) => {
     return alarms.find(a => a.id === id);
