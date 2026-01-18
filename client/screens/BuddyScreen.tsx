@@ -196,9 +196,8 @@ export default function BuddyScreen() {
   const handleSetup = useCallback(() => {
     if (!selectedMode) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const mode = MODES.find(m => m.id === selectedMode);
-    Alert.alert('Coming Soon!', `${mode?.title} mode is coming soon!`);
-  }, [selectedMode]);
+    navigation.navigate('BuddySetup', { mode: selectedMode });
+  }, [selectedMode, navigation]);
 
   const handleEnterCode = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

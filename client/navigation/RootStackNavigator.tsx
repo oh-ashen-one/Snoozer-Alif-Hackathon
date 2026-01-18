@@ -17,6 +17,7 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import StatsScreen from '@/screens/StatsScreen';
 import BuddyScreen from '@/screens/BuddyScreen';
+import BuddySetupScreen from '@/screens/BuddySetupScreen';
 import HelpScreen from '@/screens/HelpScreen';
 import LegalScreen from '@/screens/LegalScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   Settings: undefined;
   Stats: undefined;
   Buddy: undefined;
+  BuddySetup: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity' };
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
   AddAlarm: { isOnboarding: boolean };
@@ -134,6 +136,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="Buddy"
         component={BuddyScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="BuddySetup"
+        component={BuddySetupScreen}
         options={{
           headerShown: false,
         }}

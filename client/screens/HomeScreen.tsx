@@ -69,7 +69,7 @@ function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () =>
   return (
     <Pressable
       onPress={onValueChange}
-      style={[styles.toggle, { backgroundColor: value ? Colors.green : '#292524' }]}
+      style={[styles.toggle, { backgroundColor: value ? Colors.green : Colors.border }]}
     >
       <Animated.View style={[styles.toggleKnob, knobStyle]} />
     </Pressable>
@@ -452,7 +452,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0C0A09',
+    backgroundColor: Colors.bg,
   },
   centerContent: {
     justifyContent: 'center',
@@ -507,10 +507,10 @@ const styles = StyleSheet.create({
 
   // Next Alarm Card
   nextAlarmCard: {
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#292524',
+    borderColor: Colors.border,
     padding: 24,
     marginTop: 8,
   },
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
   },
   stakeBox: {
     flex: 1,
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
@@ -593,10 +593,10 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#292524',
+    borderColor: Colors.border,
     padding: 16,
     alignItems: 'center',
   },
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 100,
@@ -662,10 +662,10 @@ const styles = StyleSheet.create({
 
   // Alarm Card
   alarmCard: {
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#292524',
+    borderColor: Colors.border,
     padding: 16,
     marginBottom: 12,
   },
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#FAFAF9',
+    backgroundColor: Colors.text,
   },
 
   // Day Pills
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayPillUnselected: {
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
   },
   dayPillSelected: {
     backgroundColor: 'rgba(251, 146, 60, 0.15)',
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: 'rgba(12, 10, 9, 0.95)',
     borderTopWidth: 1,
-    borderTopColor: '#1C1917',
+    borderTopColor: Colors.bgElevated,
     paddingTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#1C1917',
+    backgroundColor: Colors.bgElevated,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,

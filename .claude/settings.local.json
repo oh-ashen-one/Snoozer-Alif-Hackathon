@@ -5,7 +5,8 @@
       "Bash(npx expo export:*)",
       "Bash(timeout 30s npx expo start:*)",
       "Bash(pkill:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)"
     ]
   }
 }
