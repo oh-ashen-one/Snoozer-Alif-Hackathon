@@ -39,7 +39,7 @@ export interface PunishmentOption {
 export const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'shame_video', label: 'Shame video plays', description: 'At max volume', icon: '🎬', color: '#EF4444' },
   { id: 'buddy_call', label: 'Auto-call your buddy', description: 'Jake gets woken up too', icon: '📞', color: '#FB923C' },
-  { id: 'group_chat', label: 'Text the group chat', description: '"The boys" on iMessage', icon: '💬', color: '#7C3AED' },
+  { id: 'group_chat', label: 'Text the group chat', description: '"The boys" on iMessage', icon: '💬', color: '#7C3AED', comingSoon: true },
   { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444', configurable: true },
   { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899', configurable: true },
   { id: 'twitter', label: 'Tweet something bad', description: '"I overslept again lol"', icon: '🐦', color: '#1DA1F2' },
@@ -193,8 +193,7 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const isAvailable = await SMS.isAvailableAsync();
     if (isAvailable) {
-      const randomMessage = getRandomEmbarrassingText();
-      await SMS.sendSMSAsync([exPhoneNumber], randomMessage);
+      await SMS.sendSMSAsync([exPhoneNumber], 'imysm');
     }
   }, [exPhoneNumber]);
 

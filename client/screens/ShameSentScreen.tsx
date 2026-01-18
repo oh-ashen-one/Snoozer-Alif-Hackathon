@@ -35,7 +35,7 @@ const PUNISHMENT_MESSAGES: Record<string, { title: string; subtitle: string; ico
   call_grandma: { title: 'Called your grandma', subtitle: 'At 6am. She probably thought someone died.', icon: '👵' },
   call_buddy: { title: 'Called your buddy', subtitle: 'They\'re awake now too. Thanks.', icon: '📞' },
   text_wife_dad: { title: 'Texted your wife\'s dad', subtitle: 'Something deeply embarrassing. Check your phone.', icon: '👴' },
-  text_ex: { title: 'Texted your ex', subtitle: 'Something deeply embarrassing. Check your phone.', icon: '💔' },
+  text_ex: { title: 'Texted your ex', subtitle: '"imysm" - she knows now.', icon: '💔' },
   social_shame: { title: 'Group chat knows', subtitle: 'Everyone saw your failure.', icon: '💬' },
   anti_charity: { title: 'Donated money', subtitle: 'To a cause you hate. Congrats.', icon: '🗳️' },
 };
