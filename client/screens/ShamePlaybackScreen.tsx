@@ -190,6 +190,8 @@ export default function ShamePlaybackScreen() {
       amount: penaltyAmount,
       currentTime,
       previousStreak: streak,
+      executedPunishments: ['shame_video'],
+      moneyEnabled: true,
     });
   };
 

@@ -595,7 +595,6 @@ export default function HomeScreen() {
             type="home"
             greeting={getGreeting()}
             name={userName || 'You'}
-            onSettingsPress={() => navigation.navigate('Settings')}
           />
         </View>
 

@@ -701,28 +701,29 @@ export default function AlarmRingingScreen() {
   };
 
   const handleShameDismiss = async () => {
-    if (__DEV__) console.log('ALARM: Shame triggered - determining punishment type');
+    if (__DEV__) console.log('ALARM: Shame triggered - determining punishment types');
     setShowPaymentPrompt(false);
     setShowShame(false);
     await stopAlarm();
 
-    // Determine primary punishment type based on what's enabled
-    const getPrimaryPunishment = (): string => {
-      if (shameVideoEnabled) return 'shame_video';
-      if (emailBossEnabled) return 'email_boss';
-      if (tweetBadEnabled) return 'tweet';
-      if (callBuddyEnabled) return 'call_buddy';
-      if (momEnabled) return 'call_mom';
-      if (grandmaEnabled) return 'call_grandma';
-      if (textWifesDadEnabled) return 'text_wife_dad';
-      if (textExEnabled) return 'text_ex';
-      if (socialShameEnabled) return 'social_shame';
-      if (antiCharityEnabled) return 'anti_charity';
-      return 'shame_video'; // Default fallback
+    // Get ALL enabled punishments (not just primary)
+    const getEnabledPunishments = (): string[] => {
+      const punishments: string[] = [];
+      if (shameVideoEnabled) punishments.push('shame_video');
+      if (emailBossEnabled) punishments.push('email_boss');
+      if (tweetBadEnabled) punishments.push('tweet');
+      if (callBuddyEnabled) punishments.push('call_buddy');
+      if (momEnabled) punishments.push('call_mom');
+      if (grandmaEnabled) punishments.push('call_grandma');
+      if (textWifesDadEnabled) punishments.push('text_wife_dad');
+      if (textExEnabled) punishments.push('text_ex');
+      if (socialShameEnabled) punishments.push('social_shame');
+      if (antiCharityEnabled) punishments.push('anti_charity');
+      return punishments;
     };
 
-    const punishmentType = getPrimaryPunishment();
-    if (__DEV__) console.log('ALARM: Primary punishment type:', punishmentType);
+    const punishmentTypes = getEnabledPunishments();
+    if (__DEV__) console.log('ALARM: Enabled punishment types:', punishmentTypes);
 
     // Get punishment config for phone numbers/emails
     const config = await getPunishmentConfig();
@@ -730,7 +731,9 @@ export default function AlarmRingingScreen() {
     navigation.navigate('PunishmentExecution', {
       alarmId: alarmData.alarmId,
       alarmLabel: alarmData.alarmLabel,
-      punishmentType,
+      punishmentTypes,
+      moneyEnabled,
+      moneyAmount: penaltyAmount,
       shameVideoUri: alarmData.shameVideoUri,
       config: {
         bossEmail: config.email_boss?.bossEmail,

@@ -6,6 +6,7 @@ import {
   Pressable,
   Text,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -265,13 +266,22 @@ export default function AddAlarmScreen() {
   const formatMinute = (m: number) => m.toString().padStart(2, '0');
 
   const handleTogglePunishment = useCallback((id: string) => {
+    // Money is exclusive - cannot add other punishments if money is enabled
+    if (moneyEnabled && !enabledPunishments.includes(id)) {
+      Alert.alert(
+        'Money is exclusive',
+        'Disable money punishment to add other punishments.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     setEnabledPunishments(prev => {
       if (prev.includes(id)) {
         return prev.filter(p => p !== id);
       }
       return [...prev, id];
     });
-  }, []);
+  }, [moneyEnabled, enabledPunishments]);
 
   const handleSaveConfig = useCallback(async (config: PunishmentConfig) => {
     setPunishmentConfig(config);
@@ -542,6 +552,15 @@ export default function AddAlarmScreen() {
                   <Text style={styles.moneyTitle}>Money Stakes</Text>
                 </View>
                 <Toggle value={moneyEnabled} onToggle={() => {
+                  // Money is exclusive - cannot enable if other punishments exist
+                  if (!moneyEnabled && enabledPunishments.length > 0) {
+                    Alert.alert(
+                      'Money is exclusive',
+                      'Disable other punishments first to use money punishment.',
+                      [{ text: 'OK' }]
+                    );
+                    return;
+                  }
                   hapticForPunishment(getPunishmentLevel(amount, enabledPunishments.includes('shame_video')));
                   setMoneyEnabled(!moneyEnabled);
                 }} />

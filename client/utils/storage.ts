@@ -60,6 +60,8 @@ export interface Alarm {
   callBuddyEnabled?: boolean;
   textWifesDadEnabled?: boolean;
   textExEnabled?: boolean;
+  momEnabled?: boolean;
+  grandmaEnabled?: boolean;
   // Escalation settings (per-alarm)
   escalatingVolume?: boolean;
   wakeRecheck?: boolean;

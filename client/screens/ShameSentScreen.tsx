@@ -2,6 +2,7 @@
  * SHAME SENT SCREEN
  *
  * Brutal. You snoozed. You're a failure. We told your buddy.
+ * Now shows ALL executed punishments and conditionally displays money.
  */
 
 import React, { useEffect } from 'react';
@@ -26,29 +27,24 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ShameSent'>;
 
 // Punishment-specific messages
-const PUNISHMENT_MESSAGES: Record<string, { title: string; subtitle: string }> = {
-  shame_video: { title: 'Your shame video played', subtitle: 'At max volume. Everyone heard.' },
-  email_boss: { title: 'You emailed your boss', subtitle: 'Something embarrassing. Good luck Monday.' },
-  tweet: { title: 'You tweeted something cringe', subtitle: 'Your followers will never forget.' },
-  call_mom: { title: 'You called your mom', subtitle: 'At 6am. She\'s worried now.' },
-  call_grandma: { title: 'You called your grandma', subtitle: 'At 6am. She probably thought someone died.' },
-  call_buddy: { title: 'You called your buddy', subtitle: 'They\'re awake now too. Thanks.' },
-  text_wife_dad: { title: 'You texted your wife\'s dad', subtitle: '"Hey Robert, quick question..."' },
-  text_ex: { title: 'You texted your ex', subtitle: '"I miss you" — yikes.' },
-  social_shame: { title: 'The group chat knows', subtitle: 'Everyone saw your failure.' },
-  anti_charity: { title: 'You donated money', subtitle: 'To a cause you hate. Congrats.' },
+const PUNISHMENT_MESSAGES: Record<string, { title: string; subtitle: string; icon: string }> = {
+  shame_video: { title: 'Shame video played', subtitle: 'At max volume. Everyone heard.', icon: '🎬' },
+  email_boss: { title: 'Emailed your boss', subtitle: 'Something embarrassing. Good luck Monday.', icon: '📧' },
+  tweet: { title: 'Tweeted something cringe', subtitle: 'Your followers will never forget.', icon: '🐦' },
+  call_mom: { title: 'Called your mom', subtitle: 'At 6am. She\'s worried now.', icon: '👩' },
+  call_grandma: { title: 'Called your grandma', subtitle: 'At 6am. She probably thought someone died.', icon: '👵' },
+  call_buddy: { title: 'Called your buddy', subtitle: 'They\'re awake now too. Thanks.', icon: '📞' },
+  text_wife_dad: { title: 'Texted your wife\'s dad', subtitle: '"Hey Robert, quick question..."', icon: '👴' },
+  text_ex: { title: 'Texted your ex', subtitle: '"I miss you" — yikes.', icon: '💔' },
+  social_shame: { title: 'Group chat knows', subtitle: 'Everyone saw your failure.', icon: '💬' },
+  anti_charity: { title: 'Donated money', subtitle: 'To a cause you hate. Congrats.', icon: '🗳️' },
 };
 
 export default function ShameSentScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { buddyName, amount, currentTime, previousStreak, punishmentType } = route.params;
-
-  // Get punishment-specific message
-  const punishmentMessage = punishmentType
-    ? PUNISHMENT_MESSAGES[punishmentType] || PUNISHMENT_MESSAGES.shame_video
-    : PUNISHMENT_MESSAGES.shame_video;
+  const { buddyName, amount, currentTime, previousStreak, executedPunishments, moneyEnabled } = route.params;
 
   // Pulsing glow animation
   const glowScale = useSharedValue(0.9);
@@ -171,11 +167,18 @@ export default function ShameSentScreen() {
             <ThemedText style={styles.statLabel}>Time you gave up</ThemedText>
             <ThemedText style={styles.statValue}>{currentTime}</ThemedText>
           </View>
-          <View style={styles.divider} />
-          <View style={styles.statRow}>
-            <ThemedText style={styles.statLabel}>Money lost</ThemedText>
-            <ThemedText style={styles.statValueRed}>-${amount}</ThemedText>
-          </View>
+
+          {/* Only show money lost if money was enabled */}
+          {moneyEnabled && amount > 0 && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.statRow}>
+                <ThemedText style={styles.statLabel}>Money lost</ThemedText>
+                <ThemedText style={styles.statValueRed}>-${amount}</ThemedText>
+              </View>
+            </>
+          )}
+
           <View style={styles.divider} />
           <View style={styles.statRow}>
             <ThemedText style={styles.statLabel}>Streak destroyed</ThemedText>
@@ -188,16 +191,41 @@ export default function ShameSentScreen() {
           </View>
         </View>
 
-        {/* Punishment executed card */}
-        <View style={styles.proofCard}>
-          <View style={styles.proofIcon}>
-            <Text style={styles.proofIconText}>✓</Text>
+        {/* Punishments Executed Card - show all executed punishments */}
+        {executedPunishments && executedPunishments.length > 0 && (
+          <View style={styles.punishmentsCard}>
+            <ThemedText style={styles.punishmentsTitle}>
+              Punishments Executed
+            </ThemedText>
+            <View style={styles.punishmentsList}>
+              {executedPunishments.map((punishment, index) => {
+                const info = PUNISHMENT_MESSAGES[punishment] || {
+                  title: punishment,
+                  subtitle: '',
+                  icon: '⚠️',
+                };
+                return (
+                  <View key={index} style={styles.punishmentItem}>
+                    <View style={styles.punishmentItemIcon}>
+                      <Text style={styles.punishmentIconText}>{info.icon}</Text>
+                    </View>
+                    <View style={styles.punishmentItemText}>
+                      <ThemedText style={styles.punishmentItemTitle}>
+                        {info.title}
+                      </ThemedText>
+                      <ThemedText style={styles.punishmentItemSub}>
+                        {info.subtitle}
+                      </ThemedText>
+                    </View>
+                    <View style={styles.punishmentCheckmark}>
+                      <Text style={styles.checkmarkText}>✓</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
           </View>
-          <View style={styles.proofText}>
-            <ThemedText style={styles.proofTitle}>{punishmentMessage.title}</ThemedText>
-            <ThemedText style={styles.proofSub}>{punishmentMessage.subtitle}</ThemedText>
-          </View>
-        </View>
+        )}
 
         {/* Roast messages */}
         <View style={styles.roastSection}>
@@ -212,15 +240,17 @@ export default function ShameSentScreen() {
           </View>
         </View>
 
-        {/* Final message */}
+        {/* Final message - conditional based on money */}
         <View style={styles.finalSection}>
           <ThemedText style={styles.finalText}>Sweet dreams 💤</ThemedText>
           <ThemedText style={styles.finalSubtext}>
             Have fun going back to sleep, lazy loser.
           </ThemedText>
-          <ThemedText style={styles.finalSubtext2}>
-            {buddyName} is ${amount} richer because you couldn't do the bare minimum.
-          </ThemedText>
+          {moneyEnabled && amount > 0 && (
+            <ThemedText style={styles.finalSubtext2}>
+              {buddyName} is ${amount} richer because you couldn't do the bare minimum.
+            </ThemedText>
+          )}
         </View>
 
         {/* Dismiss button */}
@@ -345,43 +375,71 @@ const styles = StyleSheet.create({
     color: Colors.red,
   },
 
-  proofCard: {
+  // Punishments executed card
+  punishmentsCard: {
     width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    borderRadius: 14,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 24,
   },
-  proofIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  punishmentsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.red,
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  punishmentsList: {
+    gap: 10,
+  },
+  punishmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(28, 25, 23, 0.6)',
+    borderRadius: 12,
+    padding: 12,
+  },
+  punishmentItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  punishmentIconText: {
+    fontSize: 20,
+  },
+  punishmentItemText: {
+    flex: 1,
+    gap: 2,
+  },
+  punishmentItemTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  punishmentItemSub: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  punishmentCheckmark: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: Colors.red,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  proofIconText: {
-    fontSize: 18,
+  checkmarkText: {
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.text,
-  },
-  proofText: {
-    flex: 1,
-    gap: 2,
-  },
-  proofTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  proofSub: {
-    fontSize: 13,
-    color: Colors.textSecondary,
   },
 
   roastSection: {

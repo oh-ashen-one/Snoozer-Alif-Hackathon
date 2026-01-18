@@ -173,12 +173,15 @@ export type RootStackParamList = {
     amount: number;
     currentTime: string;
     previousStreak: number;
-    punishmentType?: string;
+    executedPunishments: string[];
+    moneyEnabled: boolean;
   };
   PunishmentExecution: {
     alarmId: string;
     alarmLabel: string;
-    punishmentType: string;
+    punishmentTypes: string[];
+    moneyEnabled: boolean;
+    moneyAmount: number;
     shameVideoUri?: string;
     config?: {
       bossEmail?: string;

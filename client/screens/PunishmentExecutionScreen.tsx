@@ -2,8 +2,8 @@
  * PUNISHMENT EXECUTION SCREEN
  * PunishmentExecutionScreen.tsx
  *
- * Shows punishment-specific UI and auto-executes the punishment action.
- * Each punishment type has its own experience (email, call, tweet, text, etc.)
+ * Executes ALL enabled punishments sequentially.
+ * Shows progress indicator and punishment-specific UI for each one.
  */
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
@@ -20,6 +20,7 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
 
@@ -89,22 +90,33 @@ export default function PunishmentExecutionScreen() {
   const {
     alarmId,
     alarmLabel,
-    punishmentType,
+    punishmentTypes,
+    moneyEnabled,
+    moneyAmount,
     shameVideoUri: routeVideoUri,
     config,
   } = route.params;
 
+  // Sequential execution state
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [executedPunishments, setExecutedPunishments] = useState<string[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [videoUri, setVideoUri] = useState<string>(routeVideoUri || '');
   const [remainingSeconds, setRemainingSeconds] = useState<number>(15);
   const videoRef = useRef<Video>(null);
-  const hasExecutedRef = useRef(false);
+  const hasStartedRef = useRef(false);
   const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Get current punishment (if any)
+  const currentPunishment = punishmentTypes.length > 0 ? punishmentTypes[currentIndex] : null;
+  const punishmentInfo = currentPunishment
+    ? PUNISHMENT_CONFIG[currentPunishment] || PUNISHMENT_CONFIG.shame_video
+    : null;
+  const totalPunishments = punishmentTypes.length;
 
   // Pulsing animation
   const pulse = useSharedValue(1);
-
-  const punishmentInfo = PUNISHMENT_CONFIG[punishmentType] || PUNISHMENT_CONFIG.shame_video;
+  const progressScale = useSharedValue(1);
 
   useEffect(() => {
     setCurrentScreen('PunishmentExecution');
@@ -117,6 +129,12 @@ export default function PunishmentExecutionScreen() {
       withTiming(0.5, { duration: 500, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
+    );
+
+    // Progress number pop animation
+    progressScale.value = withSequence(
+      withTiming(1.2, { duration: 150 }),
+      withTiming(1, { duration: 150 })
     );
 
     // Setup audio for video playback
@@ -135,33 +153,58 @@ export default function PunishmentExecutionScreen() {
     setupAudio();
 
     // Load shame video if needed
-    if (punishmentType === 'shame_video' && (!routeVideoUri || routeVideoUri.startsWith('mock://'))) {
+    if (currentPunishment === 'shame_video' && (!routeVideoUri || routeVideoUri.startsWith('mock://'))) {
       getShameVideo().then(uri => {
         if (uri) setVideoUri(uri);
       });
     }
 
-    // Auto-execute punishment after brief delay
-    const executeTimer = setTimeout(() => {
-      executePunishment();
-    }, 2000);
+    // Start first punishment after brief delay
+    if (!hasStartedRef.current && totalPunishments > 0) {
+      hasStartedRef.current = true;
+      const startTimer = setTimeout(() => {
+        executePunishment();
+      }, 2000);
 
-    return () => {
-      clearTimeout(executeTimer);
-      if (mockTimerRef.current) {
-        clearInterval(mockTimerRef.current);
-      }
-    };
+      return () => clearTimeout(startTimer);
+    }
   }, []);
 
+  // Execute next punishment when currentIndex changes
+  useEffect(() => {
+    if (currentIndex > 0 && currentIndex < totalPunishments) {
+      // Pop animation for progress number
+      progressScale.value = withSequence(
+        withTiming(1.2, { duration: 150 }),
+        withTiming(1, { duration: 150 })
+      );
+
+      // Reload video URI if this punishment is shame_video
+      if (punishmentTypes[currentIndex] === 'shame_video') {
+        getShameVideo().then(uri => {
+          if (uri) setVideoUri(uri);
+        });
+      }
+
+      const timer = setTimeout(() => {
+        executePunishment();
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex]);
+
   const navigateToResult = useCallback(async () => {
+    if (mockTimerRef.current) {
+      clearInterval(mockTimerRef.current);
+    }
+
     const [buddy, streak] = await Promise.all([
       getBuddyInfo(),
       getCurrentStreak(),
     ]);
 
     const buddyName = buddy?.name || 'Your buddy';
-    const penaltyAmount = 5;
 
     const now = new Date();
     const hours = now.getHours();
@@ -172,22 +215,43 @@ export default function PunishmentExecutionScreen() {
 
     navigation.navigate('ShameSent', {
       buddyName,
-      amount: penaltyAmount,
+      amount: moneyAmount || 0,
       currentTime,
       previousStreak: streak,
-      punishmentType,
+      executedPunishments: punishmentTypes,
+      moneyEnabled: moneyEnabled || false,
     });
-  }, [navigation, punishmentType]);
+  }, [navigation, punishmentTypes, moneyEnabled, moneyAmount]);
+
+  const moveToNextPunishment = useCallback(() => {
+    // Mark current as executed
+    if (currentPunishment) {
+      setExecutedPunishments(prev => [...prev, currentPunishment]);
+    }
+
+    if (currentIndex < totalPunishments - 1) {
+      // More punishments to execute
+      setCurrentIndex(prev => prev + 1);
+      setIsExecuting(false);
+    } else {
+      // All done - navigate to result
+      navigateToResult();
+    }
+  }, [currentIndex, totalPunishments, currentPunishment, navigateToResult]);
 
   const executePunishment = useCallback(async () => {
-    if (hasExecutedRef.current) return;
-    hasExecutedRef.current = true;
-    setIsExecuting(true);
+    if (!currentPunishment) {
+      navigateToResult();
+      return;
+    }
 
+    setIsExecuting(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+    if (__DEV__) console.log(`[PunishmentExecution] Executing ${currentIndex + 1}/${totalPunishments}: ${currentPunishment}`);
+
     try {
-      switch (punishmentType) {
+      switch (currentPunishment) {
         case 'shame_video':
           // Video plays inline, wait for it to finish
           if (isWeb) {
@@ -196,14 +260,14 @@ export default function PunishmentExecutionScreen() {
               setRemainingSeconds(prev => {
                 if (prev <= 1) {
                   if (mockTimerRef.current) clearInterval(mockTimerRef.current);
-                  navigateToResult();
+                  moveToNextPunishment();
                   return 0;
                 }
                 return prev - 1;
               });
             }, 1000);
           }
-          // Real video will call navigateToResult when finished via onPlaybackStatusUpdate
+          // Real video will call moveToNextPunishment when finished via onPlaybackStatusUpdate
           break;
 
         case 'email_boss':
@@ -212,35 +276,35 @@ export default function PunishmentExecutionScreen() {
             const mailUrl = `mailto:${config.bossEmail}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`;
             await Linking.openURL(mailUrl);
           }
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'tweet':
           const tweet = EMBARRASSING_TWEETS[Math.floor(Math.random() * EMBARRASSING_TWEETS.length)];
           const tweetUrl = `https://twitter.com/intent/post?text=${encodeURIComponent(tweet)}`;
           await Linking.openURL(tweetUrl);
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'call_mom':
           if (config?.momPhone) {
             await Linking.openURL(`tel:${config.momPhone}`);
           }
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'call_grandma':
           if (config?.grandmaPhone) {
             await Linking.openURL(`tel:${config.grandmaPhone}`);
           }
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'call_buddy':
           if (config?.buddyPhone) {
             await Linking.openURL(`tel:${config.buddyPhone}`);
           }
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'text_wife_dad':
@@ -251,7 +315,7 @@ export default function PunishmentExecutionScreen() {
               await SMS.sendSMSAsync([config.wifesDadPhone], message);
             }
           }
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'text_ex':
@@ -261,27 +325,27 @@ export default function PunishmentExecutionScreen() {
               await SMS.sendSMSAsync([config.exPhone], "I miss you 💔");
             }
           }
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'social_shame':
           // Open group chat (would need group chat config)
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         case 'anti_charity':
           // Future: payment flow
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
           break;
 
         default:
-          setTimeout(navigateToResult, 1500);
+          setTimeout(moveToNextPunishment, 1500);
       }
     } catch (error) {
       if (__DEV__) console.error('[PunishmentExecution] Error:', error);
-      setTimeout(navigateToResult, 1500);
+      setTimeout(moveToNextPunishment, 1500);
     }
-  }, [punishmentType, config, navigateToResult]);
+  }, [currentPunishment, currentIndex, totalPunishments, config, moveToNextPunishment]);
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
     if (!status.isLoaded) return;
@@ -292,7 +356,7 @@ export default function PunishmentExecutionScreen() {
     }
 
     if (status.didJustFinish) {
-      navigateToResult();
+      moveToNextPunishment();
     }
   };
 
@@ -300,8 +364,20 @@ export default function PunishmentExecutionScreen() {
     opacity: pulse.value,
   }));
 
+  const progressScaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: progressScale.value }],
+  }));
+
+  // No punishments - go straight to result
+  if (totalPunishments === 0) {
+    useEffect(() => {
+      navigateToResult();
+    }, []);
+    return null;
+  }
+
   // Shame video view
-  if (punishmentType === 'shame_video') {
+  if (currentPunishment === 'shame_video') {
     return (
       <View style={styles.container}>
         <BackgroundGlow color="red" />
@@ -338,6 +414,13 @@ export default function PunishmentExecutionScreen() {
           <Animated.View style={pulseStyle}>
             <ThemedText style={styles.shameText}>YOU SNOOZED</ThemedText>
           </Animated.View>
+          {totalPunishments > 1 && (
+            <Animated.View style={[styles.progressBadge, progressScaleStyle]}>
+              <ThemedText style={styles.progressText}>
+                Punishment {currentIndex + 1} of {totalPunishments}
+              </ThemedText>
+            </Animated.View>
+          )}
         </View>
 
         {/* Bottom overlay */}
@@ -365,15 +448,43 @@ export default function PunishmentExecutionScreen() {
           <ThemedText style={styles.shameText}>YOU SNOOZED</ThemedText>
         </Animated.View>
 
-        <View style={styles.punishmentCard}>
-          <Text style={styles.punishmentIcon}>{punishmentInfo.icon}</Text>
-          <ThemedText style={styles.punishmentTitle}>{punishmentInfo.title}</ThemedText>
-          <ThemedText style={styles.punishmentSubtitle}>{punishmentInfo.subtitle}</ThemedText>
-        </View>
+        {/* Progress indicator */}
+        {totalPunishments > 1 && (
+          <Animated.View style={[styles.progressBadge, progressScaleStyle]}>
+            <ThemedText style={styles.progressText}>
+              Punishment {currentIndex + 1} of {totalPunishments}
+            </ThemedText>
+          </Animated.View>
+        )}
+
+        {punishmentInfo && (
+          <View style={styles.punishmentCard}>
+            <Text style={styles.punishmentIcon}>{punishmentInfo.icon}</Text>
+            <ThemedText style={styles.punishmentTitle}>{punishmentInfo.title}</ThemedText>
+            <ThemedText style={styles.punishmentSubtitle}>{punishmentInfo.subtitle}</ThemedText>
+          </View>
+        )}
 
         {isExecuting && (
           <View style={styles.executingContainer}>
             <ThemedText style={styles.executingText}>Executing punishment...</ThemedText>
+          </View>
+        )}
+
+        {/* Already executed punishments */}
+        {executedPunishments.length > 0 && (
+          <View style={styles.executedSection}>
+            <ThemedText style={styles.executedTitle}>Executed</ThemedText>
+            <View style={styles.executedList}>
+              {executedPunishments.map((p, i) => (
+                <View key={i} style={styles.executedItem}>
+                  <Text style={styles.executedCheck}>✓</Text>
+                  <ThemedText style={styles.executedText}>
+                    {PUNISHMENT_CONFIG[p]?.title || p}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
           </View>
         )}
       </View>
@@ -431,6 +542,23 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 
+  // Progress badge
+  progressBadge: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    borderRadius: 100,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: Spacing.lg,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.red,
+    letterSpacing: 1,
+  },
+
   // Shame text
   shameText: {
     fontSize: 32,
@@ -438,7 +566,7 @@ const styles = StyleSheet.create({
     color: Colors.red,
     textTransform: 'uppercase',
     letterSpacing: 6,
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing.lg,
   },
 
   // Punishment card
@@ -476,6 +604,35 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
 
+  // Already executed section
+  executedSection: {
+    marginTop: Spacing['2xl'],
+    alignItems: 'center',
+  },
+  executedTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    letterSpacing: 1,
+    marginBottom: Spacing.sm,
+  },
+  executedList: {
+    gap: 6,
+  },
+  executedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  executedCheck: {
+    fontSize: 14,
+    color: Colors.green,
+  },
+  executedText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+
   // Video styles
   video: {
     ...StyleSheet.absoluteFillObject,
@@ -508,7 +665,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingTop: 80,
-    paddingBottom: Spacing['2xl'],
+    paddingBottom: Spacing.lg,
     backgroundColor: 'rgba(12, 10, 9, 0.5)',
     zIndex: 10,
     alignItems: 'center',
