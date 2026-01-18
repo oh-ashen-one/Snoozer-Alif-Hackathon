@@ -764,6 +764,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text,
   },
+  recordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 146, 60, 0.3)',
+    borderRadius: 10,
+    padding: 12,
+  },
+  recordButtonEmoji: {
+    fontSize: 18,
+  },
+  recordButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.orange,
+  },
 
   // Coming soon cards
   soonCard: {
