@@ -133,13 +133,6 @@ export default function ShamePlaybackScreen() {
             if (mockTimerRef.current) {
               clearInterval(mockTimerRef.current);
             }
-            // Navigate when mock video "ends"
-            navigation.navigate('AlarmRinging', {
-              alarmId,
-              alarmLabel,
-              referencePhotoUri,
-              shameVideoUri: videoUri,
-            });
             return 0;
           }
           return prev - 1;
@@ -196,6 +189,15 @@ export default function ShamePlaybackScreen() {
       previousStreak: streak,
     });
   };
+
+  // Navigate when mock video countdown reaches 0
+  const hasNavigatedRef = useRef(false);
+  useEffect(() => {
+    if (useMockVideo && remainingSeconds === 0 && !hasNavigatedRef.current) {
+      hasNavigatedRef.current = true;
+      navigateToShameSent();
+    }
+  }, [remainingSeconds]);
 
   const handleSkipVideo = () => {
     if (__DEV__) console.log('ALARM: Video skipped (debug)');

@@ -259,7 +259,7 @@ function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
 }
 
 // Alarm List Item Component
-function AlarmListItem({ alarm, onToggle, onDelete }: { alarm: Alarm; onToggle: () => void; onDelete: () => void }) {
+function AlarmListItem({ alarm, onToggle, onDelete, onTest }: { alarm: Alarm; onToggle: () => void; onDelete: () => void; onTest: () => void }) {
   const { time, period } = formatTime(alarm.time);
   const selectedDays = alarm.days ?? [1, 2, 3, 4, 5]; // Use stored days or default to weekdays
 
@@ -317,7 +317,12 @@ function AlarmListItem({ alarm, onToggle, onDelete }: { alarm: Alarm; onToggle: 
                 <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
               </View>
             </View>
-            <Toggle value={alarm.enabled} onValueChange={onToggle} />
+            <View style={styles.alarmRight}>
+              <Toggle value={alarm.enabled} onValueChange={onToggle} />
+              <Pressable style={styles.testButton} onPress={onTest}>
+                <ThemedText style={styles.testButtonText}>Test</ThemedText>
+              </Pressable>
+            </View>
           </View>
           <DayPills selectedDays={selectedDays} />
         </View>
@@ -420,6 +425,22 @@ export default function HomeScreen() {
     [toggleAlarm]
   );
 
+  const handleTestAlarm = useCallback(
+    (alarm: Alarm) => {
+      return () => {
+        if (__DEV__) console.log('[Home] Testing alarm:', alarm.id, alarm.label);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        navigation.navigate('AlarmRinging', {
+          alarmId: alarm.id,
+          alarmLabel: alarm.label || 'Test Alarm',
+          referencePhotoUri: alarm.referencePhotoUri || '',
+          shameVideoUri: alarm.shameVideoUri || '',
+        });
+      };
+    },
+    [navigation]
+  );
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
@@ -464,6 +485,7 @@ export default function HomeScreen() {
                   alarm={alarm}
                   onToggle={handleToggleAlarm(alarm.id)}
                   onDelete={() => deleteAlarm(alarm.id)}
+                  onTest={handleTestAlarm(alarm)}
                 />
               </AnimatedCard>
             ))}
@@ -735,6 +757,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   alarmLeft: {},
+  alarmRight: {
+    alignItems: 'center',
+    gap: 8,
+  },
   alarmTimeRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -779,6 +805,21 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     backgroundColor: Colors.text,
+  },
+
+  // Test Button (per alarm)
+  testButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(251, 146, 60, 0.12)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 146, 60, 0.2)',
+  },
+  testButtonText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#FB923C',
   },
 
   // Day Pills
