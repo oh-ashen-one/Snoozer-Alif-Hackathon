@@ -450,10 +450,10 @@ export default function AlarmRingingScreen() {
 
     const stepGoal = proofActivity?.stepGoal || 50;
 
-    // Route based on proof activity type
+    // Route DIRECTLY to the chosen proof activity type
     switch (proofActivityType) {
       case 'steps':
-        // Steps only - no photo needed
+        // Steps only - walk to dismiss
         navigation.navigate('StepMission', {
           alarmId: alarmData.alarmId,
           referencePhotoUri: alarmData.referencePhotoUri,
@@ -462,12 +462,11 @@ export default function AlarmRingingScreen() {
         });
         break;
       case 'photo_activity':
-        // Photo proof - go through step mission to camera
-        navigation.navigate('StepMission', {
+        // Photo proof - go DIRECTLY to camera (no forced steps)
+        navigation.navigate('ProofCamera', {
           alarmId: alarmData.alarmId,
           referencePhotoUri: alarmData.referencePhotoUri,
-          onComplete: 'ProofCamera',
-          stepGoal: 10, // Quick steps before photo
+          activityName: proofActivity?.activity || 'Take your proof photo',
         });
         break;
       case 'scan':
@@ -489,12 +488,11 @@ export default function AlarmRingingScreen() {
         );
         break;
       default:
-        // Fallback to photo proof
-        navigation.navigate('StepMission', {
+        // Fallback to photo proof (no forced steps)
+        navigation.navigate('ProofCamera', {
           alarmId: alarmData.alarmId,
           referencePhotoUri: alarmData.referencePhotoUri,
-          onComplete: 'ProofCamera',
-          stepGoal: 10,
+          activityName: proofActivity?.activity || 'Take your proof photo',
         });
     }
   };

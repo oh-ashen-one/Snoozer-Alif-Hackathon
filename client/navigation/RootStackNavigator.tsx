@@ -146,6 +146,7 @@ export type RootStackParamList = {
   ProofCamera: {
     alarmId: string;
     referencePhotoUri: string;
+    activityName?: string;
   };
   StepMission: {
     alarmId: string;
