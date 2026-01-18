@@ -24,6 +24,7 @@ import WakeUpSuccessScreen from '@/screens/WakeUpSuccessScreen';
 import PaymentMethodScreen from '@/screens/PaymentMethodScreen';
 import SplashLoadingScreen from '@/screens/SplashLoadingScreen';
 import AlarmSoundScreen from '@/screens/AlarmSoundScreen';
+import JoinCodeScreen from '@/screens/JoinCodeScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
