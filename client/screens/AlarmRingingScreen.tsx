@@ -499,10 +499,9 @@ export default function AlarmRingingScreen() {
           </View>
         ) : null}
 
-        {/* WHY YOU SET THIS ALARM */}
+        {/* MOTIVATIONAL QUOTE */}
         <View style={styles.reasonCard}>
-          <ThemedText style={styles.reasonQuote}>"{alarmData.alarmLabel || 'Time to wake up!'}"</ThemedText>
-          <ThemedText style={styles.reasonLabel}>— {motivationalQuote}</ThemedText>
+          <ThemedText style={styles.reasonQuote}>"{motivationalQuote}"</ThemedText>
         </View>
 
         {/* ACTIVITY CARD */}
