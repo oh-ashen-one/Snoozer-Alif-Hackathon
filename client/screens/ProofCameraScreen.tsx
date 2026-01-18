@@ -100,6 +100,95 @@ export default function ProofCameraScreen() {
     });
   }, []);
 
+  // Auto-verify photo when captured
+  const runAIVerification = React.useCallback(async (uri: string) => {
+    if (!uri || uri.startsWith('mock://')) {
+      // Mock mode - auto-pass for testing
+      setVerificationStatus('passed');
+      setVerificationReason('Mock verification passed');
+      return;
+    }
+
+    if (!activityName) {
+      // No activity specified - skip AI verification
+      setVerificationStatus('passed');
+      return;
+    }
+
+    setVerifying(true);
+    setVerificationStatus('verifying');
+    setVerificationError(null);
+
+    if (__DEV__) console.log('[ProofCamera] Auto-starting AI verification for activity:', activityName);
+
+    try {
+      // Convert proof photo to base64
+      const imageBase64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64' as const,
+      });
+
+      // Prepare reference image if available
+      let referenceImageBase64: string | undefined;
+      if (referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
+        referenceImageBase64 = await FileSystem.readAsStringAsync(referencePhotoUri, {
+          encoding: 'base64' as const,
+        });
+      }
+
+      // Call AI verification API
+      const response = await apiRequest('POST', '/api/verify-proof', {
+        imageBase64: `data:image/jpeg;base64,${imageBase64}`,
+        activityDescription: activityName,
+        referenceImageBase64: referenceImageBase64 ? `data:image/jpeg;base64,${referenceImageBase64}` : undefined,
+      });
+
+      const result = await response.json();
+      if (__DEV__) console.log('[ProofCamera] AI verification result:', result);
+
+      if (!result.verified) {
+        setVerificationStatus('failed');
+        setVerificationReason(result.reason || "Couldn't verify the activity in your photo");
+        setVerificationError(result.reason || "Photo doesn't match the required activity. Please retake.");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } else {
+        setVerificationStatus('passed');
+        setVerificationReason(result.reason);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (__DEV__) console.log('[ProofCamera] AI verification passed:', result.reason);
+      }
+    } catch (aiError) {
+      if (__DEV__) console.log('[ProofCamera] AI verification failed:', aiError);
+      // On API error, fall back to local validation or pass through
+      if (referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
+        try {
+          const localResult = await validateProofPhoto(referencePhotoUri, uri);
+          if (!localResult.isMatch) {
+            setVerificationStatus('failed');
+            setVerificationError(localResult.message);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          } else {
+            setVerificationStatus('passed');
+          }
+        } catch {
+          // If all validation fails, allow through to not block user
+          setVerificationStatus('passed');
+        }
+      } else {
+        // No reference photo and API failed - allow through
+        setVerificationStatus('passed');
+      }
+    } finally {
+      setVerifying(false);
+    }
+  }, [activityName, referencePhotoUri]);
+
+  // Trigger AI verification when photo is captured
+  React.useEffect(() => {
+    if (photoUri && photoTimestamp) {
+      runAIVerification(photoUri);
+    }
+  }, [photoUri, photoTimestamp, runAIVerification]);
+
   const handleCapture = async () => {
     if (capturing) return;
 
@@ -148,95 +237,12 @@ export default function ProofCameraScreen() {
   };
 
   const handleConfirm = async () => {
-    if (verifying) return;
-    setVerifying(true);
-    setVerificationError(null);
-    setVerificationStatus('verifying');
+    // Block if still verifying or verification failed
+    if (verifying || verificationStatus !== 'passed') return;
 
     // Validate photo freshness (anti-cheat)
     if (photoTimestamp && !validatePhotoFreshness(photoTimestamp)) {
-      setVerifying(false);
-      setVerificationStatus('idle');
       return;
-    }
-
-    try {
-      // AI-powered verification for activity proof
-      if (photoUri && !photoUri.startsWith('mock://') && activityName) {
-        if (__DEV__) console.log('[ProofCamera] Starting AI verification for activity:', activityName);
-        
-        try {
-          // Convert proof photo to base64
-          const imageBase64 = await FileSystem.readAsStringAsync(photoUri, {
-            encoding: 'base64' as const,
-          });
-          
-          // Prepare reference image if available
-          let referenceImageBase64: string | undefined;
-          if (referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
-            referenceImageBase64 = await FileSystem.readAsStringAsync(referencePhotoUri, {
-              encoding: 'base64' as const,
-            });
-          }
-          
-          // Call AI verification API
-          const response = await apiRequest('POST', '/api/verify-proof', {
-            imageBase64: `data:image/jpeg;base64,${imageBase64}`,
-            activityDescription: activityName,
-            referenceImageBase64: referenceImageBase64 ? `data:image/jpeg;base64,${referenceImageBase64}` : undefined,
-          });
-          
-          const result = await response.json();
-          if (__DEV__) console.log('[ProofCamera] AI verification result:', result);
-          
-          if (!result.verified) {
-            setVerificationStatus('failed');
-            setVerificationReason(result.reason || "Couldn't verify the activity in your photo");
-            setVerificationError(result.reason || "Photo doesn't match the required activity. Please try again.");
-            setVerifying(false);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            return;
-          }
-          
-          setVerificationStatus('passed');
-          setVerificationReason(result.reason);
-          if (__DEV__) console.log('[ProofCamera] AI verification passed:', result.reason);
-        } catch (aiError) {
-          // If AI verification fails due to network/API issues, fall back to local validation
-          if (__DEV__) console.log('[ProofCamera] AI verification failed, falling back to local:', aiError);
-          
-          // Try local validation as fallback
-          if (referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
-            const localResult = await validateProofPhoto(referencePhotoUri, photoUri);
-            if (!localResult.isMatch) {
-              setVerificationError(localResult.message);
-              setVerifying(false);
-              setVerificationStatus('failed');
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              return;
-            }
-          }
-          setVerificationStatus('passed');
-        }
-      } else if (photoUri && !photoUri.startsWith('mock://') && referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
-        // Fallback to local validation if no activity name
-        const result = await validateProofPhoto(referencePhotoUri, photoUri);
-        if (!result.isMatch) {
-          setVerificationError(result.message);
-          setVerifying(false);
-          setVerificationStatus('failed');
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-        setVerificationStatus('passed');
-        if (__DEV__) console.log('[ProofCamera] Image match:', result.similarity.toFixed(2));
-      } else {
-        // Mock/web mode - skip verification
-        setVerificationStatus('passed');
-      }
-    } catch (error) {
-      if (__DEV__) console.log('[ProofCamera] Verification error:', error);
-      setVerificationStatus('passed'); // Allow through on errors to not block user
     }
 
     successDismissPattern();
@@ -387,30 +393,62 @@ export default function ProofCameraScreen() {
         ) : null}
 
         <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
-          {verificationError ? (
-            <View style={styles.errorContainer}>
-              <RNText style={{ fontSize: 20 }}>⚠️</RNText>
-              <ThemedText style={styles.errorText}>{verificationError}</ThemedText>
+          {/* Show verification status message */}
+          {verificationStatus === 'passed' ? (
+            <View style={styles.successContainer}>
+              <RNText style={{ fontSize: 20 }}>✅</RNText>
+              <ThemedText style={styles.successText}>Photo verified! You're doing the activity.</ThemedText>
             </View>
           ) : null}
 
-          <Pressable testID="button-retake-proof" style={styles.secondaryButton} onPress={handleRetake}>
-            <ThemedText style={styles.secondaryButtonText}>Retake</ThemedText>
+          {verificationStatus === 'failed' ? (
+            <View style={styles.errorContainer}>
+              <RNText style={{ fontSize: 20 }}>❌</RNText>
+              <ThemedText style={styles.errorText}>{verificationError || "Photo doesn't show the required activity. Please retake."}</ThemedText>
+            </View>
+          ) : null}
+
+          {/* Always show retake button */}
+          <Pressable 
+            testID="button-retake-proof" 
+            style={[
+              styles.secondaryButton,
+              verificationStatus === 'failed' && styles.retakeButtonHighlighted
+            ]} 
+            onPress={handleRetake}
+          >
+            <ThemedText style={[
+              styles.secondaryButtonText,
+              verificationStatus === 'failed' && styles.retakeButtonTextHighlighted
+            ]}>
+              {verificationStatus === 'failed' ? 'Retake Photo' : 'Retake'}
+            </ThemedText>
           </Pressable>
 
+          {/* Continue button - only enabled when verification passed */}
           <Pressable
             testID="button-confirm-proof"
-            style={[styles.greenButton, verifying && styles.greenButtonDisabled]}
+            style={[
+              styles.greenButton, 
+              (verificationStatus !== 'passed') && styles.greenButtonDisabled
+            ]}
             onPress={handleConfirm}
-            disabled={verifying}
+            disabled={verificationStatus !== 'passed'}
           >
-            {verifying ? (
+            {verificationStatus === 'verifying' ? (
               <View style={styles.verifyingButton}>
                 <ActivityIndicator size="small" color={Colors.text} />
-                <ThemedText style={styles.greenButtonText}>Verifying...</ThemedText>
+                <ThemedText style={styles.greenButtonText}>Scanning photo...</ThemedText>
               </View>
-            ) : (
+            ) : verificationStatus === 'passed' ? (
               <ThemedText style={styles.greenButtonText}>Looks good!</ThemedText>
+            ) : verificationStatus === 'failed' ? (
+              <ThemedText style={styles.greenButtonTextDisabled}>Photo not verified</ThemedText>
+            ) : (
+              <View style={styles.verifyingButton}>
+                <ActivityIndicator size="small" color={Colors.text} />
+                <ThemedText style={styles.greenButtonText}>Scanning...</ThemedText>
+              </View>
             )}
           </Pressable>
         </View>
@@ -774,6 +812,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+  },
+
+  // Success state
+  successContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: 12,
+    marginBottom: Spacing.sm,
+  },
+  successText: {
+    fontSize: 14,
+    color: Colors.green,
+    flex: 1,
+  },
+
+  // Retake button highlighted (when verification failed)
+  retakeButtonHighlighted: {
+    borderColor: Colors.orange,
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+  },
+  retakeButtonTextHighlighted: {
+    color: Colors.orange,
+    fontWeight: '600',
+  },
+
+  // Disabled button text
+  greenButtonTextDisabled: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.textMuted,
   },
 
   // Permission states
