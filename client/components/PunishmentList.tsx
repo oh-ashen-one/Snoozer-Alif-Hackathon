@@ -149,23 +149,8 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
   const [momPhone, setMomPhone] = useState(config.mom?.phoneNumber || '');
   const [grandmaPhone, setGrandmaPhone] = useState(config.grandma?.phoneNumber || '');
 
-  useEffect(() => {
-    if (punishment.id === 'email_boss') {
-      setBossEmail(config.email_boss?.bossEmail || '');
-    }
-    if (punishment.id === 'text_ex') {
-      setExPhoneNumber(config.text_ex?.exPhoneNumber || '');
-    }
-    if (punishment.id === 'wife_dad') {
-      setWifesDadPhone(config.wife_dad?.phoneNumber || '');
-    }
-    if (punishment.id === 'mom') {
-      setMomPhone(config.mom?.phoneNumber || '');
-    }
-    if (punishment.id === 'grandma_call') {
-      setGrandmaPhone(config.grandma?.phoneNumber || '');
-    }
-  }, [config, punishment.id]);
+  // Removed useEffect that was resetting inputs on config prop change
+  // Inputs now save immediately on change to prevent data loss
 
   const handleToggle = useCallback(() => {
     if (punishment.comingSoon) return;
@@ -377,7 +362,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="boss@company.com"
             placeholderTextColor={Colors.textMuted}
             value={bossEmail}
-            onChangeText={setBossEmail}
+            onChangeText={(text) => {
+              setBossEmail(text);
+              // Save immediately to prevent data loss on navigation
+              onSaveConfig({ ...config, email_boss: { bossEmail: text } });
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -425,7 +414,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="+1 555 123 4567"
             placeholderTextColor={Colors.textMuted}
             value={exPhoneNumber}
-            onChangeText={setExPhoneNumber}
+            onChangeText={(text) => {
+              setExPhoneNumber(text);
+              // Save immediately to prevent data loss on navigation
+              onSaveConfig({ ...config, text_ex: { exPhoneNumber: text } });
+            }}
             keyboardType="phone-pad"
             autoCapitalize="none"
             autoCorrect={false}
@@ -473,7 +466,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="+1 555 123 4567"
             placeholderTextColor={Colors.textMuted}
             value={wifesDadPhone}
-            onChangeText={setWifesDadPhone}
+            onChangeText={(text) => {
+              setWifesDadPhone(text);
+              // Save immediately to prevent data loss on navigation
+              onSaveConfig({ ...config, wife_dad: { phoneNumber: text } });
+            }}
             keyboardType="phone-pad"
             autoCapitalize="none"
             autoCorrect={false}
@@ -521,7 +518,11 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
             placeholder="+1 555 123 4567"
             placeholderTextColor={Colors.textMuted}
             value={momPhone}
-            onChangeText={setMomPhone}
+            onChangeText={(text) => {
+              setMomPhone(text);
+              // Save immediately to prevent data loss on navigation
+              onSaveConfig({ ...config, mom: { phoneNumber: text } });
+            }}
             keyboardType="phone-pad"
             autoCapitalize="none"
             autoCorrect={false}

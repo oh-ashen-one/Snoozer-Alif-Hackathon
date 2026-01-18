@@ -840,6 +840,14 @@ export default function AlarmRingingScreen() {
           contentContainerStyle={styles.payOnlyScrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Dynamic Island - Ringing State */}
+          <View style={styles.dynamicIslandContainer}>
+            <DynamicIsland
+              state="ringing"
+              stakeAmount={penaltyAmount}
+            />
+          </View>
+
           {/* Header: ALARM RINGING with pulsing dots */}
           <View style={styles.payOnlyHeader}>
             <Animated.View style={[styles.payOnlyDot, timeAnimatedStyle]} />
@@ -954,6 +962,14 @@ export default function AlarmRingingScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Dynamic Island - Ringing State */}
+        <View style={styles.dynamicIslandContainer}>
+          <DynamicIsland
+            state="ringing"
+            stakeAmount={penaltyAmount}
+          />
+        </View>
+
         {/* STREAK BANNER */}
         {streak > 0 && (
           <View style={styles.streakBanner}>
@@ -1312,6 +1328,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
+  },
+  dynamicIslandContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
   },
 
   // STREAK BANNER
