@@ -19,7 +19,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getOnboardingComplete } from '@/utils/storage';
+import { setOnboardingComplete } from '@/utils/storage';
 import { useAuth } from '@/contexts/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -77,18 +77,12 @@ export default function IntroScreen() {
   useEffect(() => {
     if (isAuthenticated) {
       const navigateAfterAuth = async () => {
-        try {
-          const hasOnboarded = await getOnboardingComplete();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: hasOnboarded ? 'Home' : 'Onboarding' }],
-          });
-        } catch {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Onboarding' }],
-          });
-        }
+        // Mark onboarding complete and go to Home
+        await setOnboardingComplete(true);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       };
       navigateAfterAuth();
     }
@@ -477,17 +471,6 @@ export default function IntroScreen() {
           </View>
         )}
 
-        {/* Apple Sign-In (iOS only) */}
-        {Platform.OS === 'ios' && (
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-            cornerRadius={BorderRadius.md}
-            style={styles.appleButton}
-            onPress={handleAppleSignIn}
-          />
-        )}
-
         {/* Google Sign-In */}
         <Pressable
           style={({ pressed }) => [
@@ -510,6 +493,17 @@ export default function IntroScreen() {
           )}
         </Pressable>
 
+        {/* Apple Sign-In (iOS only) */}
+        {Platform.OS === 'ios' && (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+            cornerRadius={BorderRadius.md}
+            style={styles.appleButton}
+            onPress={handleAppleSignIn}
+          />
+        )}
+
         {/* Terms text */}
         <Text style={styles.termsText}>
           By continuing, you agree to our{' '}
@@ -523,10 +517,10 @@ export default function IntroScreen() {
             style={styles.skipButton}
             onPress={async () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              const hasOnboarded = await getOnboardingComplete();
+              await setOnboardingComplete(true);
               navigation.reset({
                 index: 0,
-                routes: [{ name: hasOnboarded ? 'Home' : 'Onboarding' }],
+                routes: [{ name: 'Home' }],
               });
             }}
           >

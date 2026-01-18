@@ -17,7 +17,6 @@ import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
-import { setOnboardingComplete } from '@/utils/storage';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -60,6 +59,7 @@ export default function OnboardingCompleteScreen() {
   const handleDone = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    // Save the alarm locally
     await addAlarm({
       time: alarmTime,
       label: alarmLabel,
@@ -71,12 +71,11 @@ export default function OnboardingCompleteScreen() {
       days,
     });
 
-    await setOnboardingComplete(true);
-
+    // Navigate to sign-in to complete setup
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'Home' }],
+        routes: [{ name: 'Intro' }],
       })
     );
   };
@@ -143,7 +142,7 @@ export default function OnboardingCompleteScreen() {
       {/* Bottom buttons */}
       <Animated.View style={[styles.bottomContainer, contentStyle]}>
         <Pressable testID="button-lets-go" style={styles.greenButton} onPress={handleDone}>
-          <ThemedText style={styles.greenButtonText}>Let's go</ThemedText>
+          <ThemedText style={styles.greenButtonText}>Sign in to save</ThemedText>
           <Feather name="arrow-right" size={20} color={Colors.text} />
         </Pressable>
 

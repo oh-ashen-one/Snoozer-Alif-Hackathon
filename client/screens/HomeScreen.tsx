@@ -111,7 +111,7 @@ function DayPills({ selectedDays }: { selectedDays: number[] }) {
 }
 
 // Header Component with debug mode long press
-function Header({ onDebugModeActivate, onSettingsPress }: { onDebugModeActivate: () => void; onSettingsPress: () => void }) {
+function Header({ onDebugModeActivate }: { onDebugModeActivate: () => void }) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePressIn = () => {
@@ -128,11 +128,6 @@ function Header({ onDebugModeActivate, onSettingsPress }: { onDebugModeActivate:
     }
   };
 
-  const handleSettingsPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onSettingsPress();
-  };
-
   return (
     <View style={styles.header}>
       <Pressable
@@ -140,10 +135,7 @@ function Header({ onDebugModeActivate, onSettingsPress }: { onDebugModeActivate:
         onPressOut={handlePressOut}
       >
         <ThemedText style={styles.greeting}>{getGreeting()}</ThemedText>
-        <ThemedText style={styles.userName}>Alex 👋</ThemedText>
-      </Pressable>
-      <Pressable style={styles.settingsButton} onPress={handleSettingsPress}>
-        <Feather name="settings" size={20} color="#A8A29E" />
+        <ThemedText style={styles.userName}>Alex</ThemedText>
       </Pressable>
     </View>
   );
@@ -376,10 +368,6 @@ export default function HomeScreen() {
     navigation.navigate('Buddy');
   }, [navigation]);
 
-  const handleSettingsPress = useCallback(() => {
-    navigation.navigate('Settings');
-  }, [navigation]);
-
   const handleToggleAlarm = useCallback(
     (id: string) => {
       return () => {
@@ -409,7 +397,7 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Header onDebugModeActivate={handleDebugModeActivate} onSettingsPress={handleSettingsPress} />
+        <Header onDebugModeActivate={handleDebugModeActivate} />
 
         <Pressable
           testID="button-test-alarm"
@@ -495,16 +483,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FAFAF9',
     marginTop: 4,
-  },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1C1917',
-    borderWidth: 1,
-    borderColor: '#292524',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // Active Badge
