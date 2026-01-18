@@ -16,6 +16,7 @@ import {
   TextInput,
   Linking,
   Alert,
+  Modal,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +28,7 @@ import Svg, { Path, Polyline, Circle, Line } from 'react-native-svg';
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
+import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import {
@@ -129,6 +131,18 @@ export default function PaymentSettingsScreen() {
   const [customAmount, setCustomAmount] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [buddy, setBuddy] = useState<BuddyInfo | null>(null);
+
+  // Test flow state
+  const [testFlowStep, setTestFlowStep] = useState<0 | 1 | 2 | 3>(0);
+  const [testSnoozeText, setTestSnoozeText] = useState('');
+  const [testInsult] = useState(() => {
+    const SNOOZE_INSULTS = [
+      'im lazy',
+      'i have no self control',
+      'im a fat chud',
+    ];
+    return SNOOZE_INSULTS[Math.floor(Math.random() * SNOOZE_INSULTS.length)];
+  });
 
   // Load data on mount
   useEffect(() => {
@@ -241,6 +255,76 @@ export default function PaymentSettingsScreen() {
     } catch (error) {
       Alert.alert('Error', 'Unable to access contacts.');
     }
+  }, []);
+
+  // Test flow handlers
+  const handleTestPaymentFlow = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    if (!buddy?.phone) {
+      Alert.alert(
+        'Buddy Not Configured',
+        'You need to add a buddy before testing the payment flow.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Add Buddy', onPress: handleEditBuddy },
+        ]
+      );
+      return;
+    }
+
+    const amount = selectedAmount || parseInt(customAmount, 10);
+    if (!amount || amount <= 0) {
+      Alert.alert(
+        'Amount Not Set',
+        'Please select a payment amount before testing.'
+      );
+      return;
+    }
+
+    setTestFlowStep(1);
+  }, [buddy, selectedAmount, customAmount, handleEditBuddy]);
+
+  const handleTestCancel = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTestFlowStep(0);
+    setTestSnoozeText('');
+  }, []);
+
+  const handleTestContinue = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setTestFlowStep(2);
+  }, []);
+
+  const handleTestBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTestFlowStep(1);
+    setTestSnoozeText('');
+  }, []);
+
+  const handleTestConfirmInsult = useCallback(() => {
+    if (testSnoozeText.trim().toLowerCase() === testInsult.toLowerCase()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setTestFlowStep(3);
+    }
+  }, [testSnoozeText, testInsult]);
+
+  const handleTestPaymentSent = useCallback(() => {
+    setTestFlowStep(0);
+    setTestSnoozeText('');
+    Alert.alert(
+      'Test Complete!',
+      'The payment flow is working correctly. When you snooze a real alarm, iMessage will open just like that.'
+    );
+  }, []);
+
+  const handleTestShameTriggered = useCallback(() => {
+    setTestFlowStep(0);
+    setTestSnoozeText('');
+    Alert.alert(
+      'Time Ran Out',
+      'In a real scenario, your shame video would play now. The 30-second countdown gives you time to send the payment.'
+    );
   }, []);
 
   const displayAmount = selectedAmount || parseInt(customAmount, 10) || 5;
@@ -489,7 +573,121 @@ export default function PaymentSettingsScreen() {
             </Pressable>
           </View>
         </FadeInView>
+
+        <View style={styles.divider} />
+
+        {/* Test Payment Flow Section */}
+        <FadeInView delay={500} direction="up">
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionLabel}>TEST YOUR SETUP</ThemedText>
+            <ThemedText style={styles.sectionSub}>
+              Make sure everything works before your first alarm
+            </ThemedText>
+
+            <Pressable style={styles.testButton} onPress={handleTestPaymentFlow}>
+              <Text style={{ fontSize: 20 }}>🧪</Text>
+              <ThemedText style={styles.testButtonText}>
+                Test Payment Flow
+              </ThemedText>
+            </Pressable>
+
+            <ThemedText style={styles.testNote}>
+              This will walk you through the complete snooze punishment experience
+              and open iMessage with a real payment.
+            </ThemedText>
+          </View>
+        </FadeInView>
       </ScrollView>
+
+      {/* Test Flow Step 1: Are you sure? */}
+      <Modal
+        visible={testFlowStep === 1}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmCard}>
+            <ThemedText style={styles.confirmTitle}>Are you sure?</ThemedText>
+            <ThemedText style={styles.confirmDescription}>
+              You'll lose{' '}
+              <Text style={styles.redText}>${displayAmount}</Text>, your shame
+              video will play, and {buddy?.name || 'your buddy'} gets notified.
+            </ThemedText>
+
+            <View style={styles.confirmButtons}>
+              <Pressable style={styles.cancelButton} onPress={handleTestCancel}>
+                <ThemedText style={styles.cancelButtonText}>Cancel Test</ThemedText>
+              </Pressable>
+              <Pressable style={styles.sureButton} onPress={handleTestContinue}>
+                <ThemedText style={styles.sureButtonText}>I'm sure</ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Test Flow Step 2: Type insult */}
+      <Modal
+        visible={testFlowStep === 2}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.inputCard}>
+            <ThemedText style={styles.inputLabel}>
+              Type <Text style={styles.redText}>"{testInsult}"</Text> to confirm
+            </ThemedText>
+
+            <TextInput
+              style={styles.testInput}
+              value={testSnoozeText}
+              onChangeText={setTestSnoozeText}
+              placeholder="Type here..."
+              placeholderTextColor={Colors.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+            />
+
+            <View style={styles.confirmButtons}>
+              <Pressable style={styles.goBackButton} onPress={handleTestBack}>
+                <ThemedText style={styles.goBackButtonText}>Go back</ThemedText>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.confirmTestButton,
+                  testSnoozeText.trim().toLowerCase() === testInsult.toLowerCase() &&
+                    styles.confirmTestButtonActive,
+                ]}
+                onPress={handleTestConfirmInsult}
+                disabled={testSnoozeText.trim().toLowerCase() !== testInsult.toLowerCase()}
+              >
+                <ThemedText
+                  style={[
+                    styles.confirmTestButtonText,
+                    testSnoozeText.trim().toLowerCase() === testInsult.toLowerCase() &&
+                      styles.confirmTestButtonTextActive,
+                  ]}
+                >
+                  Confirm
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Test Flow Step 3: Payment Pressure Screen */}
+      <PaymentPressureScreen
+        visible={testFlowStep === 3}
+        amount={displayAmount}
+        recipientName={buddy?.name || 'Your buddy'}
+        recipientPhone={buddy?.phone || ''}
+        onPaymentSent={handleTestPaymentSent}
+        onShameTriggered={handleTestShameTriggered}
+      />
     </View>
   );
 }
@@ -850,5 +1048,159 @@ const styles = StyleSheet.create({
   },
   noteLink: {
     color: Colors.orange,
+  },
+
+  // Test Button
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.orange,
+    borderRadius: BorderRadius.md,
+    paddingVertical: 18,
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.md,
+    shadowColor: Colors.orange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  testButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.bg,
+  },
+  testNote: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  // Modal Overlay
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+
+  // Confirmation Card
+  confirmCard: {
+    width: '100%',
+    backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  confirmDescription: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  redText: {
+    color: Colors.red,
+    fontWeight: '600',
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: Colors.border,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  sureButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    paddingVertical: 14,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  sureButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.red,
+  },
+
+  // Input Card
+  inputCard: {
+    width: '100%',
+    backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+  },
+  inputLabel: {
+    fontSize: 15,
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+    lineHeight: 22,
+  },
+  testInput: {
+    backgroundColor: Colors.border,
+    borderWidth: 1,
+    borderColor: '#3F3A36',
+    borderRadius: BorderRadius.sm,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.lg,
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  goBackButton: {
+    flex: 1,
+    backgroundColor: Colors.border,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  goBackButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  confirmTestButton: {
+    flex: 1,
+    backgroundColor: Colors.border,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  confirmTestButtonActive: {
+    backgroundColor: Colors.red,
+  },
+  confirmTestButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+  confirmTestButtonTextActive: {
+    color: '#ffffff',
   },
 });
