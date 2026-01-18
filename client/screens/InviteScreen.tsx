@@ -1,0 +1,489 @@
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  Share,
+  Linking,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { ThemedText } from '@/components/ThemedText';
+import { Colors, Spacing } from '@/constants/theme';
+import { RootStackParamList } from '@/navigation/RootStackNavigator';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Invite'>;
+type NavigationProp = NativeStackScreenProps<RootStackParamList, 'Invite'>['navigation'];
+
+const STORAGE_KEY = '@snoozer/invite_code';
+
+function generateInviteCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+function validateCode(code: string): boolean {
+  const validChars = /^[A-Z0-9]{6}$/;
+  return validChars.test(code.toUpperCase());
+}
+
+export default function InviteScreen({ route }: Props) {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp>();
+  const { mode, buddyName } = route.params;
+
+  const [inviteCode, setInviteCode] = useState('');
+  const [friendCode, setFriendCode] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const inviteLink = `snoozer.app/join/${inviteCode}`;
+
+  useEffect(() => {
+    const loadOrCreateCode = async () => {
+      try {
+        const savedCode = await AsyncStorage.getItem(STORAGE_KEY);
+        if (savedCode) {
+          setInviteCode(savedCode);
+        } else {
+          const newCode = generateInviteCode();
+          await AsyncStorage.setItem(STORAGE_KEY, newCode);
+          setInviteCode(newCode);
+        }
+      } catch (e) {
+        const newCode = generateInviteCode();
+        setInviteCode(newCode);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadOrCreateCode();
+  }, []);
+
+  const handleBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  const handleCopyCode = useCallback(async () => {
+    await Clipboard.setStringAsync(inviteCode);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [inviteCode]);
+
+  const handleShareMessages = useCallback(async () => {
+    try {
+      await Share.share({
+        message: `Join me on Snoozer! Use my invite code: ${inviteCode}\n\n${inviteLink}`,
+      });
+    } catch (e) {}
+  }, [inviteCode, inviteLink]);
+
+  const handleShareWhatsApp = useCallback(async () => {
+    const message = encodeURIComponent(
+      `Join me on Snoozer! Use my invite code: ${inviteCode}\n\n${inviteLink}`
+    );
+    const url = `whatsapp://send?text=${message}`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        handleShareMessages();
+      }
+    } catch (e) {
+      handleShareMessages();
+    }
+  }, [inviteCode, inviteLink, handleShareMessages]);
+
+  const handleCopyLink = useCallback(async () => {
+    await Clipboard.setStringAsync(inviteLink);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [inviteLink]);
+
+  const handleFriendCodeChange = useCallback((text: string) => {
+    const formatted = text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    setFriendCode(formatted);
+    setError('');
+  }, []);
+
+  const handleJoinWithCode = useCallback(() => {
+    if (!friendCode) {
+      setError('Please enter a code');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    if (!validateCode(friendCode)) {
+      setError('Invalid code format. Codes are 6 characters.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('WaitingForBuddy', {
+      mode,
+      isHost: false,
+      code: friendCode,
+      buddyName: buddyName || 'Friend',
+    });
+  }, [friendCode, navigation, mode, buddyName]);
+
+  const handleShareAndWait = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('WaitingForBuddy', {
+      mode,
+      isHost: true,
+      code: inviteCode,
+      buddyName: buddyName || 'Buddy',
+    });
+  }, [navigation, mode, inviteCode, buddyName]);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.loadingContainer}>
+          <ThemedText style={styles.loadingText}>Generating code...</ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={styles.header}>
+        <Pressable style={styles.backButton} onPress={handleBack} testID="button-back">
+          <Feather name="arrow-left" size={24} color={Colors.text} />
+        </Pressable>
+        <ThemedText style={styles.headerTitle}>Invite a Buddy</ThemedText>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.codeSection}>
+          <ThemedText style={styles.sectionLabel}>Your invite code</ThemedText>
+          <View style={styles.codeCard}>
+            <Pressable style={styles.codeDisplay} onPress={handleCopyCode} testID="button-copy-code">
+              <ThemedText style={styles.codeText}>{inviteCode}</ThemedText>
+              <View style={[styles.copyBadge, copied && styles.copyBadgeSuccess]}>
+                <Feather name={copied ? 'check' : 'copy'} size={16} color="#FAFAF9" />
+              </View>
+            </Pressable>
+            <ThemedText style={styles.tapHint}>Tap to copy</ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.shareSection}>
+          <ThemedText style={styles.sectionLabel}>Share your code</ThemedText>
+          <View style={styles.shareButtons}>
+            <Pressable
+              style={styles.shareButton}
+              onPress={handleShareMessages}
+              testID="button-share-messages"
+            >
+              <View style={[styles.shareIconCircle, { backgroundColor: '#22C55E20' }]}>
+                <Feather name="message-circle" size={22} color="#22C55E" />
+              </View>
+              <ThemedText style={styles.shareButtonText}>Messages</ThemedText>
+            </Pressable>
+
+            <Pressable
+              style={styles.shareButton}
+              onPress={handleShareWhatsApp}
+              testID="button-share-whatsapp"
+            >
+              <View style={[styles.shareIconCircle, { backgroundColor: '#25D36620' }]}>
+                <Feather name="phone" size={22} color="#25D366" />
+              </View>
+              <ThemedText style={styles.shareButtonText}>WhatsApp</ThemedText>
+            </Pressable>
+
+            <Pressable
+              style={styles.shareButton}
+              onPress={handleCopyLink}
+              testID="button-copy-link"
+            >
+              <View style={[styles.shareIconCircle, { backgroundColor: '#FB923C20' }]}>
+                <Feather name="link" size={22} color="#FB923C" />
+              </View>
+              <ThemedText style={styles.shareButtonText}>Copy Link</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.dividerContainer}>
+          <View style={styles.dividerLine} />
+          <ThemedText style={styles.dividerText}>or</ThemedText>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <View style={styles.joinSection}>
+          <ThemedText style={styles.sectionLabel}>Enter friend's code</ThemedText>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={[styles.codeInput, error ? styles.codeInputError : null]}
+              value={friendCode}
+              onChangeText={handleFriendCodeChange}
+              placeholder="ABC123"
+              placeholderTextColor="#57534E"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={6}
+              testID="input-friend-code"
+            />
+            <Pressable
+              style={[
+                styles.joinButton,
+                friendCode.length === 6 && styles.joinButtonActive,
+              ]}
+              onPress={handleJoinWithCode}
+              disabled={friendCode.length !== 6}
+              testID="button-join"
+            >
+              <Feather
+                name="arrow-right"
+                size={20}
+                color={friendCode.length === 6 ? '#FAFAF9' : '#57534E'}
+              />
+            </Pressable>
+          </View>
+          {error ? <ThemedText style={styles.errorText}>{error}</ThemedText> : null}
+        </View>
+      </View>
+
+      <View style={[styles.bottomCta, { paddingBottom: insets.bottom + 16 }]}>
+        <Pressable
+          style={styles.primaryButton}
+          onPress={handleShareAndWait}
+          testID="button-share-wait"
+        >
+          <ThemedText style={styles.primaryButtonText}>Share & Wait for Buddy</ThemedText>
+          <Feather name="clock" size={18} color="#FAFAF9" />
+        </Pressable>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.textMuted,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  headerSpacer: {
+    width: 44,
+  },
+
+  content: {
+    flex: 1,
+    paddingHorizontal: Spacing.xl,
+  },
+
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#57534E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+
+  codeSection: {
+    marginBottom: 32,
+  },
+  codeCard: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 20,
+    alignItems: 'center',
+  },
+  codeDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  codeText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.text,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 4,
+  },
+  copyBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#292524',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyBadgeSuccess: {
+    backgroundColor: '#22C55E',
+  },
+  tapHint: {
+    fontSize: 12,
+    color: '#57534E',
+    marginTop: 8,
+  },
+
+  shareSection: {
+    marginBottom: 32,
+  },
+  shareButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  shareButton: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  shareIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shareButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    fontSize: 13,
+    color: '#57534E',
+    paddingHorizontal: 16,
+  },
+
+  joinSection: {},
+  inputRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  codeInput: {
+    flex: 1,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  codeInputError: {
+    borderColor: '#EF4444',
+  },
+  joinButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: '#292524',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  joinButtonActive: {
+    backgroundColor: '#FB923C',
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#EF4444',
+    marginTop: 8,
+  },
+
+  bottomCta: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: 16,
+    backgroundColor: 'rgba(12, 10, 9, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: Colors.bgElevated,
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderRadius: 14,
+    paddingVertical: 18,
+    backgroundColor: '#FB923C',
+    shadowColor: '#FB923C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FAFAF9',
+  },
+});

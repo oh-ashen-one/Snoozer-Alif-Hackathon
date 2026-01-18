@@ -18,6 +18,9 @@ import OnboardingScreen from '@/screens/OnboardingScreen';
 import StatsScreen from '@/screens/StatsScreen';
 import BuddyScreen from '@/screens/BuddyScreen';
 import BuddySetupScreen from '@/screens/BuddySetupScreen';
+import InviteScreen from '@/screens/InviteScreen';
+import WaitingForBuddyScreen from '@/screens/WaitingForBuddyScreen';
+import BuddyJoinedScreen from '@/screens/BuddyJoinedScreen';
 import HelpScreen from '@/screens/HelpScreen';
 import LegalScreen from '@/screens/LegalScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
@@ -32,6 +35,9 @@ export type RootStackParamList = {
   Stats: undefined;
   Buddy: undefined;
   BuddySetup: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity' };
+  Invite: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName?: string };
+  WaitingForBuddy: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; isHost: boolean; code: string; buddyName: string };
+  BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
   AddAlarm: { isOnboarding: boolean };
@@ -143,6 +149,27 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="BuddySetup"
         component={BuddySetupScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Invite"
+        component={InviteScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="WaitingForBuddy"
+        component={WaitingForBuddyScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="BuddyJoined"
+        component={BuddyJoinedScreen}
         options={{
           headerShown: false,
         }}
