@@ -119,13 +119,14 @@ export default function StepMissionScreen() {
         await logWakeUp(alarmId, new Date(), false, 0);
         const streak = await getCurrentStreak();
         const monthStats = await getMonthStats();
-        const wakeUpRate = monthStats.onTime > 0
-          ? Math.round((monthStats.onTime / (monthStats.onTime + monthStats.late + monthStats.missed)) * 100)
+        const total = monthStats.wakeUps + monthStats.snoozes;
+        const wakeUpRate = total > 0
+          ? Math.round((monthStats.wakeUps / total) * 100)
           : 100;
 
         navigation.navigate('WakeUpSuccess', {
           streak,
-          moneySaved: streak * 5, // Example calculation
+          moneySaved: monthStats.savedMoney,
           wakeUpRate,
           wakeTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
           targetTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
