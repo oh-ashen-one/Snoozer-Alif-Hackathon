@@ -55,6 +55,7 @@ import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { AppleCashPrompt } from '@/components/AppleCashPrompt';
+import ShameMessageSent from '@/components/ShameMessageSent';
 
 const CALENDAR_CONNECTED_KEY = '@snoozer/calendar_connected';
 
@@ -134,7 +135,8 @@ export default function AlarmRingingScreen() {
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
   const [buddyInfo, setBuddyInfo] = useState<BuddyInfo | null>(null);
   const [alarmPunishment, setAlarmPunishment] = useState<number>(5);
-  const [showPaymentPrompt, setShowPaymentPrompt] = useState(params.showPaymentPrompt || false);
+  const [showPaymentPrompt, setShowPaymentPrompt] = useState(false);
+  const [showShame, setShowShame] = useState(false);
   const [motivationalQuote] = useState(() => 
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]
   );
@@ -378,9 +380,8 @@ export default function AlarmRingingScreen() {
 
   const handleSnoozeConfirm = async () => {
     if (snoozeText.trim().toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase()) {
-      if (__DEV__) console.log('ALARM: User chose snooze');
+      if (__DEV__) console.log('ALARM: User chose snooze - showing payment prompt');
       shameTriggerPattern();
-      await stopAlarm();
 
       try {
         await logWakeUp(alarmData.alarmId, new Date(), true, 1);
@@ -389,15 +390,28 @@ export default function AlarmRingingScreen() {
         if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
       }
 
-      navigation.navigate('ShamePlayback', {
-        alarmId: alarmData.alarmId,
-        shameVideoUri: alarmData.shameVideoUri,
-        alarmLabel: alarmData.alarmLabel,
-        referencePhotoUri: alarmData.referencePhotoUri,
-        showPaymentAfter: !!buddyInfo?.phone,
-        buddyPhone: buddyInfo?.phone,
-      });
+      setShowPaymentPrompt(true);
     }
+  };
+
+  const handlePaymentSent = async () => {
+    if (__DEV__) console.log('ALARM: Payment sent - showing shame message');
+    setShowPaymentPrompt(false);
+    await stopAlarm();
+    setShowShame(true);
+  };
+
+  const handleShameDismiss = () => {
+    if (__DEV__) console.log('ALARM: Shame dismissed - navigating to shame video playback');
+    setShowShame(false);
+    navigation.navigate('ShamePlayback', {
+      alarmId: alarmData.alarmId,
+      shameVideoUri: alarmData.shameVideoUri,
+      alarmLabel: alarmData.alarmLabel,
+      referencePhotoUri: alarmData.referencePhotoUri,
+      showPaymentAfter: false,
+      buddyPhone: buddyInfo?.phone,
+    });
   };
 
   const timeAnimatedStyle = useAnimatedStyle(() => ({
@@ -633,8 +647,19 @@ export default function AlarmRingingScreen() {
         amount={penaltyAmount}
         recipientName={buddyName}
         recipientPhone={buddyInfo?.phone || ''}
-        onPaymentSent={() => setShowPaymentPrompt(false)}
+        onPaymentSent={handlePaymentSent}
         onDismiss={() => setShowPaymentPrompt(false)}
+      />
+
+      <ShameMessageSent
+        visible={showShame}
+        contacts={[
+          { name: buddyName, type: 'buddy' },
+        ]}
+        amountSent={penaltyAmount}
+        recipientName={buddyName}
+        userName="You"
+        onDismiss={handleShameDismiss}
       />
     </View>
   );
