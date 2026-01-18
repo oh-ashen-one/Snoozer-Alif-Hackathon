@@ -414,15 +414,6 @@ export default function HomeScreen() {
       >
         <Header onDebugModeActivate={handleDebugModeActivate} />
 
-        <Pressable
-          testID="button-test-alarm"
-          style={styles.testAlarmButton}
-          onPress={handleTestAlarmNow}
-        >
-          <Feather name="zap" size={18} color="#FB923C" />
-          <ThemedText style={styles.testAlarmButtonText}>Test Alarm</ThemedText>
-        </Pressable>
-
         {nextAlarm ? (
           <>
             <FadeInView delay={100} direction="up">
@@ -449,6 +440,15 @@ export default function HomeScreen() {
                 />
               </AnimatedCard>
             ))}
+
+            <Pressable
+              testID="button-test-alarm"
+              style={styles.testAlarmButton}
+              onPress={handleTestAlarmNow}
+            >
+              <Feather name="zap" size={18} color="#FB923C" />
+              <ThemedText style={styles.testAlarmButtonText}>Test Alarm</ThemedText>
+            </Pressable>
           </>
         ) : (
           <>
@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 100,
-    marginBottom: 16,
+    marginTop: 24,
     borderWidth: 1,
     borderColor: 'rgba(251, 146, 60, 0.2)',
   },

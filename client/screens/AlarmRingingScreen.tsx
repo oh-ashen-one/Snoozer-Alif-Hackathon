@@ -1,4 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+/**
+ * ALARM RINGING SCREEN
+ * AlarmRingingScreen.tsx
+ *
+ * ════════════════════════════════════════════════════════════════
+ * FEATURES:
+ * - Volume escalation bar (getting louder!)
+ * - Today's first event reminder
+ * - Wake-up tip / reason you set this
+ * - Streak banner with fire icons
+ * - Punishment cards (money + shame)
+ * ════════════════════════════════════════════════════════════════
+ */
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,19 +23,16 @@ import {
   BackHandler,
   Platform,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
-import { Audio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
 import {
   alarmRingingPattern,
   snoozeWarningPattern,
   shameTriggerPattern,
-  successDismissPattern,
   buttonPress,
-  continuousAlarmPulse,
 } from '@/utils/haptics';
 import Animated, {
   useSharedValue,
@@ -30,15 +41,13 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
-import { VolumeIndicator } from '@/components/VolumeIndicator';
 import { CheatWarningModal } from '@/components/CheatWarningModal';
-import { Colors, Spacing, BorderRadius } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarms, getProofActivity, ProofActivity } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
@@ -70,14 +79,6 @@ const SNOOZE_CONFIRMATION = "im fuch a fat chud";
 const VIBRATION_PATTERN = [500, 500, 500, 500];
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const BUDDY_QUOTES = [
-  "Don't make me come over there.",
-  "I can see you're still in bed...",
-  "Get up or I'm sending screenshots.",
-  "You promised you'd wake up.",
-  "Your shame video is ready to go.",
-];
-
 export default function AlarmRingingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
@@ -95,21 +96,24 @@ export default function AlarmRingingScreen() {
   const [snoozeText, setSnoozeText] = useState('');
   const [streak, setStreak] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const [buddyQuote] = useState(BUDDY_QUOTES[Math.floor(Math.random() * BUDDY_QUOTES.length)]);
   const [proofActivity, setProofActivity] = useState<ProofActivity | null>(null);
   const [alarmSoundSource, setAlarmSoundSource] = useState<any>(null);
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
-  const { startAlarm: startEscalatingAlarm, stopAlarm: stopEscalatingAlarm, volumePercent, isPlaying } = useEscalatingVolume(alarmSoundSource);
-  
-  const { 
-    startHeartbeat, 
-    stopHeartbeat, 
+  // Mock data for new UI elements - these would come from actual alarm settings
+  const reason = "You said you'd stop being late.";
+  const buddyName = 'Jake';
+  const penaltyAmount = 5;
+
+  const { startAlarm: startEscalatingAlarm, stopAlarm: stopEscalatingAlarm, volumePercent } = useEscalatingVolume(alarmSoundSource);
+
+  const {
+    startHeartbeat,
+    stopHeartbeat,
     scheduleBackupNotification,
     cancelBackupNotification,
-    validateTimeIntegrity 
   } = useAntiCheat({
     onCheatDetected: (cheatType) => {
       setDetectedCheat(cheatType);
@@ -122,22 +126,36 @@ export default function AlarmRingingScreen() {
     },
   });
 
-  const breatheValue = useSharedValue(0);
   const pulseValue = useSharedValue(1);
+  const fireScale = useSharedValue(1);
+  const shakeValue = useSharedValue(0);
 
   useEffect(() => {
     setTimeout(() => setLoaded(true), 100);
 
-    breatheValue.value = withRepeat(
-      withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-
     pulseValue.value = withRepeat(
       withSequence(
-        withTiming(1.1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.03, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
         withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1
+    );
+
+    fireScale.value = withRepeat(
+      withSequence(
+        withTiming(1.15, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1
+    );
+
+    shakeValue.value = withRepeat(
+      withSequence(
+        withTiming(-3, { duration: 150 }),
+        withTiming(3, { duration: 150 }),
+        withTiming(-3, { duration: 150 }),
+        withTiming(0, { duration: 150 }),
+        withTiming(0, { duration: 2550 }) // Pause between shakes
       ),
       -1
     );
@@ -152,7 +170,7 @@ export default function AlarmRingingScreen() {
 
   useEffect(() => {
     if (__DEV__) console.log('ALARM: Ringing screen mounted');
-    
+
     const loadFallbackAlarm = async () => {
       if (!alarmData.alarmId) {
         try {
@@ -250,11 +268,12 @@ export default function AlarmRingingScreen() {
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')}`;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    return `${displayHours}:${minutes.toString().padStart(2, '0')}${period}`;
   };
 
-  const getPeriod = (date: Date) => {
-    return date.getHours() >= 12 ? 'PM' : 'AM';
+  const formatDay = (date: Date) => {
+    return date.toLocaleDateString('en-US', { weekday: 'long' });
   };
 
   const formatEventTime = (dateStr: string) => {
@@ -301,14 +320,14 @@ export default function AlarmRingingScreen() {
       if (__DEV__) console.log('ALARM: User chose snooze');
       shameTriggerPattern();
       await stopAlarm();
-      
+
       try {
         await logWakeUp(alarmData.alarmId, new Date(), true, 1);
         if (__DEV__) console.log('[AlarmRinging] Logged snooze');
       } catch (error) {
         if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
       }
-      
+
       navigation.navigate('ShamePlayback', {
         alarmId: alarmData.alarmId,
         shameVideoUri: alarmData.shameVideoUri,
@@ -318,148 +337,149 @@ export default function AlarmRingingScreen() {
     }
   };
 
-  const gradientAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(breatheValue.value, [0, 1], [0.06, 0.14]);
-    return { opacity };
-  });
+  const timeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseValue.value }],
+  }));
 
-  const ringAnimatedStyle = useAnimatedStyle(() => {
-    const size = interpolate(breatheValue.value, [0, 1], [200, 240]);
-    const opacity = interpolate(breatheValue.value, [0, 1], [0.1, 0.2]);
-    return {
-      width: size,
-      height: size,
-      borderRadius: size / 2,
-      opacity,
-    };
-  });
+  const fireAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: fireScale.value }],
+  }));
 
-  const timeAnimatedStyle = useAnimatedStyle(() => {
-    const scale = interpolate(breatheValue.value, [0, 1], [1, 1.02]);
-    return { transform: [{ scale }] };
-  });
+  const shakeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeValue.value }],
+  }));
 
-  const buddyRingAnimatedStyle = useAnimatedStyle(() => {
-    const size = interpolate(breatheValue.value, [0, 1], [120, 140]);
-    const opacity = interpolate(breatheValue.value, [0, 1], [0.05, 0.15]);
-    return {
-      width: size,
-      height: size,
-      borderRadius: size / 2,
-      opacity,
-    };
-  });
-
-  const onlinePulseStyle = useAnimatedStyle(() => {
-    return { transform: [{ scale: pulseValue.value }] };
-  });
-
-  const penaltyAmount = 1;
-  const buddyName = "Your Buddy";
+  // Get first calendar event for today
+  const firstEvent = calendarEvents.length > 0 ? calendarEvents[0] : null;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 }]}>
-      <Animated.View style={[styles.gradientOverlay, gradientAnimatedStyle]} />
-      
-      <Animated.View style={[styles.breathingRing, ringAnimatedStyle]} />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Background Glow */}
+      <Animated.View style={styles.backgroundGlow} />
 
-      <View style={[styles.topSection, { opacity: loaded ? 1 : 0 }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* STREAK BANNER */}
         {streak > 0 && (
-          <View style={styles.streakPill}>
-            <Feather name="zap" size={14} color="#FB923C" />
-            <ThemedText style={styles.streakText}>{streak} days strong</ThemedText>
-          </View>
-        )}
-
-        <View style={styles.volumeRow}>
-          <VolumeIndicator volumePercent={volumePercent} />
-        </View>
-
-        <View style={styles.timeContainer}>
-          <Animated.Text style={[styles.timeText, timeAnimatedStyle]}>
-            {formatTime(currentTime)}
-          </Animated.Text>
-          <ThemedText style={styles.periodText}>{getPeriod(currentTime)}</ThemedText>
-        </View>
-        
-        <ThemedText style={styles.wakeUpLabel}>Time to get up</ThemedText>
-
-        {calendarEvents.length > 0 && (
-          <View style={styles.calendarSection}>
-            <View style={styles.calendarHeader}>
-              <Feather name="calendar" size={14} color="#3B82F6" />
-              <ThemedText style={styles.calendarTitle}>Today's Schedule</ThemedText>
+          <View style={styles.streakBanner}>
+            <Animated.View style={fireAnimatedStyle}>
+              <Feather name="zap" size={28} color={Colors.orange} />
+            </Animated.View>
+            <View style={styles.streakInfo}>
+              <ThemedText style={styles.streakNumber}>{streak} DAY STREAK</ThemedText>
+              <ThemedText style={styles.streakSub}>Don't break it now</ThemedText>
             </View>
-            {calendarEvents.slice(0, 2).map((event) => (
-              <View key={event.id} style={styles.calendarEvent}>
-                <ThemedText style={styles.eventTime}>{formatEventTime(event.start)}</ThemedText>
-                <ThemedText style={styles.eventName} numberOfLines={1}>{event.summary}</ThemedText>
-              </View>
-            ))}
+            <Animated.View style={fireAnimatedStyle}>
+              <Feather name="zap" size={28} color={Colors.orange} />
+            </Animated.View>
           </View>
         )}
-      </View>
 
-      <View style={[styles.buddySection, { opacity: loaded ? 1 : 0 }]}>
-        <View style={styles.buddyAvatarContainer}>
-          <Animated.View style={[styles.buddyPulseRing, buddyRingAnimatedStyle]} />
-          <View style={styles.buddyAvatar}>
-            <Feather name="user" size={40} color="#78716C" />
+        {/* MASSIVE TIME */}
+        <Animated.View style={[styles.timeContainer, timeAnimatedStyle, { opacity: loaded ? 1 : 0 }]}>
+          <ThemedText style={styles.time}>{formatTime(currentTime)}</ThemedText>
+          <ThemedText style={styles.day}>{formatDay(currentTime).toUpperCase()}</ThemedText>
+        </Animated.View>
+
+        {/* VOLUME ESCALATION BAR */}
+        <View style={styles.volumeSection}>
+          <View style={styles.volumeHeader}>
+            <Feather
+              name="volume-2"
+              size={18}
+              color={volumePercent >= 80 ? Colors.red : Colors.orange}
+            />
+            <ThemedText style={[
+              styles.volumeLabel,
+              { color: volumePercent >= 80 ? Colors.red : Colors.orange }
+            ]}>
+              {volumePercent >= 100 ? 'MAX VOLUME' : `Volume: ${Math.round(volumePercent)}%`}
+            </ThemedText>
+            {volumePercent < 100 && (
+              <ThemedText style={styles.volumeWarning}>Getting louder...</ThemedText>
+            )}
           </View>
-          <Animated.View style={[styles.onlineIndicator, onlinePulseStyle]} />
-        </View>
-        
-        <ThemedText style={styles.buddyName}>{buddyName} is watching</ThemedText>
-        <ThemedText style={styles.buddyQuote}>"{buddyQuote}"</ThemedText>
-      </View>
-
-      <View style={[styles.bottomSection, { opacity: loaded ? 1 : 0 }]}>
-        <View style={styles.proofCard}>
-          <View style={styles.proofHeader}>
-            <Feather name="camera" size={24} color="#FAFAF9" />
-            <ThemedText style={styles.proofTitle}>Prove you're up</ThemedText>
+          <View style={styles.volumeBarBg}>
+            <View style={[
+              styles.volumeBarFill,
+              {
+                width: `${volumePercent}%`,
+                backgroundColor: volumePercent >= 80 ? Colors.red : Colors.orange,
+              }
+            ]} />
           </View>
-          
-          <ThemedText style={styles.proofDescription}>
-            {proofActivity 
-              ? <>Show yourself <Text style={styles.greenText}>{proofActivity.activity.toLowerCase()}</Text> to dismiss the alarm. No proof, no escape.</>
-              : <>Take a photo at your <Text style={styles.greenText}>wake-up spot</Text> to dismiss the alarm. No photo, no escape.</>
-            }
-          </ThemedText>
-          
-          <Pressable
-            style={styles.dismissButton}
-            onPress={handleDismiss}
-            testID="button-dismiss-alarm"
-          >
-            <Feather name="camera" size={20} color="#ffffff" />
-            <ThemedText style={styles.dismissButtonText}>Take Photo & Dismiss</ThemedText>
-          </Pressable>
         </View>
 
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <ThemedText style={styles.dividerText}>or face the consequences</ThemedText>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {snoozeStep === 0 && (
-          <Pressable
-            style={styles.snoozeButton}
-            onPress={handleSnoozePress}
-            testID="button-snooze"
-          >
-            <ThemedText style={styles.snoozeButtonText}>Snooze (-${penaltyAmount})</ThemedText>
-          </Pressable>
+        {/* TODAY'S FIRST EVENT */}
+        {firstEvent && (
+          <View style={styles.eventCard}>
+            <Feather name="calendar" size={18} color={Colors.textMuted} />
+            <ThemedText style={styles.eventTime}>{formatEventTime(firstEvent.start)}</ThemedText>
+            <ThemedText style={styles.eventTitle} numberOfLines={1}>{firstEvent.summary}</ThemedText>
+          </View>
         )}
 
+        {/* WHY YOU SET THIS ALARM */}
+        <View style={styles.reasonCard}>
+          <ThemedText style={styles.reasonQuote}>"{reason}"</ThemedText>
+          <ThemedText style={styles.reasonLabel}>— You, last night</ThemedText>
+        </View>
+
+        {/* ACTIVITY CARD */}
+        <View style={styles.activityCard}>
+          <View style={styles.activityIconWrapper}>
+            <Feather name="star" size={22} color={Colors.orange} />
+          </View>
+          <View style={styles.activityTextContainer}>
+            <ThemedText style={styles.activityText}>
+              {proofActivity ? proofActivity.activity : 'Take a photo at your wake-up spot'}
+            </ThemedText>
+            <ThemedText style={styles.activityLabel}>to dismiss alarm</ThemedText>
+          </View>
+        </View>
+
+        {/* SNOOZE = HEADER */}
+        <View style={styles.snoozeHeader}>
+          <View style={styles.snoozeLine} />
+          <ThemedText style={styles.snoozeHeaderText}>SNOOZE =</ThemedText>
+          <View style={styles.snoozeLine} />
+        </View>
+
+        {/* PUNISHMENT CARDS */}
+        <View style={styles.punishmentGrid}>
+          <View style={styles.punishmentCard}>
+            <Feather name="dollar-sign" size={44} color={Colors.text} />
+            <ThemedText style={styles.punishmentAmount}>${penaltyAmount}</ThemedText>
+            <ThemedText style={styles.punishmentDesc}>to {buddyName}</ThemedText>
+          </View>
+
+          <View style={styles.punishmentCard}>
+            <Feather name="video" size={44} color={Colors.text} />
+            <ThemedText style={styles.punishmentAmount}>SHAME</ThemedText>
+            <ThemedText style={styles.punishmentDesc}>MAX volume</ThemedText>
+          </View>
+        </View>
+
+        {/* NOTIFY CARD */}
+        <Animated.View style={[styles.notifyCard, shakeAnimatedStyle]}>
+          <Feather name="smartphone" size={40} color={Colors.text} />
+          <View style={styles.notifyContent}>
+            <ThemedText style={styles.notifyName}>{buddyName.toUpperCase()}</ThemedText>
+            <ThemedText style={styles.notifyText}>gets notified of your failure</ThemedText>
+          </View>
+        </Animated.View>
+
+        {/* SNOOZE CONFIRMATION FLOW */}
         {snoozeStep === 1 && (
           <View style={styles.confirmCard}>
             <ThemedText style={styles.confirmTitle}>Are you sure?</ThemedText>
             <ThemedText style={styles.confirmDescription}>
               You'll lose <Text style={styles.redText}>${penaltyAmount}</Text>, your shame video will play, and {buddyName} gets notified.
             </ThemedText>
-            
+
             <View style={styles.confirmButtons}>
               <Pressable style={styles.nevermindButton} onPress={handleNevermind}>
                 <ThemedText style={styles.nevermindButtonText}>Nevermind, I'm up</ThemedText>
@@ -476,7 +496,7 @@ export default function AlarmRingingScreen() {
             <ThemedText style={styles.inputLabel}>
               Type <Text style={styles.redText}>"{SNOOZE_CONFIRMATION}"</Text> to confirm
             </ThemedText>
-            
+
             <TextInput
               style={styles.snoozeInput}
               value={snoozeText}
@@ -488,7 +508,7 @@ export default function AlarmRingingScreen() {
               autoFocus
               testID="input-snooze-confirmation"
             />
-            
+
             <View style={styles.confirmButtons}>
               <Pressable style={styles.goBackButton} onPress={handleNevermind}>
                 <ThemedText style={styles.goBackButtonText}>Go back</ThemedText>
@@ -514,6 +534,29 @@ export default function AlarmRingingScreen() {
             </View>
           </View>
         )}
+      </ScrollView>
+
+      {/* FOOTER BUTTONS */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 28 }]}>
+        <Pressable
+          style={styles.wakeUpButton}
+          onPress={handleDismiss}
+          testID="button-dismiss-alarm"
+        >
+          <ThemedText style={styles.wakeUpButtonText}>I'M UP — TAKE PHOTO</ThemedText>
+        </Pressable>
+
+        {snoozeStep === 0 && (
+          <Pressable
+            style={styles.snoozeButton}
+            onPress={handleSnoozePress}
+            testID="button-snooze"
+          >
+            <ThemedText style={styles.snoozeButtonText}>
+              snooze <Text style={styles.snoozeCost}>(lose ${penaltyAmount})</Text>
+            </ThemedText>
+          </Pressable>
+        )}
       </View>
 
       <CheatWarningModal
@@ -528,270 +571,281 @@ export default function AlarmRingingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bgElevated,
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: Colors.bg,
   },
-  gradientOverlay: {
+  backgroundGlow: {
     position: 'absolute',
-    top: '-20%',
-    left: '-20%',
-    width: '140%',
-    height: '70%',
-    backgroundColor: '#FB923C',
+    top: '-30%',
+    left: '-30%',
+    width: '160%',
+    height: '80%',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderRadius: 1000,
+    opacity: 0.5,
   },
-  breathingRing: {
-    position: 'absolute',
-    top: '12%',
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(251, 146, 60, 0.2)',
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
 
-  topSection: {
-    alignItems: 'center',
-  },
-  streakPill: {
+  // STREAK BANNER
+  streakBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(251, 146, 60, 0.12)',
-    borderRadius: 100,
-    marginBottom: 32,
+    justifyContent: 'center',
+    gap: 14,
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(251, 146, 60, 0.4)',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 6,
   },
-  streakText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#FB923C',
-  },
-  volumeRow: {
+  streakInfo: {
     alignItems: 'center',
-    marginBottom: 24,
   },
+  streakNumber: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.orange,
+    letterSpacing: 1,
+  },
+  streakSub: {
+    fontSize: 11,
+    color: Colors.orange,
+    opacity: 0.8,
+  },
+
+  // MASSIVE TIME
   timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-  },
-  timeText: {
-    fontSize: 96,
-    fontWeight: '600',
-    color: '#FAFAF9',
-    letterSpacing: -6,
-    lineHeight: 96,
-  },
-  periodText: {
-    fontSize: 24,
-    fontWeight: '400',
-    color: '#78716C',
-    marginLeft: 4,
-  },
-  wakeUpLabel: {
-    marginTop: 12,
-    fontSize: 15,
-    color: '#A8A29E',
-  },
-
-  calendarSection: {
-    marginTop: 20,
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.15)',
-    borderRadius: 12,
-    padding: 12,
-    width: '100%',
-    maxWidth: 280,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     marginBottom: 8,
   },
-  calendarTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#3B82F6',
+  time: {
+    fontSize: Math.min(SCREEN_WIDTH * 0.22, 100),
+    fontWeight: '800',
+    color: Colors.text,
+    letterSpacing: -4,
+    lineHeight: Math.min(SCREEN_WIDTH * 0.24, 110),
   },
-  calendarEvent: {
+  day: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    fontWeight: '500',
+    letterSpacing: 3,
+    marginTop: 6,
+  },
+
+  // VOLUME ESCALATION
+  volumeSection: {
+    marginBottom: 10,
+  },
+  volumeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  volumeLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  volumeWarning: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginLeft: 'auto',
+  },
+  volumeBarBg: {
+    width: '100%',
+    height: 6,
+    backgroundColor: Colors.border,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  volumeBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+
+  // TODAY'S EVENT
+  eventCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 4,
+    backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 8,
   },
   eventTime: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#78716C',
-    minWidth: 70,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.orange,
   },
-  eventName: {
+  eventTitle: {
     flex: 1,
     fontSize: 13,
-    color: '#FAFAF9',
+    color: Colors.text,
   },
 
-  buddySection: {
+  // REASON QUOTE
+  reasonCard: {
+    marginBottom: 10,
     alignItems: 'center',
   },
-  buddyAvatarContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buddyPulseRing: {
-    position: 'absolute',
-    borderWidth: 1,
-    borderColor: 'rgba(250, 250, 249, 0.1)',
-  },
-  buddyAvatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#292524',
-    borderWidth: 2,
-    borderColor: '#3F3A36',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 14,
-    height: 14,
-    backgroundColor: '#22C55E',
-    borderRadius: 7,
-    borderWidth: 3,
-    borderColor: Colors.bgElevated,
-  },
-  buddyName: {
-    marginTop: 16,
-    fontSize: 17,
-    fontWeight: '500',
-    color: '#FAFAF9',
-  },
-  buddyQuote: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#78716C',
+  reasonQuote: {
+    fontSize: 15,
     fontStyle: 'italic',
+    color: Colors.textSecondary,
+  },
+  reasonLabel: {
+    fontSize: 11,
+    color: Colors.textMuted,
   },
 
-  bottomSection: {
-    width: '100%',
-    maxWidth: 340,
-    gap: 12,
-  },
-  proofCard: {
-    backgroundColor: 'rgba(34, 197, 94, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.2)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 4,
-  },
-  proofHeader: {
+  // ACTIVITY CARD
+  activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+    gap: 12,
+    backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     marginBottom: 12,
   },
-  proofTitle: {
-    fontSize: 18,
+  activityIconWrapper: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityTextContainer: {
+    flex: 1,
+  },
+  activityText: {
+    fontSize: 15,
+    color: Colors.text,
     fontWeight: '600',
-    color: '#FAFAF9',
   },
-  proofDescription: {
-    fontSize: 14,
-    color: '#A8A29E',
+  activityLabel: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+
+  // SNOOZE HEADER
+  snoozeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  snoozeLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  snoozeHeaderText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: Colors.red,
+    letterSpacing: 2,
+  },
+
+  // PUNISHMENT CARDS
+  punishmentGrid: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  punishmentCard: {
+    flex: 1,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    gap: 4,
+  },
+  punishmentAmount: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  punishmentDesc: {
+    fontSize: 10,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 21,
   },
-  greenText: {
-    color: '#22C55E',
-    fontWeight: '500',
-  },
-  dismissButton: {
+
+  // NOTIFY CARD
+  notifyCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#22C55E',
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    shadowColor: '#22C55E',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  dismissButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginVertical: 8,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#292524',
-  },
-  dividerText: {
-    fontSize: 11,
-    color: '#57534E',
-  },
-
-  snoozeButton: {
-    alignSelf: 'center',
+    gap: 14,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderRadius: 16,
+    paddingVertical: 14,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#292524',
-    borderRadius: 8,
+    marginBottom: 12,
   },
-  snoozeButtonText: {
+  notifyContent: {
+    flexDirection: 'column',
+  },
+  notifyName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.text,
+    letterSpacing: 1,
+  },
+  notifyText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#78716C',
+    color: Colors.red,
   },
 
+  // CONFIRM CARD
   confirmCard: {
     backgroundColor: 'rgba(239, 68, 68, 0.06)',
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.15)',
     borderRadius: 14,
     padding: 20,
+    marginTop: 8,
   },
   confirmTitle: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FAFAF9',
+    color: Colors.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   confirmDescription: {
     fontSize: 13,
-    color: '#A8A29E',
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 19.5,
   },
   redText: {
-    color: '#EF4444',
+    color: Colors.red,
     fontWeight: '600',
   },
   confirmButtons: {
@@ -801,7 +855,7 @@ const styles = StyleSheet.create({
   },
   nevermindButton: {
     flex: 1,
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
@@ -809,7 +863,7 @@ const styles = StyleSheet.create({
   nevermindButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#FAFAF9',
+    color: Colors.text,
   },
   sureButton: {
     flex: 1,
@@ -823,38 +877,39 @@ const styles = StyleSheet.create({
   sureButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#EF4444',
+    color: Colors.red,
   },
 
+  // INPUT CARD
   inputCard: {
-    width: '100%',
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.25)',
     borderRadius: 14,
     padding: 20,
+    marginTop: 8,
   },
   inputLabel: {
     fontSize: 14,
-    color: '#FAFAF9',
+    color: Colors.text,
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 21,
   },
   snoozeInput: {
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
     borderWidth: 1,
     borderColor: '#3F3A36',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: '#FAFAF9',
+    color: Colors.text,
     textAlign: 'center',
   },
   goBackButton: {
     flex: 1,
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -862,17 +917,17 @@ const styles = StyleSheet.create({
   goBackButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#FAFAF9',
+    color: Colors.text,
   },
   confirmSnoozeButton: {
     flex: 1,
-    backgroundColor: '#292524',
+    backgroundColor: Colors.border,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   confirmSnoozeButtonActive: {
-    backgroundColor: '#EF4444',
+    backgroundColor: Colors.red,
   },
   confirmSnoozeButtonText: {
     fontSize: 14,
@@ -881,5 +936,45 @@ const styles = StyleSheet.create({
   },
   confirmSnoozeButtonTextActive: {
     color: '#ffffff',
+  },
+
+  // FOOTER
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    gap: 8,
+    alignItems: 'center',
+  },
+  wakeUpButton: {
+    width: '100%',
+    backgroundColor: Colors.green,
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  wakeUpButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.text,
+    letterSpacing: 0.5,
+  },
+  snoozeButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    opacity: 0.5,
+  },
+  snoozeButtonText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  snoozeCost: {
+    color: Colors.red,
+    fontWeight: '600',
   },
 });
