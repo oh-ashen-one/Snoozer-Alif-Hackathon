@@ -144,7 +144,7 @@ export default function OnboardingCompleteScreen() {
       {/* Bottom buttons */}
       <Animated.View style={[styles.bottomContainer, contentStyle]}>
         <Pressable testID="button-lets-go" style={styles.greenButton} onPress={handleDone}>
-          <ThemedText style={styles.greenButtonText}>Sign in to save</ThemedText>
+          <ThemedText style={styles.greenButtonText}>Let's go</ThemedText>
           <Feather name="arrow-right" size={20} color={Colors.text} />
         </Pressable>
 
