@@ -203,17 +203,18 @@ export default function AddAlarmScreen() {
         // Store the config for later use
         setGlobalPunishmentConfig(config);
 
-        // Map punishment IDs to toggle states
+        // Map punishment IDs from global settings to local toggle states
+        // PunishmentsScreen IDs → AddAlarmScreen states
         setShameVideo(defaultPunishments.includes('shame_video'));
-        setBuddyNotify(defaultPunishments.includes('buddy_call'));
+        setCallBuddy(defaultPunishments.includes('buddy_call')); // buddy_call = Auto-call your buddy
         setSocialShame(defaultPunishments.includes('group_chat'));
         setTextWifesDad(defaultPunishments.includes('wife_dad'));
         setEmailBoss(defaultPunishments.includes('email_boss'));
         setTweetBad(defaultPunishments.includes('twitter'));
         setTextEx(defaultPunishments.includes('text_ex'));
-        setCallBuddy(defaultPunishments.includes('mom')); // mom = auto-call
+        // Note: mom and grandma_call are enabled in settings but marked "Coming Soon" in add alarm
+        // They use same config data but can't be toggled per-alarm yet
         setAntiCharity(defaultPunishments.includes('donate_enemy'));
-        // grandma_call maps to a separate state if needed
 
         if (__DEV__) console.log('[AddAlarm] Loaded global punishment defaults:', defaultPunishments);
       } catch (error) {
@@ -721,8 +722,8 @@ export default function AddAlarmScreen() {
             />
 
             <PunishmentCard
-              emoji="💔"
-              title="Text your ex 'I miss u'"
+              emoji="😳"
+              title="Text friend something embarrassing"
               enabled={textEx}
               onToggle={() => {
                 buttonPress('secondary');
