@@ -91,8 +91,9 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
   {
     id: 'venmo',
     label: 'Venmo',
-    subtitle: 'Connect account',
+    subtitle: 'Coming soon',
     color: '#008CFF',
+    disabled: true,
   },
   {
     id: 'paypal',
