@@ -18,6 +18,10 @@
           "fetch",
           "processing",
           "voip"
+        ],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.snoozer.app.refresh",
+          "com.snoozer.app.processing"
         ]
       }
     },
