@@ -14,7 +14,7 @@ export function useScreenOptions({
   const { theme, isDark } = useTheme();
 
   return {
-    headerTitleAlign: "center",
+    headerTitleAlign: "left",
     headerTransparent: transparent,
     headerBlurEffect: isDark ? "dark" : "light",
     headerTintColor: theme.text,
