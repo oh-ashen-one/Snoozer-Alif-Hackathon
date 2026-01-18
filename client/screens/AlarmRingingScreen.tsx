@@ -37,11 +37,13 @@ import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
 import { VolumeIndicator } from '@/components/VolumeIndicator';
+import { CheatWarningModal } from '@/components/CheatWarningModal';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarms, getProofActivity, ProofActivity } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
+import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 
 // Import local alarm sounds
 const ALARM_SOUND_FILES: Record<string, any> = {
@@ -95,8 +97,28 @@ export default function AlarmRingingScreen() {
   const [buddyQuote] = useState(BUDDY_QUOTES[Math.floor(Math.random() * BUDDY_QUOTES.length)]);
   const [proofActivity, setProofActivity] = useState<ProofActivity | null>(null);
   const [alarmSoundSource, setAlarmSoundSource] = useState<any>(null);
+  const [cheatModalVisible, setCheatModalVisible] = useState(false);
+  const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
 
   const { startAlarm: startEscalatingAlarm, stopAlarm: stopEscalatingAlarm, volumePercent, isPlaying } = useEscalatingVolume(alarmSoundSource);
+  
+  const { 
+    startHeartbeat, 
+    stopHeartbeat, 
+    scheduleBackupNotification,
+    cancelBackupNotification,
+    validateTimeIntegrity 
+  } = useAntiCheat({
+    onCheatDetected: (cheatType) => {
+      setDetectedCheat(cheatType);
+      setCheatModalVisible(true);
+    },
+    onAlarmInterrupted: (alarmState) => {
+      if (__DEV__) console.log('[AntiCheat] Alarm was interrupted:', alarmState);
+      setDetectedCheat('app_killed');
+      setCheatModalVisible(true);
+    },
+  });
 
   const breatheValue = useSharedValue(0);
   const pulseValue = useSharedValue(1);
@@ -188,6 +210,15 @@ export default function AlarmRingingScreen() {
     startEscalatingAlarm();
     alarmRingingPattern();
 
+    // Start anti-cheat heartbeat
+    startHeartbeat({
+      alarmId: alarmData.alarmId,
+      alarmLabel: alarmData.alarmLabel,
+      referencePhotoUri: alarmData.referencePhotoUri,
+      shameVideoUri: alarmData.shameVideoUri,
+    });
+    scheduleBackupNotification();
+
     if (Platform.OS !== 'web') {
       Vibration.vibrate(VIBRATION_PATTERN, true);
     }
@@ -204,6 +235,8 @@ export default function AlarmRingingScreen() {
       clearInterval(interval);
       backHandler.remove();
       stopAlarm();
+      stopHeartbeat();
+      cancelBackupNotification();
     };
   }, [alarmSoundSource]);
 
@@ -447,6 +480,12 @@ export default function AlarmRingingScreen() {
           </View>
         )}
       </View>
+
+      <CheatWarningModal
+        visible={cheatModalVisible}
+        cheatType={detectedCheat}
+        onDismiss={() => setCheatModalVisible(false)}
+      />
     </View>
   );
 }

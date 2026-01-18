@@ -17,6 +17,8 @@ import { cancelAlarm } from '@/utils/notifications';
 import { saveProofPhoto } from '@/utils/fileSystem';
 import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
 import { validateProofPhoto } from '@/utils/imageComparison';
+import { CheatWarningModal } from '@/components/CheatWarningModal';
+import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
@@ -42,11 +44,21 @@ export default function ProofCameraScreen() {
   const { alarmId, referencePhotoUri } = route.params;
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoTimestamp, setPhotoTimestamp] = useState<number | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [activity, setActivity] = useState<ProofActivity | null>(null);
+  const [cheatModalVisible, setCheatModalVisible] = useState(false);
+  const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
   const cameraRef = useRef<CameraView>(null);
+
+  const { validatePhotoFreshness } = useAntiCheat({
+    onCheatDetected: (cheatType) => {
+      setDetectedCheat(cheatType);
+      setCheatModalVisible(true);
+    },
+  });
 
   React.useEffect(() => {
     getProofActivity().then(setActivity);
@@ -66,6 +78,7 @@ export default function ProofCameraScreen() {
         // Simulate a brief delay
         await new Promise(resolve => setTimeout(resolve, 300));
         setPhotoUri('mock://proof-photo');
+        setPhotoTimestamp(Date.now());
         if (__DEV__) console.log('[ProofCamera] Photo URI set to mock');
       } else if (cameraRef.current) {
         const photo = await cameraRef.current.takePictureAsync({
@@ -73,6 +86,7 @@ export default function ProofCameraScreen() {
         });
         if (photo?.uri) {
           setPhotoUri(photo.uri);
+          setPhotoTimestamp(Date.now());
           if (__DEV__) console.log('[ProofCamera] Photo URI set:', photo.uri);
         }
       }
@@ -80,6 +94,7 @@ export default function ProofCameraScreen() {
       if (__DEV__) console.log('[ProofCamera] Capture error:', error);
       // On error, use mock data to continue flow
       setPhotoUri('mock://proof-photo');
+      setPhotoTimestamp(Date.now());
     } finally {
       setCapturing(false);
       if (__DEV__) console.log('[ProofCamera] Capture complete, photoUri should be set');
@@ -89,6 +104,7 @@ export default function ProofCameraScreen() {
   const handleRetake = () => {
     buttonPress('secondary');
     setPhotoUri(null);
+    setPhotoTimestamp(null);
     setVerificationError(null);
     setVerifying(false);
   };
@@ -97,6 +113,12 @@ export default function ProofCameraScreen() {
     if (verifying) return;
     setVerifying(true);
     setVerificationError(null);
+
+    // Validate photo freshness (anti-cheat)
+    if (photoTimestamp && !validatePhotoFreshness(photoTimestamp)) {
+      setVerifying(false);
+      return;
+    }
 
     try {
       if (photoUri && !photoUri.startsWith('mock://') && referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
@@ -280,6 +302,15 @@ export default function ProofCameraScreen() {
           <View style={styles.captureButtonInner} />
         </Pressable>
       </View>
+
+      <CheatWarningModal
+        visible={cheatModalVisible}
+        cheatType={detectedCheat}
+        onDismiss={() => {
+          setCheatModalVisible(false);
+          handleRetake();
+        }}
+      />
     </View>
   );
 }
