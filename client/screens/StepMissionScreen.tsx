@@ -129,6 +129,13 @@ export default function StepMissionScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
 
+  // Auto-navigate when step goal is complete (skip success UI)
+  useEffect(() => {
+    if (isComplete) {
+      handleContinue();
+    }
+  }, [isComplete, handleContinue]);
+
   const progressStyle = useAnimatedStyle(() => ({
     width: `${progressWidth.value}%`,
   }));
