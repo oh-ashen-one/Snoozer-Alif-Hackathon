@@ -34,14 +34,18 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarms } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 
-// Import local alarm sound
+// Import local alarm sounds
 const nuclearAlarmSound = require('@/assets/sounds/nuclear-alarm.wav');
+const classicAlarmSound = { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' };
+
+const ALARM_SOUND_KEY = '@snoozer/alarm_sound';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
@@ -165,8 +169,19 @@ export default function AlarmRingingScreen() {
           shouldDuckAndroid: false,
         });
 
+        // Get selected alarm sound from storage
+        let soundSource = nuclearAlarmSound; // Default to nuclear
+        try {
+          const savedSound = await AsyncStorage.getItem(ALARM_SOUND_KEY);
+          if (savedSound === 'default') {
+            soundSource = classicAlarmSound;
+          }
+        } catch {
+          // Use default if error
+        }
+
         const { sound } = await Audio.Sound.createAsync(
-          nuclearAlarmSound,
+          soundSource,
           {
             isLooping: true,
             volume: 1.0,

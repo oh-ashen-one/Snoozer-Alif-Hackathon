@@ -35,7 +35,15 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const STORAGE_KEYS = {
   VIBRATION_ENABLED: '@snoozer/vibration_enabled',
+  ALARM_SOUND: '@snoozer/alarm_sound',
 };
+
+export const ALARM_SOUNDS = [
+  { id: 'nuclear', name: 'Nuclear Alarm', description: 'Intense warning siren' },
+  { id: 'default', name: 'Classic', description: 'Standard alarm tone' },
+] as const;
+
+export type AlarmSoundId = typeof ALARM_SOUNDS[number]['id'];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -142,20 +150,25 @@ export default function SettingsScreen() {
   const [defaultPunishment, setDefaultPunishment] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState('Venmo');
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
+  const [alarmSound, setAlarmSound] = useState<AlarmSoundId>('nuclear');
 
-  // Load vibration setting on mount
+  // Load settings on mount
   useEffect(() => {
-    const loadVibrationSetting = async () => {
+    const loadSettings = async () => {
       try {
-        const value = await AsyncStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
-        if (value !== null) {
-          setVibrationEnabled(value === 'true');
+        const vibration = await AsyncStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
+        if (vibration !== null) {
+          setVibrationEnabled(vibration === 'true');
+        }
+        const sound = await AsyncStorage.getItem(STORAGE_KEYS.ALARM_SOUND);
+        if (sound !== null) {
+          setAlarmSound(sound as AlarmSoundId);
         }
       } catch (error) {
-        // Default to true if error
+        // Default values if error
       }
     };
-    loadVibrationSetting();
+    loadSettings();
   }, []);
 
   // Navigation handlers
@@ -244,6 +257,52 @@ export default function SettingsScreen() {
   const handleChangePayment = useCallback(() => {
     navigation.navigate('PaymentMethod');
   }, [navigation]);
+
+  // Alarm sound handler
+  const handleChangeAlarmSound = useCallback(() => {
+    const options: string[] = ALARM_SOUNDS.map(s => s.name);
+    options.push('Cancel');
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: options.length - 1,
+          title: 'Select Alarm Sound',
+        },
+        async (buttonIndex) => {
+          if (buttonIndex < ALARM_SOUNDS.length) {
+            const selected = ALARM_SOUNDS[buttonIndex];
+            setAlarmSound(selected.id);
+            try {
+              await AsyncStorage.setItem(STORAGE_KEYS.ALARM_SOUND, selected.id);
+            } catch (error) {
+              // Silently fail
+            }
+          }
+        }
+      );
+    } else {
+      Alert.alert(
+        'Select Alarm Sound',
+        'Choose your preferred alarm tone',
+        [
+          ...ALARM_SOUNDS.map((sound) => ({
+            text: sound.name,
+            onPress: async () => {
+              setAlarmSound(sound.id);
+              try {
+                await AsyncStorage.setItem(STORAGE_KEYS.ALARM_SOUND, sound.id);
+              } catch (error) {
+                // Silently fail
+              }
+            },
+          })),
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
+  }, []);
 
   // Notification handlers
   const handleToggleVibration = useCallback(async () => {
@@ -423,8 +482,8 @@ export default function SettingsScreen() {
                 iconColor="#3B82F6"
                 iconBg={ICON_COLORS.blue}
                 label="Alarm sound"
-                value="Default"
-                showChevron={false}
+                value={ALARM_SOUNDS.find(s => s.id === alarmSound)?.name || 'Nuclear Alarm'}
+                onPress={handleChangeAlarmSound}
               />
               <View style={styles.rowDivider} />
               <SettingsRow
