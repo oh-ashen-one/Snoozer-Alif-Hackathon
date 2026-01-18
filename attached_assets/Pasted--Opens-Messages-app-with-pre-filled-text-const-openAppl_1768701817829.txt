@@ -1,0 +1,62 @@
+// Opens Messages app with pre-filled text
+const openAppleCashMessage = (phoneNumber, amount, note) => {
+  const message = `Hey! Sending you $${amount} for Snoozer 💸 (${note})`;
+  Linking.openURL(`sms:${phoneNumber}&body=${encodeURIComponent(message)}`);
+};
+```
+
+User opens iMessage → sees pre-filled message → taps Apple Pay button manually → done.
+
+**Updated prompt:**
+
+**FOR REPLIT:**
+```
+Update payment system to prioritize Apple Cash via iMessage.
+
+1. Update /src/utils/payments.js:
+
+   // Apple Cash via iMessage (primary)
+   openAppleCashMessage(phoneNumber, amount, note) {
+     const message = `Sending you $${amount} for Snoozer 💸 (${note})`;
+     return Linking.openURL(`sms:${phoneNumber}&body=${encodeURIComponent(message)}`);
+   }
+   
+   // Fallback options
+   generateVenmoLink(username, amount, note) {
+     return `venmo://paycharge?txn=pay&recipients=${username}&amount=${amount}&note=${encodeURIComponent(note)}`;
+   }
+   
+   generatePayPalLink(username, amount) {
+     return `https://paypal.me/${username}/${amount}`;
+   }
+   
+   generateCashAppLink(cashtag, amount) {
+     return `https://cash.app/$${cashtag}/${amount}`;
+   }
+
+2. Update PaymentMethodScreen.jsx:
+   - "How do you want to settle up?"
+   - Option 1 (featured): "iMessage / Apple Cash" with  icon
+   - Subtitle: "Just text your buddy the money"
+   - Requires: buddy's phone number (already have from buddy setup)
+   
+   - Divider: "or use another app"
+   
+   - Option 2: Venmo (requires Venmo username)
+   - Option 3: PayPal (requires PayPal.me username)
+   - Option 4: Cash App (requires $cashtag)
+   
+   Save selection to AsyncStorage '@snoozer/payment_method'
+
+3. Update PayBuddyModal:
+   - "You owe Sarah $5"
+   - Big button: "Send via iMessage" (if Apple Cash selected)
+   - Opens Messages with pre-filled: "Sending you $5 for Snoozer 💸 (snoozed on Mon)"
+   - User taps Apple Pay button in iMessage manually
+   - "Mark as paid" button below
+
+4. For buddy setup flow:
+   - Always collect phone number (needed for Apple Cash + notifications anyway)
+   - Optional: collect Venmo/PayPal/CashApp username
+
+Make iMessage the primary, most prominent option since most users are on iPhone.

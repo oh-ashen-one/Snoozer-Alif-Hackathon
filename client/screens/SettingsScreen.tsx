@@ -240,34 +240,8 @@ export default function SettingsScreen() {
   }, []);
 
   const handleChangePayment = useCallback(() => {
-    const options = ['Venmo', 'PayPal', 'Cash App', 'Cancel'];
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex: options.length - 1,
-          title: 'Payment Method',
-        },
-        (buttonIndex) => {
-          if (buttonIndex < options.length - 1) {
-            setPaymentMethod(options[buttonIndex]);
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        'Payment Method',
-        'Select payment method',
-        [
-          { text: 'Venmo', onPress: () => setPaymentMethod('Venmo') },
-          { text: 'PayPal', onPress: () => setPaymentMethod('PayPal') },
-          { text: 'Cash App', onPress: () => setPaymentMethod('Cash App') },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
-    }
-  }, []);
+    navigation.navigate('PaymentMethod');
+  }, [navigation]);
 
   // Notification handlers
   const handleToggleVibration = useCallback(async () => {

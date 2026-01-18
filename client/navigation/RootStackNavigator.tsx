@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { HeaderButton } from '@react-navigation/elements';
-import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
 import IntroScreen from '@/screens/IntroScreen';
 import HomeScreen from '@/screens/HomeScreen';
-import { useAuth } from '@/contexts/AuthContext';
-import { getOnboardingComplete } from '@/utils/storage';
 import AddAlarmScreen from '@/screens/AddAlarmScreen';
 import ReferencePhotoScreen from '@/screens/ReferencePhotoScreen';
 import RecordShameScreen from '@/screens/RecordShameScreen';
@@ -27,11 +21,14 @@ import BuddyJoinedScreen from '@/screens/BuddyJoinedScreen';
 import HelpScreen from '@/screens/HelpScreen';
 import LegalScreen from '@/screens/LegalScreen';
 import WakeUpSuccessScreen from '@/screens/WakeUpSuccessScreen';
+import PaymentMethodScreen from '@/screens/PaymentMethodScreen';
+import SplashLoadingScreen from '@/screens/SplashLoadingScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
 
 export type RootStackParamList = {
+  SplashLoading: undefined;
   Intro: undefined;
   Onboarding: undefined;
   Home: undefined;
@@ -44,6 +41,7 @@ export type RootStackParamList = {
   BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
+  PaymentMethod: undefined;
   WakeUpSuccess: {
     streak: number;
     moneySaved: number;
@@ -100,47 +98,23 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
-  const { isAuthenticated, isLoading } = useAuth();
-  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
-
-  useEffect(() => {
-    const determineInitialRoute = async () => {
-      if (isLoading) return;
-
-      if (!isAuthenticated) {
-        // Not signed in - show intro screen
-        setInitialRoute('Intro');
-      } else {
-        // Signed in - check if onboarding is complete
-        try {
-          const hasOnboarded = await getOnboardingComplete();
-          setInitialRoute(hasOnboarded ? 'Home' : 'Onboarding');
-        } catch {
-          setInitialRoute('Onboarding');
-        }
-      }
-    };
-
-    determineInitialRoute();
-  }, [isAuthenticated, isLoading]);
-
-  // Show loading while determining initial route
-  if (isLoading || !initialRoute) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={Colors.orange} />
-      </View>
-    );
-  }
 
   return (
     <Stack.Navigator
-      initialRouteName={initialRoute}
+      initialRouteName="SplashLoading"
       screenOptions={{
         ...screenOptions,
         contentStyle: { backgroundColor: Colors.bg },
       }}
     >
+      <Stack.Screen
+        name="SplashLoading"
+        component={SplashLoadingScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
       <Stack.Screen
         name="Intro"
         component={IntroScreen}
@@ -286,15 +260,13 @@ export default function RootStackNavigator() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="PaymentMethod"
+        component={PaymentMethodScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.bg,
-  },
-});
