@@ -36,7 +36,7 @@ export default function SplashLoadingScreen() {
     if (hasNavigated) return;
     setHasNavigated(true);
 
-    let targetRoute: keyof RootStackParamList = 'Onboarding';
+    let targetRoute: keyof RootStackParamList = 'Intro';
 
     try {
       const hasOnboarded = await getOnboardingComplete();
@@ -44,7 +44,7 @@ export default function SplashLoadingScreen() {
         targetRoute = 'Home';
       }
     } catch {
-      // On error, start fresh with Onboarding
+      // On error, start fresh with Intro (sign-in)
     }
 
     navigation.reset({
