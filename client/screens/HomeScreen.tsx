@@ -20,6 +20,7 @@ import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm, getUserName } from '@/utils/storage';
+import { killAllSounds } from '@/utils/soundKiller';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 const DEBUG_LONG_PRESS_DURATION = 3000;
@@ -352,6 +353,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // HARD STOP: Kill any rogue alarm sounds when home screen is focused
+      killAllSounds();
+      
       loadAlarms();
       const loadUserName = async () => {
         const name = await getUserName();

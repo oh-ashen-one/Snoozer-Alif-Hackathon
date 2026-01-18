@@ -12,7 +12,7 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -27,7 +27,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, CommonActions, useFocusEffect } from '@react-navigation/native';
 import {
   alarmRingingPattern,
   snoozeWarningPattern,
@@ -351,6 +351,19 @@ export default function AlarmRingingScreen() {
       if (__DEV__) console.log('[AlarmRinging] Error stopping alarm:', error);
     }
   };
+
+  // HARD STOP: When screen loses focus, stop all sounds immediately
+  useFocusEffect(
+    useCallback(() => {
+      // Screen focused - alarm should play (handled elsewhere)
+      return () => {
+        // Screen losing focus - KILL ALL SOUNDS
+        if (__DEV__) console.log('[AlarmRinging] Screen lost focus - stopping all sounds');
+        Vibration.cancel();
+        stopEscalatingAlarm();
+      };
+    }, [stopEscalatingAlarm])
+  );
 
   // Load alarm sound source on mount
   useEffect(() => {
