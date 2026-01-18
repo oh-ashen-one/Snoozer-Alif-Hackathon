@@ -16,6 +16,7 @@ import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import StatsScreen from '@/screens/StatsScreen';
+import BuddyScreen from '@/screens/BuddyScreen';
 import HelpScreen from '@/screens/HelpScreen';
 import LegalScreen from '@/screens/LegalScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
@@ -28,6 +29,7 @@ export type RootStackParamList = {
   Home: undefined;
   Settings: undefined;
   Stats: undefined;
+  Buddy: undefined;
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
   AddAlarm: { isOnboarding: boolean };
@@ -125,6 +127,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="Stats"
         component={StatsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Buddy"
+        component={BuddyScreen}
         options={{
           headerShown: false,
         }}

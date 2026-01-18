@@ -1,0 +1,56 @@
+Create the buddy setup flow after mode selection.
+
+1. Create BuddySetupScreen.jsx - receives mode as route param:
+
+   For ALL modes, Step 1 - Invite:
+   - Header: "Invite your buddy" or "Create group" based on mode
+   - Share link card: "snoozer.app/join/ABC123" with copy button
+   - Or: Share via buttons (Messages, WhatsApp, Copy Link)
+   - QR code option for in-person
+   - "Waiting for buddy..." state with pulsing animation
+   - Skip to "Enter their code" option
+
+2. For 1v1 Battle, Step 2 - Set Stakes:
+   - "Set your weekly stake"
+   - Amount selector: $5, $10, $15, $20 (pills, orange when selected)
+   - "Loser pays winner every Sunday"
+   - Payment method: "Add card" or "Connect Venmo" buttons
+   - Continue button
+
+3. For Group Pool, Step 2 - Group Settings:
+   - "Group name" text input
+   - "Weekly buy-in" amount selector: $5, $10, $15
+   - "Winner takes all each week"
+   - Show pending members list as they join
+   - "Start when ready" button (min 3 people)
+
+4. For Survivor Mode, Step 2 - Tournament Setup:
+   - "Buy-in amount" selector: $10, $25, $50
+   - "Miss one wake-up = eliminated"
+   - Show prize pool total as people join
+   - "Start tournament" button (min 4 people)
+
+5. For Accountability Partner, Step 2 - Preferences:
+   - "Get notified when they snooze?" toggle
+   - "Share your streak with them?" toggle
+   - "Allow nudges?" toggle
+   - No payment setup needed
+   - "Start partnership" button
+
+6. For Charity Stakes, Step 2 - Charity Setup:
+   - "Pick a charity" dropdown/list
+   - Suggestion: "Pick one you hate for extra motivation 😈"
+   - Amount per snooze: $1, $2, $5 selector
+   - "Your buddy will verify your wake-ups"
+   - Connect payment method
+   - Continue button
+
+7. Final step for all modes - Confirmation:
+   - Success checkmark animation
+   - Summary card showing mode, stakes, buddy name
+   - "Your competition starts tomorrow morning"
+   - "Let's go" button → HomeScreen
+
+Navigation: BuddyScreen → BuddySetupScreen (with mode param) → HomeScreen
+
+Use our design tokens. All backgrounds #0C0A09, cards #1C1917, buttons with glow shadows.

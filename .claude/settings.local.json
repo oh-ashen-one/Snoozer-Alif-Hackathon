@@ -4,7 +4,8 @@
       "Bash(curl:*)",
       "Bash(npx expo export:*)",
       "Bash(timeout 30s npx expo start:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

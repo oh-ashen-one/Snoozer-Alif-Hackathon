@@ -191,12 +191,14 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
 }
 
 // Stats Row Component
-function StatsRow() {
+function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
   return (
     <View style={styles.statsRow}>
       {/* Streak Card */}
       <View style={styles.statCard}>
-        <ThemedText style={styles.statEmoji}>🔥</ThemedText>
+        <View style={[styles.statIconCircle, { backgroundColor: 'rgba(251, 146, 60, 0.15)' }]}>
+          <Feather name="zap" size={18} color="#FB923C" />
+        </View>
         <ThemedText style={styles.statLabel}>Streak</ThemedText>
         <ThemedText style={styles.statValueGray}>0</ThemedText>
         <ThemedText style={styles.statSubLabel}>days</ThemedText>
@@ -204,19 +206,23 @@ function StatsRow() {
 
       {/* Saved Card */}
       <View style={styles.statCard}>
-        <ThemedText style={styles.statEmoji}>💰</ThemedText>
+        <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+          <Feather name="dollar-sign" size={18} color="#22C55E" />
+        </View>
         <ThemedText style={styles.statLabel}>Saved</ThemedText>
         <ThemedText style={styles.statValueGray}>$0</ThemedText>
         <ThemedText style={styles.statSubLabel}>this month</ThemedText>
       </View>
 
       {/* Buddy Card */}
-      <View style={[styles.statCard, styles.statCardDashed]}>
-        <ThemedText style={styles.statEmojiGray}>👥</ThemedText>
+      <Pressable style={[styles.statCard, styles.statCardDashed]} onPress={onBuddyPress}>
+        <View style={[styles.statIconCircle, { backgroundColor: 'rgba(120, 113, 108, 0.15)' }]}>
+          <Feather name="users" size={18} color="#78716C" />
+        </View>
         <ThemedText style={styles.statLabel}>Buddy</ThemedText>
         <ThemedText style={styles.addBuddyText}>+ Add</ThemedText>
         <ThemedText style={styles.statSubLabel}>2x motivation</ThemedText>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -263,13 +269,13 @@ function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void
 }
 
 // Bottom Nav Component
-function BottomNav({ activeTab, onStatsPress, onSettingsPress }: { activeTab: string; onStatsPress: () => void; onSettingsPress: () => void }) {
+function BottomNav({ activeTab, onStatsPress, onBuddyPress, onSettingsPress }: { activeTab: string; onStatsPress: () => void; onBuddyPress: () => void; onSettingsPress: () => void }) {
   const insets = useSafeAreaInsets();
 
   const tabs = [
     { key: 'alarms', icon: 'clock', label: 'Alarms', onPress: undefined },
     { key: 'stats', icon: 'bar-chart-2', label: 'Stats', onPress: onStatsPress },
-    { key: 'buddy', icon: 'users', label: 'Buddy', onPress: undefined },
+    { key: 'buddy', icon: 'users', label: 'Buddy', onPress: onBuddyPress },
     { key: 'settings', icon: 'sliders', label: 'Settings', onPress: onSettingsPress },
   ];
 
@@ -371,6 +377,11 @@ export default function HomeScreen() {
     navigation.navigate('Stats');
   }, [navigation]);
 
+  const handleBuddyPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('Buddy');
+  }, [navigation]);
+
   const handleToggleAlarm = useCallback(
     (id: string) => {
       return () => {
@@ -415,7 +426,7 @@ export default function HomeScreen() {
         {nextAlarm ? (
           <>
             <NextAlarmCard alarm={nextAlarm} />
-            <StatsRow />
+            <StatsRow onBuddyPress={handleBuddyPress} />
             <SectionHeader onAddPress={handleAddAlarm} />
             {alarms.map(alarm => (
               <AlarmListItem
@@ -427,13 +438,13 @@ export default function HomeScreen() {
           </>
         ) : (
           <>
-            <StatsRow />
+            <StatsRow onBuddyPress={handleBuddyPress} />
             <EmptyState onAddAlarm={handleAddAlarm} />
           </>
         )}
       </ScrollView>
 
-      <BottomNav activeTab={activeTab} onStatsPress={handleStatsPress} onSettingsPress={handleSettingsPress} />
+      <BottomNav activeTab={activeTab} onStatsPress={handleStatsPress} onBuddyPress={handleBuddyPress} onSettingsPress={handleSettingsPress} />
     </View>
   );
 }
@@ -592,14 +603,13 @@ const styles = StyleSheet.create({
   statCardDashed: {
     borderStyle: 'dashed',
   },
-  statEmoji: {
-    fontSize: 20,
+  statIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 4,
-  },
-  statEmojiGray: {
-    fontSize: 20,
-    marginBottom: 4,
-    opacity: 0.5,
   },
   statLabel: {
     fontSize: 12,
