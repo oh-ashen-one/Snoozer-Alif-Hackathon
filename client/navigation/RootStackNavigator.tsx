@@ -79,6 +79,16 @@ export type RootStackParamList = {
     punishment?: number;
     extraPunishments?: string[];
     days?: number[];
+    // New per-alarm settings
+    proofActivityType?: 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake';
+    activityName?: string;
+    moneyEnabled?: boolean;
+    shameVideoEnabled?: boolean;
+    buddyNotifyEnabled?: boolean;
+    socialShameEnabled?: boolean;
+    antiCharityEnabled?: boolean;
+    escalatingVolume?: boolean;
+    wakeRecheck?: boolean;
   };
   RecordShame: {
     alarmTime: string;
@@ -88,6 +98,16 @@ export type RootStackParamList = {
     punishment?: number;
     extraPunishments?: string[];
     days?: number[];
+    // New per-alarm settings
+    proofActivityType?: 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake';
+    activityName?: string;
+    moneyEnabled?: boolean;
+    shameVideoEnabled?: boolean;
+    buddyNotifyEnabled?: boolean;
+    socialShameEnabled?: boolean;
+    antiCharityEnabled?: boolean;
+    escalatingVolume?: boolean;
+    wakeRecheck?: boolean;
   };
   OnboardingComplete: {
     alarmTime: string;
@@ -97,6 +117,16 @@ export type RootStackParamList = {
     punishment?: number;
     extraPunishments?: string[];
     days?: number[];
+    // New per-alarm settings
+    proofActivityType?: 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake';
+    activityName?: string;
+    moneyEnabled?: boolean;
+    shameVideoEnabled?: boolean;
+    buddyNotifyEnabled?: boolean;
+    socialShameEnabled?: boolean;
+    antiCharityEnabled?: boolean;
+    escalatingVolume?: boolean;
+    wakeRecheck?: boolean;
   };
   AlarmRinging: {
     alarmId: string;

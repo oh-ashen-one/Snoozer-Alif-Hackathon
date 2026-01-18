@@ -64,7 +64,23 @@ export default function ProofSetupScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmTime, alarmLabel, isOnboarding, punishment, extraPunishments, days } = route.params;
+  const { 
+    alarmTime, 
+    alarmLabel, 
+    isOnboarding, 
+    punishment, 
+    extraPunishments, 
+    days,
+    proofActivityType,
+    activityName: passedActivityName,
+    moneyEnabled,
+    shameVideoEnabled,
+    buddyNotifyEnabled,
+    socialShameEnabled,
+    antiCharityEnabled,
+    escalatingVolume,
+    wakeRecheck,
+  } = route.params;
   const { alarms, updateAlarm } = useAlarms();
 
   const [step, setStep] = useState<Step>('activity');
@@ -189,6 +205,15 @@ export default function ProofSetupScreen() {
         punishment,
         extraPunishments,
         days,
+        proofActivityType,
+        activityName: passedActivityName || activity.trim(),
+        moneyEnabled,
+        shameVideoEnabled,
+        buddyNotifyEnabled,
+        socialShameEnabled,
+        antiCharityEnabled,
+        escalatingVolume,
+        wakeRecheck,
       });
     } catch (error) {
       console.error('[ProofSetup] Error saving:', error);

@@ -214,7 +214,7 @@ export default function AlarmRingingScreen() {
     );
 
     getCurrentStreak().then(s => setStreak(s));
-    getProofActivity().then(setProofActivity);
+    // Note: proofActivity is now loaded per-alarm in loadAlarmData, not globally
     getBuddyInfo().then(buddy => {
       if (__DEV__) console.log('[AlarmRinging] Buddy info:', buddy);
       setBuddyInfo(buddy);
@@ -258,9 +258,26 @@ export default function AlarmRingingScreen() {
             });
           }
           // Load punishment from alarm settings
-          if (targetAlarm.punishment) {
+          if (targetAlarm.punishment !== undefined) {
             setAlarmPunishment(targetAlarm.punishment);
             if (__DEV__) console.log('[AlarmRinging] Punishment amount:', targetAlarm.punishment);
+          }
+          // Load per-alarm proof activity settings
+          if (targetAlarm.proofActivityType) {
+            const proofFromAlarm: ProofActivity = {
+              activity: targetAlarm.activityName || targetAlarm.label || 'Wake up activity',
+              activityIcon: 'camera',
+              createdAt: targetAlarm.createdAt,
+              isStepOnly: targetAlarm.proofActivityType === 'steps',
+              stepGoal: targetAlarm.stepGoal || (targetAlarm.proofActivityType === 'steps' ? 50 : 10),
+            };
+            setProofActivity(proofFromAlarm);
+            if (__DEV__) console.log('[AlarmRinging] Per-alarm proof activity:', targetAlarm.proofActivityType, targetAlarm.activityName);
+          } else {
+            // Fallback to global settings for older alarms
+            getProofActivity().then(activity => {
+              if (activity) setProofActivity(activity);
+            });
           }
           if (__DEV__) console.log('[AlarmRinging] Loaded alarm:', targetAlarm.id);
         } else if (!alarmData.alarmId) {

@@ -150,6 +150,7 @@ export default function AddAlarmScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const isOnboarding = route.params?.isOnboarding ?? true;
+  const { addAlarm } = useAlarms();
 
   const [hour, setHour] = useState(6);
   const [minute, setMinute] = useState(0);
@@ -222,7 +223,7 @@ export default function AddAlarmScreen() {
     const hasShameVideo = shameVideo;
     const level = getPunishmentLevel(amount, hasShameVideo);
     alarmCreatedPattern(level);
-    
+
     const hour24 = isPM ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
     const timeString = `${hour24.toString().padStart(2, '0')}:${formatMinute(minute)}`;
 
@@ -232,6 +233,7 @@ export default function AddAlarmScreen() {
     if (socialShame) extraPunishments.push('group_chat');
     if (antiCharity) extraPunishments.push('donate_enemy');
 
+    // Navigate to ProofSetup with all alarm settings
     navigation.navigate('ProofSetup', {
       alarmTime: timeString,
       alarmLabel: activityName || 'Wake up',
@@ -239,6 +241,16 @@ export default function AddAlarmScreen() {
       punishment: moneyEnabled ? amount : 0,
       extraPunishments,
       days: selectedDays,
+      // New per-alarm settings
+      proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake',
+      activityName: activityName,
+      moneyEnabled,
+      shameVideoEnabled: shameVideo,
+      buddyNotifyEnabled: buddyNotify,
+      socialShameEnabled: socialShame,
+      antiCharityEnabled: antiCharity,
+      escalatingVolume,
+      wakeRecheck,
     });
   };
 

@@ -34,7 +34,24 @@ export default function OnboardingCompleteScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmTime, alarmLabel, referencePhotoUri, shameVideoUri, punishment, extraPunishments, days } = route.params;
+  const { 
+    alarmTime, 
+    alarmLabel, 
+    referencePhotoUri, 
+    shameVideoUri, 
+    punishment, 
+    extraPunishments, 
+    days,
+    proofActivityType,
+    activityName,
+    moneyEnabled,
+    shameVideoEnabled,
+    buddyNotifyEnabled,
+    socialShameEnabled,
+    antiCharityEnabled,
+    escalatingVolume,
+    wakeRecheck,
+  } = route.params;
   const { addAlarm } = useAlarms();
 
   const scale = useSharedValue(0);
@@ -60,7 +77,7 @@ export default function OnboardingCompleteScreen() {
   const handleDone = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Save the alarm locally
+    // Save the alarm locally with all per-alarm settings
     await addAlarm({
       time: alarmTime,
       label: alarmLabel,
@@ -70,6 +87,19 @@ export default function OnboardingCompleteScreen() {
       punishment,
       extraPunishments,
       days,
+      // Per-alarm proof settings
+      proofActivityType: proofActivityType || 'photo_activity',
+      activityName: activityName || alarmLabel,
+      stepGoal: proofActivityType === 'steps' ? 50 : 10,
+      // Per-alarm punishment toggles
+      moneyEnabled: moneyEnabled ?? true,
+      shameVideoEnabled: shameVideoEnabled ?? true,
+      buddyNotifyEnabled: buddyNotifyEnabled ?? true,
+      socialShameEnabled: socialShameEnabled ?? false,
+      antiCharityEnabled: antiCharityEnabled ?? false,
+      // Per-alarm escalation settings
+      escalatingVolume: escalatingVolume ?? true,
+      wakeRecheck: wakeRecheck ?? true,
     });
 
     // Mark onboarding as complete and go to Home

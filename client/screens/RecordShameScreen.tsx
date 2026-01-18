@@ -62,7 +62,24 @@ export default function RecordShameScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmTime, alarmLabel, referencePhotoUri, isOnboarding, punishment, extraPunishments, days } = route.params;
+  const { 
+    alarmTime, 
+    alarmLabel, 
+    referencePhotoUri, 
+    isOnboarding, 
+    punishment, 
+    extraPunishments, 
+    days,
+    proofActivityType,
+    activityName,
+    moneyEnabled,
+    shameVideoEnabled,
+    buddyNotifyEnabled,
+    socialShameEnabled,
+    antiCharityEnabled,
+    escalatingVolume,
+    wakeRecheck,
+  } = route.params;
   const { alarms, updateAlarm } = useAlarms();
 
   const [isRecording, setIsRecording] = useState(false);
@@ -210,6 +227,15 @@ export default function RecordShameScreen() {
         punishment,
         extraPunishments,
         days,
+        proofActivityType,
+        activityName,
+        moneyEnabled,
+        shameVideoEnabled,
+        buddyNotifyEnabled,
+        socialShameEnabled,
+        antiCharityEnabled,
+        escalatingVolume,
+        wakeRecheck,
       });
     } catch (error) {
       console.error('[RecordShame] Error using video:', error);
@@ -225,6 +251,15 @@ export default function RecordShameScreen() {
           punishment,
           extraPunishments,
           days,
+          proofActivityType,
+          activityName,
+          moneyEnabled,
+          shameVideoEnabled,
+          buddyNotifyEnabled,
+          socialShameEnabled,
+          antiCharityEnabled,
+          escalatingVolume,
+          wakeRecheck,
         });
       }
     }
@@ -249,6 +284,15 @@ export default function RecordShameScreen() {
       punishment,
       extraPunishments,
       days,
+      proofActivityType,
+      activityName,
+      moneyEnabled,
+      shameVideoEnabled,
+      buddyNotifyEnabled,
+      socialShameEnabled,
+      antiCharityEnabled,
+      escalatingVolume,
+      wakeRecheck,
     });
   };
 

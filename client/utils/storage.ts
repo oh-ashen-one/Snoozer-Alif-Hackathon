@@ -25,6 +25,19 @@ export interface Alarm {
   punishment?: number;
   extraPunishments?: string[];
   days?: number[];
+  // Proof of Wake settings (per-alarm)
+  proofActivityType?: 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake';
+  activityName?: string;
+  stepGoal?: number;
+  // Punishment toggles (per-alarm)
+  moneyEnabled?: boolean;
+  shameVideoEnabled?: boolean;
+  buddyNotifyEnabled?: boolean;
+  socialShameEnabled?: boolean;
+  antiCharityEnabled?: boolean;
+  // Escalation settings (per-alarm)
+  escalatingVolume?: boolean;
+  wakeRecheck?: boolean;
 }
 
 export async function getAlarms(): Promise<Alarm[]> {
