@@ -56,8 +56,6 @@ import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import ShameMessageSent from '@/components/ShameMessageSent';
-import { DynamicIsland } from '@/components/DynamicIsland';
-import { LiveActivityWidget } from '@/components/LiveActivityWidget';
 import { notifyBuddySnoozed } from '@/utils/buddyNotifications';
 import { setCurrentScreen } from '@/utils/soundKiller';
 import { useIMessage } from '@/hooks/useIMessage';
@@ -836,11 +834,6 @@ export default function AlarmRingingScreen() {
           <Animated.View style={[styles.payOnlyRing, { opacity: 0.1, transform: [{ scale: 2 }] }]} />
         </View>
 
-        {/* Dynamic Island - Positioned at top notch area */}
-        <View style={[styles.dynamicIslandOverlay, { top: insets.top }]}>
-          <DynamicIsland state="ringing" stakeAmount={penaltyAmount} visible={true} />
-        </View>
-
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.payOnlyScrollContent}
@@ -955,11 +948,6 @@ export default function AlarmRingingScreen() {
       {/* Background Glow */}
       <Animated.View style={styles.backgroundGlow} />
 
-      {/* Dynamic Island - Positioned at top notch area */}
-      <View style={[styles.dynamicIslandOverlay, { top: insets.top }]}>
-        <DynamicIsland state="ringing" stakeAmount={penaltyAmount} visible={true} />
-      </View>
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -1050,25 +1038,6 @@ export default function AlarmRingingScreen() {
               <View style={styles.snoozeLine} />
             </View>
 
-            {/* LIVE ACTIVITY WIDGET - Punishment Preview */}
-            <LiveActivityWidget
-              state="ringing"
-              punishments={(() => {
-                const items: { emoji: string; label: string; fullText?: string }[] = [];
-                if (textWifesDadEnabled) items.push({ emoji: '\u{1F474}', label: "Text wife's dad", fullText: 'Wife\'s dad gets "hey bro what are you wearing"' });
-                if (textExEnabled && exPhoneNumber) items.push({ emoji: '\u{1F494}', label: 'Text ex "i miss u"', fullText: 'Ex gets "i miss u"' });
-                if (emailBossEnabled) items.push({ emoji: '\u{1F4E7}', label: 'Email your boss', fullText: 'Boss gets "running late again"' });
-                if (shameVideoEnabled) items.push({ emoji: '\\u{1F3A5}', label: 'Shame video plays', fullText: 'Shame video plays at MAX volume' });
-                if (moneyEnabled && penaltyAmount > 0) items.push({ emoji: '\\u{1F4B5}', label: `Pay $${penaltyAmount}`, fullText: `$${penaltyAmount} goes to ${buddyName}` });
-                if (socialShameEnabled) items.push({ emoji: '\\u{1F4AC}', label: 'Group chat shamed', fullText: 'You get shamed in group chat' });
-                if (antiCharityEnabled) items.push({ emoji: '\u{1F5F3}', label: 'Donate to enemy', fullText: 'Donation goes to party you hate' });
-                if (callBuddyEnabled) items.push({ emoji: '\u{1F4DE}', label: 'Call buddy', fullText: 'Buddy gets woken up by your failure' });
-                if (momEnabled) items.push({ emoji: '\\u{1F469}', label: 'Call mom', fullText: 'Mom gets called at 6am' });
-                if (grandmaEnabled) items.push({ emoji: '\u{1F475}', label: 'Call grandma', fullText: 'Grandma gets called at 6am' });
-                if (buddyNotifyEnabled) items.push({ emoji: '\u{1F4F1}', label: `Notify ${buddyName}`, fullText: `${buddyName} gets notified of your failure` });
-                return items.slice(0, 4);
-              })()}
-            />
           </>
         ) : (
           <View style={styles.noPunishmentCard}>
@@ -1233,14 +1202,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-  },
-  dynamicIslandOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    alignItems: 'center',
-    paddingTop: 4,
   },
 
   // STREAK BANNER

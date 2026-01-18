@@ -72,7 +72,7 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Wake Up!',
+        title: '⏰ WAKE UP!',
         body: alarm.label || 'Time to get up!',
         data: {
           alarmId: alarm.id,
@@ -83,6 +83,8 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
         sound: 'default',
         priority: Notifications.AndroidNotificationPriority.MAX,
         vibrate: [0, 250, 250, 250],
+        // iOS 15+ time-sensitive notification - breaks through Focus modes
+        ...(Platform.OS === 'ios' && { interruptionLevel: 'timeSensitive' }),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -120,9 +122,9 @@ export async function scheduleSnoozeAlarm(alarm: Alarm, snoozeMinutes: number = 
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Still awake? 👀',
+        title: '⏰ Still awake? 👀',
         body: 'Just checking if you went back to sleep. You have 30 seconds to confirm or the alarm goes off!',
-        data: { 
+        data: {
           alarmId: alarm.id,
           alarmLabel: alarm.label,
           referencePhotoUri: alarm.referencePhotoUri,
@@ -132,6 +134,8 @@ export async function scheduleSnoozeAlarm(alarm: Alarm, snoozeMinutes: number = 
         sound: 'default',
         priority: Notifications.AndroidNotificationPriority.MAX,
         vibrate: [0, 250, 250, 250],
+        // iOS 15+ time-sensitive notification - breaks through Focus modes
+        ...(Platform.OS === 'ios' && { interruptionLevel: 'timeSensitive' }),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,

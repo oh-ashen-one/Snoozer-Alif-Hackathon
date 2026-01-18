@@ -1,0 +1,253 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// SNOOZER ALARM SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+// INSTALL: npx expo install expo-notifications expo-av expo-task-manager expo-background-fetch @react-native-async-storage/async-storage
+// ADD alarm-sound.mp3 to /assets folder
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { Audio } from 'expo-av';
+import * as TaskManager from 'expo-task-manager';
+import * as BackgroundFetch from 'expo-background-fetch';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ALARM_TASK = 'SNOOZER_ALARM_TASK';
+const STORAGE_KEY = '@snoozer_alarm';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority.MAX,
+  }),
+});
+
+const AlarmContext = createContext(null);
+
+export function AlarmProvider({ children }) {
+  const [alarm, setAlarm] = useState(null);
+  const [isRinging, setIsRinging] = useState(false);
+  const soundRef = useRef(null);
+
+  useEffect(() => {
+    setupNotifications();
+    setupBackgroundTask();
+    loadSavedAlarm();
+    return () => { if (soundRef.current) soundRef.current.unloadAsync(); };
+  }, []);
+
+  async function setupNotifications() {
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: { allowAlert: true, allowBadge: true, allowSound: true, allowCriticalAlerts: true },
+    });
+    if (status !== 'granted') return;
+
+    await Notifications.setNotificationCategoryAsync('ALARM', [
+      { identifier: 'WAKE_UP', buttonTitle: "✓ I'm Up", options: { opensAppToForeground: true } },
+      { identifier: 'SNOOZE', buttonTitle: '😴 Snooze (-$5)', options: { opensAppToForeground: true, isDestructive: true } },
+    ]);
+
+    Notifications.addNotificationResponseReceivedListener((response) => {
+      if (response.actionIdentifier === 'SNOOZE') snoozeAlarm();
+    });
+  }
+
+  async function startAlarmSound() {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
+      const { sound } = await Audio.Sound.createAsync(
+        require('./assets/alarm-sound.mp3'),
+        { isLooping: true, volume: 1.0, shouldPlay: true }
+      );
+      soundRef.current = sound;
+      setIsRinging(true);
+    } catch (error) {
+      console.error('Failed to play alarm:', error);
+    }
+  }
+
+  async function stopAlarmSound() {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+    setIsRinging(false);
+  }
+
+  async function setupBackgroundTask() {
+    TaskManager.defineTask(ALARM_TASK, async () => {
+      const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const alarmData = JSON.parse(saved);
+        if (new Date() >= new Date(alarmData.time)) triggerAlarm(alarmData);
+      }
+      return BackgroundFetch.BackgroundFetchResult.NewData;
+    });
+    await BackgroundFetch.registerTaskAsync(ALARM_TASK, {
+      minimumInterval: 60,
+      stopOnTerminate: false,
+      startOnBoot: true,
+    });
+  }
+
+  async function scheduleAlarm(alarmData) {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '⏰ WAKE UP!',
+        body: `GET UP OR: ${alarmData.punishments.map(p => p.emoji).join(' ')}`,
+        sound: 'alarm-sound.wav',
+        categoryIdentifier: 'ALARM',
+        data: { alarmData },
+        interruptionLevel: 'critical',
+      },
+      trigger: { date: new Date(alarmData.time) },
+    });
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(alarmData));
+    setAlarm(alarmData);
+  }
+
+  async function triggerAlarm(alarmData) {
+    setAlarm(alarmData);
+    await startAlarmSound();
+  }
+
+  async function missionCompleted() {
+    await stopAlarmSound();
+    await Notifications.dismissAllNotificationsAsync();
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    setAlarm(null);
+  }
+
+  async function snoozeAlarm() {
+    if (!alarm) return;
+    await firePunishments(alarm.punishments);
+    await stopAlarmSound();
+    const newAlarm = { ...alarm, time: new Date(Date.now() + 5 * 60 * 1000).toISOString() };
+    await scheduleAlarm(newAlarm);
+  }
+
+  async function firePunishments(punishments) {
+    for (const p of punishments) {
+      if (!p.enabled) continue;
+      console.log(`🔥 FIRING: ${p.emoji} ${p.name}`);
+      // TODO: Add your Twilio/SendGrid API calls here
+    }
+  }
+
+  async function loadSavedAlarm() {
+    const saved = await AsyncStorage.getItem(STORAGE_KEY);
+    if (saved) setAlarm(JSON.parse(saved));
+  }
+
+  return (
+    <AlarmContext.Provider value={{ alarm, isRinging, scheduleAlarm, triggerAlarm, missionCompleted, snoozeAlarm }}>
+      {children}
+    </AlarmContext.Provider>
+  );
+}
+
+export function useAlarm() {
+  return useContext(AlarmContext);
+}
+
+export function AlarmRingingScreen() {
+  const { alarm, missionCompleted, snoozeAlarm } = useAlarm();
+  return (
+    <View style={s.ringContainer}>
+      <Text style={s.ringEmoji}>🔔</Text>
+      <Text style={s.ringTitle}>WAKE UP!</Text>
+      <Text style={s.ringSubtitle}>GET UP OR ELSE:</Text>
+      <View style={s.pList}>
+        {alarm?.punishments?.map((p, i) => (
+          <View key={i} style={s.pRow}>
+            <Text style={s.pEmoji}>{p.emoji}</Text>
+            <Text style={s.pText}>{p.name}</Text>
+          </View>
+        ))}
+      </View>
+      <TouchableOpacity style={s.wakeBtn} onPress={missionCompleted}>
+        <Text style={s.wakeTxt}>✓ I'M UP</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={s.snoozeBtn} onPress={snoozeAlarm}>
+        <Text style={s.snoozeTxt}>😴 Snooze (-$5)</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+export function SetAlarmScreen() {
+  const { alarm, scheduleAlarm } = useAlarm();
+  const handleSet = () => {
+    scheduleAlarm({
+      id: Date.now().toString(),
+      time: new Date(Date.now() + 10 * 1000).toISOString(),
+      punishments: [
+        { emoji: '👴', name: "Text wife's dad", enabled: true },
+        { emoji: '💔', name: 'Text ex "i miss u"', enabled: true },
+        { emoji: '📧', name: 'Email your boss', enabled: true },
+      ],
+      stakeAmount: 5,
+    });
+  };
+  return (
+    <View style={s.container}>
+      {alarm ? (
+        <View style={s.alarmSet}>
+          <Text style={s.alarmTime}>{new Date(alarm.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+          <Text style={s.alarmStatus}>⏰ Alarm Set</Text>
+          <Text style={s.pPreview}>{alarm.punishments.map(p => p.emoji).join('  ')}</Text>
+        </View>
+      ) : (
+        <TouchableOpacity style={s.setBtn} onPress={handleSet}>
+          <Text style={s.setBtnTxt}>Set Test Alarm (10 sec)</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+export default function SnoozerAlarmApp() {
+  return (
+    <AlarmProvider>
+      <AppContent />
+    </AlarmProvider>
+  );
+}
+
+function AppContent() {
+  const { isRinging } = useAlarm();
+  return isRinging ? <AlarmRingingScreen /> : <SetAlarmScreen />;
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0C0A09', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  ringContainer: { flex: 1, backgroundColor: '#0C0A09', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  ringEmoji: { fontSize: 80, marginBottom: 16 },
+  ringTitle: { fontSize: 42, fontWeight: '800', color: '#EF4444', marginBottom: 8 },
+  ringSubtitle: { fontSize: 18, fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: 24 },
+  pList: { width: '100%', marginBottom: 32 },
+  pRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(239,68,68,0.1)', padding: 14, borderRadius: 12, marginBottom: 8 },
+  pEmoji: { fontSize: 24, marginRight: 12 },
+  pText: { fontSize: 15, color: 'rgba(255,255,255,0.85)' },
+  wakeBtn: { backgroundColor: '#22C55E', paddingVertical: 18, paddingHorizontal: 48, borderRadius: 14, width: '100%', marginBottom: 12 },
+  wakeTxt: { color: '#fff', fontSize: 18, fontWeight: '800', textAlign: 'center' },
+  snoozeBtn: { backgroundColor: 'rgba(239,68,68,0.15)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', paddingVertical: 16, paddingHorizontal: 48, borderRadius: 14, width: '100%' },
+  snoozeTxt: { color: '#EF4444', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  alarmSet: { alignItems: 'center' },
+  alarmTime: { fontSize: 72, fontWeight: '200', color: '#fff' },
+  alarmStatus: { fontSize: 16, color: '#22C55E', fontWeight: '600', marginTop: 8 },
+  pPreview: { fontSize: 28, marginTop: 16, letterSpacing: 8 },
+  setBtn: { backgroundColor: '#FB923C', paddingVertical: 18, paddingHorizontal: 32, borderRadius: 14 },
+  setBtnTxt: { color: '#000', fontSize: 18, fontWeight: '700' },
+});

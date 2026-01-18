@@ -18,7 +18,6 @@ import { FadeInView } from '@/components/FadeInView';
 import { AnimatedCard } from '@/components/AnimatedCard';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import Header, { getGreeting } from '@/components/Header';
-import { DynamicIsland } from '@/components/DynamicIsland';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm, getUserName } from '@/utils/storage';
@@ -476,7 +475,6 @@ export default function HomeScreen() {
   const { alarms, loading, toggleAlarm, deleteAlarm, loadAlarms } = useAlarms();
   const [debugMode, setDebugMode] = useState(false);
   const [userName, setUserName] = useState('');
-  const [islandVisible, setIslandVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -490,14 +488,6 @@ export default function HomeScreen() {
         setUserName(name);
       };
       loadUserName();
-
-      // Show Dynamic Island notification briefly
-      setIslandVisible(true);
-      const timer = setTimeout(() => {
-        setIslandVisible(false);
-      }, 3000);
-
-      return () => clearTimeout(timer);
     }, [loadAlarms])
   );
 
@@ -597,22 +587,6 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <BackgroundGlow color="orange" />
 
-      {/* Dynamic Island - Positioned at top notch area */}
-      {nextAlarm && (
-        <View style={[styles.dynamicIslandOverlay, { top: insets.top }]}>
-          <DynamicIsland
-            state="sleeping"
-            alarmTime={(() => {
-              const { time, period } = formatTime(nextAlarm.time);
-              return `${time} ${period}`;
-            })()}
-            stakeAmount={nextAlarm.punishment || 0}
-            visible={islandVisible}
-            onPress={() => setIslandVisible(true)}
-          />
-        </View>
-      )}
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -695,14 +669,6 @@ const styles = StyleSheet.create({
   // Header
   headerContainer: {
     marginBottom: 16,
-  },
-  dynamicIslandOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    alignItems: 'center',
-    paddingTop: 4,
   },
   greeting: {
     fontSize: 14,

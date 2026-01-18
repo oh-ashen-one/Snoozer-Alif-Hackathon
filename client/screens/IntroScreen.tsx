@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { useAuth } from '@/contexts/AuthContext';
+import { getOnboardingComplete } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -81,10 +82,21 @@ export default function IntroScreen() {
   // Navigate after successful sign-in
   useEffect(() => {
     if (isAuthenticated) {
-      // Go to Onboarding flow (Name → Goals → Habit → Set Alarm → etc.)
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Onboarding' }],
+      // Check if user already completed onboarding
+      getOnboardingComplete().then(hasOnboarded => {
+        if (hasOnboarded) {
+          // Returning user - go directly to Home
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        } else {
+          // New user - go to Onboarding flow
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Onboarding' }],
+          });
+        }
       });
     }
   }, [isAuthenticated, navigation]);
