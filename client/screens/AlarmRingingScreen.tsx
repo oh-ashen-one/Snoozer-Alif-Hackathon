@@ -138,11 +138,18 @@ const getProofDescription = (proofType: string, activity: ProofActivity | null):
     case 'steps':
       return `Walk ${activity?.stepGoal || 50} steps`;
     case 'photo_activity':
-      return activity?.activity || 'Take a photo at your wake-up spot';
+      // Show the specific activity the user configured
+      if (activity?.activity && activity.activity !== 'Wake up activity') {
+        return `Photo: ${activity.activity}`;
+      }
+      return 'Take your wake-up photo';
     case 'math':
       return 'Solve 3 math problems';
     default:
-      return activity?.activity || 'Take a photo at your wake-up spot';
+      if (activity?.activity && activity.activity !== 'Wake up activity') {
+        return `Photo: ${activity.activity}`;
+      }
+      return 'Take your wake-up photo';
   }
 };
 
@@ -184,6 +191,10 @@ export default function AlarmRingingScreen() {
   const [alarmPunishment, setAlarmPunishment] = useState<number>(5);
   const [showPaymentPrompt, setShowPaymentPrompt] = useState(false);
   const [showShame, setShowShame] = useState(false);
+  // Per-alarm punishment settings
+  const [moneyEnabled, setMoneyEnabled] = useState(true);
+  const [shameVideoEnabled, setShameVideoEnabled] = useState(true);
+  const [buddyNotifyEnabled, setBuddyNotifyEnabled] = useState(true);
   const [motivationalQuote] = useState(() => 
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]
   );
@@ -300,6 +311,27 @@ export default function AlarmRingingScreen() {
             setAlarmPunishment(targetAlarm.punishment);
             if (__DEV__) console.log('[AlarmRinging] Punishment amount:', targetAlarm.punishment);
           }
+          // Load per-alarm punishment toggles
+          // Check if money is enabled (either from moneyEnabled flag or if punishment > 0)
+          const hasMoneyPunishment = targetAlarm.moneyEnabled !== undefined 
+            ? targetAlarm.moneyEnabled 
+            : (targetAlarm.punishment || 0) > 0;
+          setMoneyEnabled(hasMoneyPunishment);
+          
+          // Check if shame video is enabled (from toggle or if extraPunishments includes it)
+          const hasShameVideo = targetAlarm.shameVideoEnabled !== undefined
+            ? targetAlarm.shameVideoEnabled
+            : (targetAlarm.extraPunishments || []).includes('shame_video');
+          setShameVideoEnabled(hasShameVideo);
+          
+          // Check if buddy notify is enabled
+          const hasBuddyNotify = targetAlarm.buddyNotifyEnabled !== undefined
+            ? targetAlarm.buddyNotifyEnabled
+            : (targetAlarm.extraPunishments || []).includes('buddy_call');
+          setBuddyNotifyEnabled(hasBuddyNotify);
+          
+          if (__DEV__) console.log('[AlarmRinging] Punishments - money:', hasMoneyPunishment, 'shame:', hasShameVideo, 'buddy:', hasBuddyNotify);
+          
           // Load per-alarm proof activity settings
           if (targetAlarm.proofActivityType) {
             setProofActivityType(targetAlarm.proofActivityType);
@@ -639,43 +671,66 @@ export default function AlarmRingingScreen() {
           </View>
         </View>
 
-        {/* SNOOZE = HEADER */}
-        <View style={styles.snoozeHeader}>
-          <View style={styles.snoozeLine} />
-          <ThemedText style={styles.snoozeHeaderText}>SNOOZE =</ThemedText>
-          <View style={styles.snoozeLine} />
-        </View>
+        {/* SNOOZE = HEADER - only show if any punishment is enabled */}
+        {(moneyEnabled || shameVideoEnabled || buddyNotifyEnabled) ? (
+          <>
+            <View style={styles.snoozeHeader}>
+              <View style={styles.snoozeLine} />
+              <ThemedText style={styles.snoozeHeaderText}>SNOOZE =</ThemedText>
+              <View style={styles.snoozeLine} />
+            </View>
 
-        {/* PUNISHMENT CARDS */}
-        <View style={styles.punishmentGrid}>
-          <View style={styles.punishmentCard}>
-            <Text style={{ fontSize: 44 }}>{'\u{1F4B5}'}</Text>
-            <ThemedText style={styles.punishmentAmount}>${penaltyAmount}</ThemedText>
-            <ThemedText style={styles.punishmentDesc}>to {buddyName}</ThemedText>
-          </View>
+            {/* PUNISHMENT CARDS - only show enabled punishments */}
+            <View style={styles.punishmentGrid}>
+              {moneyEnabled && penaltyAmount > 0 ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F4B5}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>${penaltyAmount}</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>to {buddyName}</ThemedText>
+                </View>
+              ) : null}
 
-          <View style={styles.punishmentCard}>
-            <Text style={{ fontSize: 44 }}>{'\u{1F3A5}'}</Text>
-            <ThemedText style={styles.punishmentAmount}>SHAME</ThemedText>
-            <ThemedText style={styles.punishmentDesc}>MAX volume</ThemedText>
-          </View>
-        </View>
+              {shameVideoEnabled ? (
+                <View style={styles.punishmentCard}>
+                  <Text style={{ fontSize: 44 }}>{'\u{1F3A5}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>SHAME</ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>MAX volume</ThemedText>
+                </View>
+              ) : null}
+            </View>
 
-        {/* NOTIFY CARD */}
-        <Animated.View style={[styles.notifyCard, shakeAnimatedStyle]}>
-          <Text style={{ fontSize: 40 }}>{'\u{1F4F1}'}</Text>
-          <View style={styles.notifyContent}>
-            <ThemedText style={styles.notifyName}>{buddyName.toUpperCase()}</ThemedText>
-            <ThemedText style={styles.notifyText}>gets notified of your failure</ThemedText>
+            {/* NOTIFY CARD - only show if buddy notify is enabled */}
+            {buddyNotifyEnabled ? (
+              <Animated.View style={[styles.notifyCard, shakeAnimatedStyle]}>
+                <Text style={{ fontSize: 40 }}>{'\u{1F4F1}'}</Text>
+                <View style={styles.notifyContent}>
+                  <ThemedText style={styles.notifyName}>{buddyName.toUpperCase()}</ThemedText>
+                  <ThemedText style={styles.notifyText}>gets notified of your failure</ThemedText>
+                </View>
+              </Animated.View>
+            ) : null}
+          </>
+        ) : (
+          <View style={styles.noPunishmentCard}>
+            <Text style={{ fontSize: 32 }}>{'\u{2705}'}</Text>
+            <ThemedText style={styles.noPunishmentText}>No punishment - just snooze</ThemedText>
           </View>
-        </Animated.View>
+        )}
 
         {/* SNOOZE CONFIRMATION FLOW */}
         {snoozeStep === 1 && (
           <View style={styles.confirmCard}>
             <ThemedText style={styles.confirmTitle}>Are you sure?</ThemedText>
             <ThemedText style={styles.confirmDescription}>
-              You'll lose <Text style={styles.redText}>${penaltyAmount}</Text>, your shame video will play, and {buddyName} gets notified.
+              {(() => {
+                const consequences = [];
+                if (moneyEnabled && penaltyAmount > 0) consequences.push(`lose $${penaltyAmount}`);
+                if (shameVideoEnabled) consequences.push('your shame video will play');
+                if (buddyNotifyEnabled) consequences.push(`${buddyName} gets notified`);
+                return consequences.length > 0 
+                  ? `You'll ${consequences.join(', ')}.`
+                  : 'This will just snooze your alarm.';
+              })()}
             </ThemedText>
 
             <View style={styles.confirmButtons}>
@@ -753,7 +808,9 @@ export default function AlarmRingingScreen() {
             testID="button-snooze"
           >
             <ThemedText style={styles.snoozeButtonText}>
-              snooze <Text style={styles.snoozeCost}>(lose ${penaltyAmount})</Text>
+              snooze{moneyEnabled && penaltyAmount > 0 ? (
+                <Text style={styles.snoozeCost}> (lose ${penaltyAmount})</Text>
+              ) : null}
             </ThemedText>
           </Pressable>
         )}
@@ -1039,6 +1096,27 @@ const styles = StyleSheet.create({
   notifyText: {
     fontSize: 12,
     color: Colors.red,
+  },
+
+  // NO PUNISHMENT CARD
+  noPunishmentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  noPunishmentText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.green,
   },
 
   // CONFIRM CARD

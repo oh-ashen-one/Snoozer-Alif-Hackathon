@@ -45,7 +45,7 @@ export interface Alarm {
   extraPunishments?: string[];
   days?: number[];
   // Proof of Wake settings (per-alarm)
-  proofActivityType?: 'photo_activity' | 'steps' | 'math';
+  proofActivityType?: 'photo_activity' | 'steps' | 'math' | 'type_phrase';
   activityName?: string;
   stepGoal?: number;
   // Punishment toggles (per-alarm)

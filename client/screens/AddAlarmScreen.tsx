@@ -60,6 +60,13 @@ const PROOF_ACTIVITIES = [
     emoji: '🧮',
     ctaText: () => 'Solve Math',
   },
+  {
+    id: 'type_phrase',
+    name: 'Type Phrase',
+    description: 'Type a motivational phrase to dismiss',
+    emoji: '⌨️',
+    ctaText: () => 'Type Phrase',
+  },
 ];
 
 const ACTIVITY_SUGGESTIONS = ['Brush teeth', 'Make coffee', 'At gym', 'Outside'];
@@ -281,7 +288,7 @@ export default function AddAlarmScreen() {
           punishment: moneyEnabled ? amount : 0,
           extraPunishments,
           days: selectedDays,
-          proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math',
+          proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
           activityName: activityName,
           // Preserve existing data
           referencePhotoUri: existingAlarmData?.referencePhotoUri ?? null,
@@ -300,7 +307,7 @@ export default function AddAlarmScreen() {
           punishment: moneyEnabled ? amount : 0,
           extraPunishments,
           days: selectedDays,
-          proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math',
+          proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
           activityName: activityName,
         });
       }
