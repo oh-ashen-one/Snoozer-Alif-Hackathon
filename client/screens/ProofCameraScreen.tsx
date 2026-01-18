@@ -28,6 +28,22 @@ const isDev = __DEV__;
 const isWeb = Platform.OS === 'web';
 const useMockCamera = isDev || isWeb;
 
+// Random gesture prompts for anti-cheat and fun
+const GESTURE_PROMPTS = [
+  'while doing a peace sign',
+  'with one eye closed',
+  'while giving a thumbs up',
+  'with your tongue out',
+  'while touching your nose',
+  'with a big smile',
+  'while waving at the camera',
+  'with your hand on your head',
+  'while making an OK sign',
+  'with both thumbs up',
+  'while pointing at yourself',
+  'with a surprised face',
+];
+
 // Mock camera placeholder component
 const MockCameraView = () => (
   <View style={styles.mockCamera}>
@@ -51,6 +67,9 @@ export default function ProofCameraScreen() {
   const [activity, setActivity] = useState<ProofActivity | null>(null);
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
+  const [gesturePrompt] = useState(() => 
+    GESTURE_PROMPTS[Math.floor(Math.random() * GESTURE_PROMPTS.length)]
+  );
   const cameraRef = useRef<CameraView>(null);
 
   const { validatePhotoFreshness } = useAntiCheat({
@@ -265,7 +284,11 @@ export default function ProofCameraScreen() {
         <View style={styles.guideOverlay}>
           <View style={styles.guideBox}>
             <View style={styles.guidePill}>
-              <ThemedText style={styles.guidePillText}>{activity ? `Show yourself: ${activity.activity}` : 'Align with reference'}</ThemedText>
+              <ThemedText style={styles.guidePillText}>
+                {activity 
+                  ? `Take a photo of yourself doing this activity.. ${gesturePrompt}`
+                  : `Align with reference ${gesturePrompt}`}
+              </ThemedText>
             </View>
           </View>
         </View>
