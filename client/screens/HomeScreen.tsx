@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react';
-import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator, Alert, Platform, Text } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -57,6 +57,19 @@ function formatTime(time: string): { time: string; period: string } {
   const period = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours % 12 || 12;
   return { time: `${displayHours}:${minutes.toString().padStart(2, '0')}`, period };
+}
+
+// Helper to convert "HH:MM" to minutes for sorting
+function parseTimeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+// Sort alarms by time (earliest first)
+function sortAlarmsByTime(alarmList: Alarm[]): Alarm[] {
+  return [...alarmList].sort((a, b) =>
+    parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time)
+  );
 }
 
 // Toggle Component
@@ -204,7 +217,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
           <ThemedText style={{ fontSize: 18 }}>⚡</ThemedText>
         </View>
         <ThemedText style={styles.statLabel}>Streak</ThemedText>
-        <ThemedText style={styles.statValueGray} numberOfLines={1} adjustsFontSizeToFit>0</ThemedText>
+        <ThemedText style={styles.statValueGray}>0</ThemedText>
         <ThemedText style={styles.statSubLabel}>days</ThemedText>
       </View>
 
@@ -214,7 +227,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
           <ThemedText style={{ fontSize: 18 }}>💵</ThemedText>
         </View>
         <ThemedText style={styles.statLabel}>Saved</ThemedText>
-        <ThemedText style={styles.statValueGray} numberOfLines={1} adjustsFontSizeToFit>$0</ThemedText>
+        <ThemedText style={styles.statValueGray}>$0</ThemedText>
         <ThemedText style={styles.statSubLabel}>this month</ThemedText>
       </View>
 
@@ -317,7 +330,7 @@ function EmptyState({ onAddAlarm }: { onAddAlarm: () => void }) {
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIcon}>
-        <ThemedText style={{ fontSize: 48 }}>🔕</ThemedText>
+        <Text style={styles.emptyIconEmoji}>🔕</Text>
       </View>
       <ThemedText style={styles.emptyTitle}>No alarms yet</ThemedText>
       <ThemedText style={styles.emptySubtitle}>
@@ -372,10 +385,15 @@ export default function HomeScreen() {
     });
   }, [navigation]);
 
+  // Sort alarms chronologically for display
+  const sortedAlarms = useMemo(() => sortAlarmsByTime(alarms), [alarms]);
+
   const nextAlarm = useMemo(() => {
     const enabledAlarms = alarms.filter(a => a.enabled);
     if (enabledAlarms.length === 0) return null;
-    return enabledAlarms[0];
+    // Sort by time and return the earliest
+    const sorted = sortAlarmsByTime(enabledAlarms);
+    return sorted[0];
   }, [alarms]);
 
   const handleAddAlarm = useCallback(() => {
@@ -430,7 +448,7 @@ export default function HomeScreen() {
             <FadeInView delay={300} direction="up">
               <SectionHeader onAddPress={handleAddAlarm} />
             </FadeInView>
-            {alarms.map((alarm, index) => (
+            {sortedAlarms.map((alarm, index) => (
               <AnimatedCard
                 key={alarm.id}
                 index={index}
@@ -645,9 +663,10 @@ const styles = StyleSheet.create({
     color: '#78716C',
   },
   statValueGray: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#57534E',
+    letterSpacing: 0.5,
   },
   statSubLabel: {
     fontSize: 12,
@@ -830,6 +849,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+  },
+  emptyIconEmoji: {
+    fontSize: 48,
+    textAlign: 'center',
   },
   emptyTitle: {
     fontSize: 20,

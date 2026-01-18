@@ -276,7 +276,7 @@ export default function StatsScreen() {
                 <Text style={{ fontSize: 18 }}>💵</Text>
               </View>
               <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
-              <ThemedText style={styles.statValueGreen} numberOfLines={1} adjustsFontSizeToFit>${stats.moneySaved}</ThemedText>
+              <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
               <ThemedText style={styles.statSubtext}>this month</ThemedText>
             </View>
             <View style={styles.statCard}>
@@ -284,7 +284,7 @@ export default function StatsScreen() {
                 <Text style={{ fontSize: 18 }}>📉</Text>
               </View>
               <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
-              <ThemedText style={styles.statValueRed} numberOfLines={1} adjustsFontSizeToFit>${stats.moneyLost}</ThemedText>
+              <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
               <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
             </View>
           </View>
@@ -299,7 +299,7 @@ export default function StatsScreen() {
                 </View>
                 <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
               </View>
-              <ThemedText style={styles.wakeUpPercent} numberOfLines={1} adjustsFontSizeToFit>{stats.wakeUpRate}%</ThemedText>
+              <ThemedText style={styles.wakeUpPercent}>{stats.wakeUpRate}%</ThemedText>
             </View>
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: `${stats.wakeUpRate}%` }]} />
@@ -450,14 +450,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statValueGreen: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.green,
+    letterSpacing: 0.5,
   },
   statValueRed: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.red,
+    letterSpacing: 0.5,
   },
   statSubtext: {
     fontSize: 12,
@@ -501,6 +503,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.green,
+    letterSpacing: 0.5,
   },
   progressBar: {
     height: 8,

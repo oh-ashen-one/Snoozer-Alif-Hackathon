@@ -40,6 +40,7 @@ const navTheme = {
 export default function App() {
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
   const notificationResponseListener = useRef<Notifications.EventSubscription | null>(null);
+  const notificationReceivedListener = useRef<Notifications.EventSubscription | null>(null);
 
   const onNavigationReady = useCallback(() => {
     SplashScreen.hideAsync();
@@ -80,9 +81,27 @@ export default function App() {
 
     notificationResponseListener.current = addNotificationResponseListener(handleNotificationResponse);
 
+    // Listen for notifications received while app is in foreground
+    // This auto-navigates to AlarmRingingScreen when notification arrives
+    notificationReceivedListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      const data = notification.request.content.data;
+
+      if (data?.alarmId && navigationRef.current) {
+        navigationRef.current.navigate('AlarmRinging', {
+          alarmId: data.alarmId as string,
+          alarmLabel: (data.alarmLabel as string) || 'Alarm',
+          referencePhotoUri: (data.referencePhotoUri as string) || '',
+          shameVideoUri: (data.shameVideoUri as string) || '',
+        });
+      }
+    });
+
     return () => {
       if (notificationResponseListener.current) {
         notificationResponseListener.current.remove();
+      }
+      if (notificationReceivedListener.current) {
+        notificationReceivedListener.current.remove();
       }
     };
   }, []);
