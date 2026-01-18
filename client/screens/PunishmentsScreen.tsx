@@ -315,12 +315,19 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
 
       {/* Show saved wife's dad number when configured and not expanded */}
       {enabled && punishment.id === 'wife_dad' && config.wife_dad?.phoneNumber && !expanded && (
-        <Pressable style={styles.savedConfigRow} onPress={onExpand}>
-          <ThemedText style={styles.savedConfigText}>
+        <View style={styles.savedConfigRow}>
+          <ThemedText style={styles.savedConfigTextGreen}>
             📱 {config.wife_dad.phoneNumber}
           </ThemedText>
-          <ThemedText style={styles.editText}>Edit</ThemedText>
-        </Pressable>
+          <View style={styles.savedConfigButtons}>
+            <Pressable style={styles.savedConfigButton} onPress={handleTestWifesDad}>
+              <ThemedText style={styles.testLinkText}>Test</ThemedText>
+            </Pressable>
+            <Pressable style={styles.savedConfigButton} onPress={onExpand}>
+              <ThemedText style={styles.editText}>Edit</ThemedText>
+            </Pressable>
+          </View>
+        </View>
       )}
 
       {/* Wife's Dad Configuration */}
