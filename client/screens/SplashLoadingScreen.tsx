@@ -28,26 +28,30 @@ export default function SplashLoadingScreen() {
   // Animation values
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentScale = useRef(new Animated.Value(0.9)).current;
-  const footerOpacity = useRef(new Animated.Value(0)).current;
 
   // Shake animation
   const shakeRotation = useRef(new Animated.Value(0)).current;
   const shakeTranslateX = useRef(new Animated.Value(0)).current;
 
-  // Navigate based on auth state when loading complete
+  // Navigate based on onboarding/auth state when loading complete
   const navigateAway = useCallback(async () => {
     if (hasNavigated || isLoading) return;
     setHasNavigated(true);
 
     let targetRoute: keyof RootStackParamList = 'Intro';
 
-    if (isAuthenticated) {
-      try {
-        const hasOnboarded = await getOnboardingComplete();
-        targetRoute = hasOnboarded ? 'Home' : 'Onboarding';
-      } catch {
+    try {
+      const hasOnboarded = await getOnboardingComplete();
+      if (hasOnboarded) {
+        // User completed onboarding - go to Home
+        targetRoute = 'Home';
+      } else if (isAuthenticated) {
+        // Authenticated but not onboarded - go to Onboarding
         targetRoute = 'Onboarding';
       }
+      // Otherwise, default to 'Intro'
+    } catch {
+      // On error, go to Intro
     }
 
     navigation.reset({
@@ -72,12 +76,6 @@ export default function SplashLoadingScreen() {
           toValue: 1,
           tension: 80,
           friction: 10,
-          useNativeDriver: true,
-        }),
-        Animated.timing(footerOpacity, {
-          toValue: 0.6,
-          duration: 500,
-          delay: 300,
           useNativeDriver: true,
         }),
       ]).start();
@@ -161,7 +159,7 @@ export default function SplashLoadingScreen() {
       shakeAnimation.stop();
       clearInterval(interval);
     };
-  }, [contentOpacity, contentScale, footerOpacity, shakeRotation, shakeTranslateX]);
+  }, [contentOpacity, contentScale, shakeRotation, shakeTranslateX]);
 
   // Navigate when progress reaches 100 and auth is ready
   useEffect(() => {
@@ -286,14 +284,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 13,
-    color: Colors.textMuted,
   },
 });
