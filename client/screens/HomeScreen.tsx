@@ -320,10 +320,10 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
 
   return (
     <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-      <RectButton style={styles.alarmCard} onPress={onEdit}>
+      <View style={styles.alarmCard}>
         <View style={styles.alarmContent}>
           <View style={styles.alarmTopRow}>
-            <View style={styles.alarmLeft}>
+            <GHTouchableOpacity style={styles.alarmLeft} onPress={onEdit} activeOpacity={0.7}>
               <View style={styles.alarmTimeRow}>
                 <ThemedText style={styles.alarmTime}>{time}</ThemedText>
                 <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
@@ -336,7 +336,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
                 <ThemedText style={styles.alarmDot}> · </ThemedText>
                 <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
               </View>
-            </View>
+            </GHTouchableOpacity>
             <View style={styles.alarmRight}>
               <Toggle value={alarm.enabled} onValueChange={onToggle} />
               <Pressable style={styles.testButton} onPress={onTest}>
@@ -344,9 +344,11 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
               </Pressable>
             </View>
           </View>
-          <DayPills selectedDays={selectedDays} />
+          <GHTouchableOpacity onPress={onEdit} activeOpacity={0.7}>
+            <DayPills selectedDays={selectedDays} />
+          </GHTouchableOpacity>
         </View>
-      </RectButton>
+      </View>
     </Swipeable>
   );
 }
@@ -789,11 +791,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   deleteAction: {
-    flex: 1,
     backgroundColor: Colors.red,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
+    height: '100%',
     borderRadius: 16,
     marginBottom: 12,
   },
