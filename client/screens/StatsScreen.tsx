@@ -243,7 +243,7 @@ export default function StatsScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
         showsVerticalScrollIndicator={false}
       >
         <FadeInView delay={50} direction="up">

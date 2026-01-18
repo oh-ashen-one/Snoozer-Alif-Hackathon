@@ -290,20 +290,19 @@ export default function SettingsScreen() {
     navigation.navigate('Legal', { type: 'privacy' });
   }, [navigation]);
 
-  // Danger zone handlers
-  const handleStartOver = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  // Sign out handler
+  const handleSignOut = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'Start Over?',
-      'This will reset the app and bring you back to the first screen. Continue?',
+      'Sign Out?',
+      'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Start Over',
+          text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             await setOnboardingComplete(false);
-            // Try to sign out but don't block on it
             signOut().catch(() => {});
             navigation.dispatch(
               CommonActions.reset({
@@ -343,6 +342,14 @@ export default function SettingsScreen() {
                 label="Your name"
                 value={userName}
                 onPress={handleEditName}
+              />
+              <View style={styles.rowDivider} />
+              <SettingsRow
+                icon="log-out"
+                iconColor="#EF4444"
+                iconBg={ICON_COLORS.red}
+                label="Sign out"
+                onPress={handleSignOut}
               />
             </View>
           </View>
@@ -494,22 +501,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Danger Zone Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.dangerLabel}>DANGER ZONE</ThemedText>
-          <View style={styles.dangerCard}>
-            <SettingsRow
-              icon="refresh-cw"
-              iconColor="#EF4444"
-              iconBg={ICON_COLORS.red}
-              label="Start over"
-              onPress={handleStartOver}
-              showChevron={false}
-              isDestructive
-            />
-          </View>
-        </View>
-
         {/* Footer */}
         <View style={styles.footer}>
           <ThemedText style={styles.versionText}>Snoozer v1.0</ThemedText>
@@ -571,28 +562,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: Spacing.md,
   },
-  dangerLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.red,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: Spacing.md,
-  },
-
   // Card
   card: {
     backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
-    overflow: 'hidden',
-  },
-  dangerCard: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
     overflow: 'hidden',
   },
 

@@ -405,7 +405,7 @@ export default function HomeScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 20, paddingBottom: 100 },
+          { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 120 },
         ]}
         showsVerticalScrollIndicator={false}
       >

@@ -195,25 +195,30 @@ export default function AddAlarmScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Progress Dots */}
-        <View style={styles.progressDots}>
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-          <View style={[styles.dot, styles.dotActive]} />
-          <View style={styles.dotInactive} />
-        </View>
+        <FadeInView delay={50} direction="up">
+          <View style={styles.progressDots}>
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+            <View style={[styles.dot, styles.dotActive]} />
+            <View style={styles.dotInactive} />
+          </View>
+        </FadeInView>
 
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.pillBadge}>
-            <FlameIcon />
-            <Text style={styles.pillText}>Wake up on time</Text>
+        <FadeInView delay={100} direction="up">
+          <View style={styles.header}>
+            <View style={styles.pillBadge}>
+              <FlameIcon />
+              <Text style={styles.pillText}>Wake up on time</Text>
+            </View>
+            <Text style={styles.title}>Set your first alarm</Text>
+            <Text style={styles.subtitle}>When do you need to wake up?</Text>
           </View>
-          <Text style={styles.title}>Set your first alarm</Text>
-          <Text style={styles.subtitle}>When do you need to wake up?</Text>
-        </View>
+        </FadeInView>
 
         {/* Time Picker */}
-        <View style={styles.timePickerCard}>
+        <FadeInView delay={150} direction="up">
+          <View style={styles.timePickerCard}>
           <View style={styles.timePickerRow}>
             {/* Hour */}
             <View style={styles.timeColumn}>
@@ -256,30 +261,34 @@ export default function AddAlarmScreen() {
             </View>
           </View>
         </View>
+        </FadeInView>
 
         {/* Days */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>REPEAT</Text>
-          <View style={styles.daysRow}>
-            {DAYS.map(day => {
-              const isSelected = selectedDays.includes(day);
-              return (
-                <Pressable
-                  key={day}
-                  style={[styles.dayPill, isSelected && styles.dayPillSelected]}
-                  onPress={() => toggleDay(day)}
-                >
-                  <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
-                    {day.charAt(0)}
-                  </Text>
-                </Pressable>
-              );
-            })}
+        <FadeInView delay={200} direction="up">
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>REPEAT</Text>
+            <View style={styles.daysRow}>
+              {DAYS.map(day => {
+                const isSelected = selectedDays.includes(day);
+                return (
+                  <Pressable
+                    key={day}
+                    style={[styles.dayPill, isSelected && styles.dayPillSelected]}
+                    onPress={() => toggleDay(day)}
+                  >
+                    <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
+                      {day.charAt(0)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Money Punishment */}
-        <View style={styles.section}>
+        <FadeInView delay={250} direction="up">
+          <View style={styles.section}>
           <View style={styles.sectionLabelRow}>
             <WarningIcon />
             <Text style={styles.sectionLabel}>IF YOU SNOOZE, YOU PAY</Text>
@@ -319,10 +328,12 @@ export default function AddAlarmScreen() {
           <Text style={styles.helperText}>
             {punishment === 0 ? 'You can add payment stakes in settings anytime' : 'Higher stakes = stronger motivation'}
           </Text>
-        </View>
+          </View>
+        </FadeInView>
 
         {/* Extra Consequences */}
-        <View style={styles.section}>
+        <FadeInView delay={300} direction="up">
+          <View style={styles.section}>
           <Text style={styles.sectionLabel}>EXTRA CONSEQUENCES (OPTIONAL)</Text>
           <View style={styles.consequencesList}>
             {visiblePunishments.map(option => {
@@ -366,10 +377,12 @@ export default function AddAlarmScreen() {
           </Pressable>
 
           <Text style={styles.helperText}>The more consequences, the more likely you'll get up</Text>
-        </View>
+          </View>
+        </FadeInView>
 
         {/* Summary Card */}
-        <View style={styles.summaryCard}>
+        <FadeInView delay={350} direction="up">
+          <View style={styles.summaryCard}>
           <View style={styles.summaryTop}>
             <View>
               <Text style={styles.summaryLabel}>Your alarm</Text>
@@ -398,13 +411,16 @@ export default function AddAlarmScreen() {
               })}
             </View>
           )}
-        </View>
+          </View>
+        </FadeInView>
 
         {/* Continue Button */}
-        <Pressable testID="button-continue" style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueText}>Continue</Text>
-          <ArrowIcon />
-        </Pressable>
+        <FadeInView delay={400} direction="up">
+          <Pressable testID="button-continue" style={styles.continueButton} onPress={handleContinue}>
+            <Text style={styles.continueText}>Continue</Text>
+            <ArrowIcon />
+          </Pressable>
+        </FadeInView>
       </ScrollView>
     </View>
   );

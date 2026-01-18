@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { FadeInView } from '@/components/FadeInView';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -244,41 +245,47 @@ export default function OnboardingScreen() {
             style={styles.stepContainer} 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
-            <View style={styles.header}>
-              <View style={styles.pillBadge}>
-                <Feather name="user" size={14} color={Colors.orange} />
-                <Text style={styles.pillText}>Let's get to know you</Text>
+            <FadeInView delay={50} direction="up">
+              <View style={styles.header}>
+                <View style={styles.pillBadge}>
+                  <Feather name="user" size={14} color={Colors.orange} />
+                  <Text style={styles.pillText}>Let's get to know you</Text>
+                </View>
+                <Text style={styles.title}>What's your name?</Text>
+                <Text style={styles.subtitle}>We'll use this to personalize your experience</Text>
               </View>
-              <Text style={styles.title}>What's your name?</Text>
-              <Text style={styles.subtitle}>We'll use this to personalize your experience</Text>
-            </View>
+            </FadeInView>
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter your name"
-                placeholderTextColor={Colors.textMuted}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                autoCorrect={false}
-                autoFocus
-              />
-            </View>
+            <FadeInView delay={100} direction="up">
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter your name"
+                  placeholderTextColor={Colors.textMuted}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  autoFocus
+                />
+              </View>
+            </FadeInView>
           </KeyboardAvoidingView>
         );
 
       case 1:
         return (
           <View style={styles.stepContainer}>
-            <View style={styles.header}>
-              <View style={styles.pillBadge}>
-                <Feather name="target" size={14} color={Colors.orange} />
-                <Text style={styles.pillText}>Your motivation</Text>
+            <FadeInView delay={50} direction="up">
+              <View style={styles.header}>
+                <View style={styles.pillBadge}>
+                  <Feather name="target" size={14} color={Colors.orange} />
+                  <Text style={styles.pillText}>Your motivation</Text>
+                </View>
+                <Text style={styles.title}>What are your goals?</Text>
+                <Text style={styles.subtitle}>Select all that apply</Text>
               </View>
-              <Text style={styles.title}>What are your goals?</Text>
-              <Text style={styles.subtitle}>Select all that apply</Text>
-            </View>
+            </FadeInView>
 
             <ScrollView
               style={styles.scrollView}
@@ -286,13 +293,14 @@ export default function OnboardingScreen() {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.optionsList}>
-                {GOALS.map(goal => (
-                  <GoalCard
-                    key={goal.id}
-                    goal={goal}
-                    isSelected={selectedGoals.includes(goal.id)}
-                    onSelect={handleGoalSelect}
-                  />
+                {GOALS.map((goal, index) => (
+                  <FadeInView key={goal.id} delay={100 + index * 50} direction="up">
+                    <GoalCard
+                      goal={goal}
+                      isSelected={selectedGoals.includes(goal.id)}
+                      onSelect={handleGoalSelect}
+                    />
+                  </FadeInView>
                 ))}
               </View>
             </ScrollView>
@@ -302,14 +310,16 @@ export default function OnboardingScreen() {
       case 2:
         return (
           <View style={styles.stepContainer}>
-            <View style={styles.header}>
-              <View style={styles.pillBadge}>
-                <Feather name="check-circle" size={14} color={Colors.orange} />
-                <Text style={styles.pillText}>Almost done</Text>
+            <FadeInView delay={50} direction="up">
+              <View style={styles.header}>
+                <View style={styles.pillBadge}>
+                  <Feather name="check-circle" size={14} color={Colors.orange} />
+                  <Text style={styles.pillText}>Almost done</Text>
+                </View>
+                <Text style={styles.title}>What do you want to be consistent with?</Text>
+                <Text style={styles.subtitle}>Start with one habit</Text>
               </View>
-              <Text style={styles.title}>What do you want to be consistent with?</Text>
-              <Text style={styles.subtitle}>Start with one habit</Text>
-            </View>
+            </FadeInView>
 
             <ScrollView
               style={styles.scrollView}
@@ -317,16 +327,19 @@ export default function OnboardingScreen() {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.optionsList}>
-                {HABITS.map(habit => (
-                  <HabitCard
-                    key={habit.id}
-                    habit={habit}
-                    isSelected={selectedHabit === habit.id}
-                    onSelect={handleHabitSelect}
-                  />
+                {HABITS.map((habit, index) => (
+                  <FadeInView key={habit.id} delay={100 + index * 50} direction="up">
+                    <HabitCard
+                      habit={habit}
+                      isSelected={selectedHabit === habit.id}
+                      onSelect={handleHabitSelect}
+                    />
+                  </FadeInView>
                 ))}
               </View>
-              <Text style={styles.helperText}>More habits coming soon!</Text>
+              <FadeInView delay={300} direction="up">
+                <Text style={styles.helperText}>More habits coming soon!</Text>
+              </FadeInView>
             </ScrollView>
           </View>
         );
