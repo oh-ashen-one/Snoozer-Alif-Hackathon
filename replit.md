@@ -182,6 +182,22 @@ await Audio.setAudioModeAsync({
 
 ---
 
+## DEBUGGING RULES
+
+When running into an issue or trying to fix something:
+
+**Enable forensic-level logging for this issue, and anything adjacent to it. We will no longer guess; we will use verbose logs to isolate the issue and make a targeted fix.**
+
+### Debugging Protocol
+1. Add `if (__DEV__) console.log('[ComponentName] action:', data)` at every relevant step
+2. Log inputs, outputs, and state changes
+3. Log before AND after async operations
+4. Include timestamps for timing-sensitive issues
+5. Never remove debug logs until the issue is confirmed fixed
+6. Use descriptive prefixes: `[AlarmRinging]`, `[ProofCamera]`, `[Storage]`, etc.
+
+---
+
 ## SCREEN SPECS
 
 ### HomeScreen
