@@ -54,6 +54,11 @@ export interface Alarm {
   buddyNotifyEnabled?: boolean;
   socialShameEnabled?: boolean;
   antiCharityEnabled?: boolean;
+  emailBossEnabled?: boolean;
+  tweetBadEnabled?: boolean;
+  callBuddyEnabled?: boolean;
+  textWifesDadEnabled?: boolean;
+  textExEnabled?: boolean;
   // Escalation settings (per-alarm)
   escalatingVolume?: boolean;
   wakeRecheck?: boolean;

@@ -176,6 +176,11 @@ export default function AddAlarmScreen() {
   const [buddyNotify, setBuddyNotify] = useState(false);
   const [socialShame, setSocialShame] = useState(false);
   const [antiCharity, setAntiCharity] = useState(false);
+  const [emailBoss, setEmailBoss] = useState(false);
+  const [tweetBad, setTweetBad] = useState(false);
+  const [callBuddy, setCallBuddy] = useState(false);
+  const [textWifesDad, setTextWifesDad] = useState(false);
+  const [textEx, setTextEx] = useState(false);
 
   const [escalatingVolume, setEscalatingVolume] = useState(true);
   const [wakeRecheck, setWakeRecheck] = useState(true);

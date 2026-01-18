@@ -310,79 +310,106 @@ function getProofTypeLabel(proofType: string | undefined): string {
   }
 }
 
-// Alarm List Item Component
+// Format days display for chip
+function getDaysDisplay(days: number[]): string {
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  if (days.length === 0) return 'No days';
+  if (days.length === 7) return 'Every day';
+  const sorted = [...days].sort((a, b) => a - b);
+  if (JSON.stringify(sorted) === JSON.stringify([1, 2, 3, 4, 5])) return 'Mon - Fri';
+  if (JSON.stringify(sorted) === JSON.stringify([0, 6])) return 'Sat, Sun';
+  return sorted.map(d => dayLabels[d]).join(', ');
+}
+
+// Alarm List Item Component - A1 Style
 function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: Alarm; onToggle: () => void; onDelete: () => void; onTest: () => void; onEdit: () => void }) {
   const { time, period } = formatTime(alarm.time);
-  const selectedDays = alarm.days ?? [1, 2, 3, 4, 5]; // Use stored days or default to weekdays
+  const selectedDays = alarm.days ?? [1, 2, 3, 4, 5];
   const proofLabel = getProofTypeLabel(alarm.proofActivityType);
+  const alarmAny = alarm as any;
+  const extras = alarm.extraPunishments ?? [];
 
-  // Build punishment display - check both extraPunishments array AND boolean flags
-  const getPunishmentText = () => {
-    const parts: string[] = [];
-    const extras = alarm.extraPunishments ?? [];
-    const alarmAny = alarm as any;
+  // Check if alarm has stakes
+  const money = alarm.punishment ?? 0;
+  const hasMoneyStake = (alarmAny.moneyEnabled && money > 0) || 
+    (!alarmAny.hasOwnProperty('moneyEnabled') && money > 0);
+  const buddyName = alarmAny.buddyName || 'Buddy';
+  const hasStakes = hasMoneyStake;
 
-    // Add money punishment
-    const money = alarm.punishment ?? 0;
-    if ((alarmAny.moneyEnabled && money > 0) || 
-        (!alarmAny.hasOwnProperty('moneyEnabled') && money > 0)) {
-      parts.push(`$${money}`);
-    }
-
-    // Add extra punishments - check both array AND boolean flags
-    if (extras.includes('shame_video') || alarmAny.shameVideoEnabled) {
-      parts.push('Video');
-    }
-    if (extras.includes('buddy_call') || alarmAny.buddyNotifyEnabled) {
-      parts.push('Buddy');
-    }
-    if (extras.includes('group_chat') || alarmAny.socialShameEnabled) {
-      parts.push('Social');
-    }
-    if (extras.includes('donate_enemy') || alarmAny.antiCharityEnabled) {
-      parts.push('Anti-charity');
-    }
-
-    if (parts.length === 0) {
-      return 'No stakes';
-    }
-
-    return parts.join(' + ');
+  // Get stake text for chip
+  const getStakeText = (): string | null => {
+    if (!hasMoneyStake) return null;
+    return `$${money} → ${buddyName}`;
   };
 
+  const stakeText = getStakeText();
+
   return (
-    <View style={styles.alarmCard}>
-      <View style={styles.alarmContent}>
-        <View style={styles.alarmTopRow}>
-          <Pressable style={styles.alarmLeft} onPress={onEdit}>
-            <View style={styles.alarmTimeRow}>
-              <ThemedText style={styles.alarmTime}>{time}</ThemedText>
-              <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
-            </View>
-            <View style={styles.alarmSubtitleRow}>
-              <View style={styles.proofBadge}>
-                <ThemedText style={styles.proofBadgeText}>{proofLabel}</ThemedText>
-              </View>
-              <ThemedText style={styles.alarmPenalty}>{getPunishmentText()}</ThemedText>
-            </View>
-          </Pressable>
-          <View style={styles.alarmRight}>
-            <Toggle value={alarm.enabled} onValueChange={onToggle} />
-            <View style={styles.alarmButtonsRow}>
-              <Pressable style={styles.testButton} onPress={onTest}>
-                <ThemedText style={styles.testButtonText}>Test</ThemedText>
-              </Pressable>
-              <Pressable style={styles.editButton} onPress={onEdit}>
-                <ThemedText style={{ fontSize: 14 }}>✏️</ThemedText>
-              </Pressable>
-              <Pressable style={styles.deleteButton} onPress={onDelete}>
-                <ThemedText style={{ fontSize: 14 }}>🗑️</ThemedText>
-              </Pressable>
-            </View>
-          </View>
+    <View style={[
+      styles.alarmCard,
+      { 
+        opacity: alarm.enabled ? 1 : 0.5,
+        borderColor: alarm.enabled && hasStakes ? 'rgba(251, 146, 60, 0.2)' : Colors.border,
+      }
+    ]}>
+      {/* Row 1: Time + Toggle */}
+      <View style={styles.cardRow1}>
+        <View style={styles.alarmTimeRow}>
+          <ThemedText style={styles.alarmTime}>{time}</ThemedText>
+          <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
         </View>
-        <Pressable onPress={onEdit}>
-          <DayPills selectedDays={selectedDays} />
+        <Pressable
+          style={[styles.toggle, { backgroundColor: alarm.enabled ? Colors.green : Colors.border }]}
+          onPress={onToggle}
+        >
+          <View style={[
+            styles.toggleKnobStatic,
+            { transform: [{ translateX: alarm.enabled ? 20 : 0 }] }
+          ]} />
+        </Pressable>
+      </View>
+
+      {/* Row 2: Info chips */}
+      <View style={styles.cardRow2}>
+        {hasStakes ? (
+          <>
+            <View style={styles.chipDays}>
+              <ThemedText style={styles.chipDaysText}>{getDaysDisplay(selectedDays)}</ThemedText>
+            </View>
+            {stakeText ? (
+              <View style={styles.chipStake}>
+                <ThemedText style={styles.chipStakeText}>{stakeText}</ThemedText>
+              </View>
+            ) : null}
+            <View style={styles.chipProof}>
+              <ThemedText style={styles.chipProofText}>{proofLabel}</ThemedText>
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.chipMuted}>
+              <ThemedText style={styles.chipMutedText}>{getDaysDisplay(selectedDays)}</ThemedText>
+            </View>
+            <View style={styles.chipMuted}>
+              <ThemedText style={styles.chipMutedText}>No stakes</ThemedText>
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* Row 3: Actions */}
+      <View style={styles.cardRow3}>
+        <Pressable style={styles.actionPill} onPress={onTest}>
+          <Text style={{ fontSize: 14 }}>⚡</Text>
+          <ThemedText style={styles.actionText}>Test</ThemedText>
+        </Pressable>
+        <Pressable style={styles.actionPill} onPress={onEdit}>
+          <Text style={{ fontSize: 14 }}>✏️</Text>
+          <ThemedText style={styles.actionText}>Edit</ThemedText>
+        </Pressable>
+        <Pressable style={styles.actionPillDanger} onPress={onDelete}>
+          <Text style={{ fontSize: 14 }}>🗑️</Text>
+          <ThemedText style={styles.actionTextDanger}>Delete</ThemedText>
         </Pressable>
       </View>
     </View>
@@ -695,6 +722,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FB923C',
   },
+  proofBadge: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 8,
+  },
+  proofBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#22C55E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   stakesRow: {
     flexDirection: 'row',
     gap: 12,
@@ -799,86 +840,44 @@ const styles = StyleSheet.create({
     color: '#FAFAF9',
   },
 
-  // Alarm Card
+  // Alarm Card - A1 Style
   alarmCard: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: 16,
+    backgroundColor: 'rgba(28, 25, 23, 0.8)',
     borderWidth: 1,
     borderColor: Colors.border,
+    borderRadius: 18,
     padding: 16,
     marginBottom: 12,
   },
-  deleteAction: {
-    backgroundColor: Colors.red,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    height: '100%',
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  alarmContent: {},
-  alarmTopRow: {
+  cardRow1: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  alarmLeft: {},
-  alarmRight: {
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 14,
   },
   alarmTimeRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    gap: 6,
   },
   alarmTime: {
-    fontSize: 32,
-    fontWeight: '600',
+    fontSize: 42,
+    fontWeight: '700',
     color: '#FAFAF9',
+    lineHeight: 42,
   },
   alarmPeriod: {
-    fontSize: 14,
+    fontSize: 18,
+    fontWeight: '500',
     color: '#78716C',
-    marginLeft: 4,
-  },
-  alarmSubtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  alarmLabel: {
-    fontSize: 13,
-    color: '#A8A29E',
-  },
-  alarmDot: {
-    fontSize: 13,
-    color: '#A8A29E',
-  },
-  alarmPenalty: {
-    fontSize: 12,
-    color: '#EF4444',
-  },
-  proofBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginRight: 8,
-  },
-  proofBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#22C55E',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
 
   // Toggle
   toggle: {
-    width: 52,
-    height: 32,
-    borderRadius: 16,
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    padding: 2,
     justifyContent: 'center',
   },
   toggleKnob: {
@@ -887,43 +886,106 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     backgroundColor: Colors.text,
   },
-
-  // Test Button (per alarm)
-  testButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(251, 146, 60, 0.12)',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(251, 146, 60, 0.2)',
+  toggleKnobStatic: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FAFAF9',
   },
-  testButtonText: {
-    fontSize: 11,
-    fontWeight: '500',
+
+  // Row 2 - Info chips
+  cardRow2: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  chipDays: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderRadius: 8,
+  },
+  chipDaysText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#FB923C',
   },
-  alarmButtonsRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  editButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    backgroundColor: 'rgba(251, 146, 60, 0.12)',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(251, 146, 60, 0.2)',
-  },
-  deleteButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+  chipStake: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+    borderRadius: 8,
+  },
+  chipStakeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+  chipProof: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(41, 37, 36, 0.8)',
+    borderRadius: 8,
+  },
+  chipProofText: {
+    fontSize: 13,
+    color: '#A8A29E',
+  },
+  chipMuted: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(41, 37, 36, 0.5)',
+    borderRadius: 8,
+  },
+  chipMutedText: {
+    fontSize: 13,
+    color: '#57534E',
   },
 
-  // Day Pills
+  // Row 3 - Actions
+  cardRow3: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(41, 37, 36, 0.6)',
+    borderWidth: 1,
+    borderColor: '#3a3533',
+    borderRadius: 10,
+  },
+  actionPillDanger: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderRadius: 10,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#A8A29E',
+  },
+  actionTextDanger: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+
+  // Day Pills (kept for other uses)
   dayPillsRow: {
     flexDirection: 'row',
     gap: 6,

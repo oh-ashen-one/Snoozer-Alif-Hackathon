@@ -58,7 +58,7 @@ export default function ProofCameraScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmId, referencePhotoUri } = route.params;
+  const { alarmId, referencePhotoUri, activityName } = route.params;
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoTimestamp, setPhotoTimestamp] = useState<number | null>(null);
