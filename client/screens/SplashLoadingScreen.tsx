@@ -222,18 +222,6 @@ export default function SplashLoadingScreen() {
         </View>
       </Animated.View>
 
-      {/* Footer */}
-      <Animated.View
-        style={[
-          styles.footer,
-          {
-            opacity: footerOpacity,
-            paddingBottom: Math.max(insets.bottom, 24) + 24,
-          },
-        ]}
-      >
-        <Text style={styles.footerText}>Made with 😤</Text>
-      </Animated.View>
     </View>
   );
 }
