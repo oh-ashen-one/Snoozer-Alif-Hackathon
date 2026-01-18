@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
 const KEYS = {
   ALARMS: '@snoozer/alarms',
@@ -84,7 +85,18 @@ export async function setOnboardingComplete(complete: boolean): Promise<void> {
 
 export async function clearAllData(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove(Object.values(KEYS));
+    await AsyncStorage.clear();
+    try {
+      const docDir = (FileSystem as any).documentDirectory;
+      if (docDir) {
+        const files = await FileSystem.readDirectoryAsync(docDir);
+        for (const file of files) {
+          await FileSystem.deleteAsync(`${docDir}${file}`, { idempotent: true });
+        }
+      }
+    } catch (fileError) {
+      // File deletion is optional - AsyncStorage.clear() already clears main data
+    }
   } catch (error) {
     console.error('Error clearing data:', error);
   }

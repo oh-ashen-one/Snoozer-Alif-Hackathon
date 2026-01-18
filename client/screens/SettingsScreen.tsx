@@ -17,7 +17,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   useAnimatedStyle,
@@ -187,7 +186,7 @@ export default function SettingsScreen() {
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Save',
-            onPress: (name) => {
+            onPress: (name: string | undefined) => {
               if (name && name.trim()) {
                 setUserName(name.trim());
               }
@@ -347,16 +346,10 @@ export default function SettingsScreen() {
           {
             text: 'Delete',
             style: 'destructive',
-            onPress: async (text) => {
+            onPress: async (text: string | undefined) => {
               if (text === 'DELETE') {
                 try {
-                  await AsyncStorage.clear();
-                  if (FileSystem.documentDirectory) {
-                    const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
-                    for (const file of files) {
-                      await FileSystem.deleteAsync(`${FileSystem.documentDirectory}${file}`, { idempotent: true });
-                    }
-                  }
+                  await clearAllData();
                   navigation.dispatch(
                     CommonActions.reset({
                       index: 0,
@@ -386,13 +379,7 @@ export default function SettingsScreen() {
             style: 'destructive',
             onPress: async () => {
               try {
-                await AsyncStorage.clear();
-                if (FileSystem.documentDirectory) {
-                  const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
-                  for (const file of files) {
-                    await FileSystem.deleteAsync(`${FileSystem.documentDirectory}${file}`, { idempotent: true });
-                  }
-                }
+                await clearAllData();
                 navigation.dispatch(
                   CommonActions.reset({
                     index: 0,

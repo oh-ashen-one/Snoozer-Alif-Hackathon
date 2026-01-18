@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { StyleSheet, Platform } from "react-native";
-import { NavigationContainer, NavigationContainerRef } from "@react-navigation/native";
+import { NavigationContainer, NavigationContainerRef, DefaultTheme } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -17,6 +17,19 @@ import { addNotificationResponseListener } from "@/utils/notifications";
 import { ensureDirectories } from "@/utils/fileSystem";
 
 SplashScreen.preventAutoHideAsync();
+
+const navTheme = {
+  ...DefaultTheme,
+  dark: true,
+  colors: {
+    primary: '#FB923C',
+    background: '#0C0A09',
+    card: '#1C1917',
+    text: '#FAFAF9',
+    border: '#292524',
+    notification: '#EF4444',
+  },
+};
 
 export default function App() {
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
@@ -74,7 +87,7 @@ export default function App() {
         <SafeAreaProvider>
           <GestureHandlerRootView style={styles.root}>
             <KeyboardProvider>
-              <NavigationContainer ref={navigationRef} onReady={onNavigationReady}>
+              <NavigationContainer ref={navigationRef} onReady={onNavigationReady} theme={navTheme}>
                 <RootStackNavigator />
               </NavigationContainer>
               <StatusBar style="light" />
