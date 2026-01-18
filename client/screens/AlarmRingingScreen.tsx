@@ -449,7 +449,8 @@ export default function AlarmRingingScreen() {
               onChangeText={setSnoozeText}
               placeholder="Type here..."
               placeholderTextColor="#57534E"
-              autoCapitalize="characters"
+              autoCapitalize="none"
+              autoCorrect={false}
               autoFocus
               testID="input-snooze-confirmation"
             />
