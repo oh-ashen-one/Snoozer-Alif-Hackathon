@@ -332,97 +332,107 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Account Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionLabel}>ACCOUNT</ThemedText>
-          <View style={styles.card}>
-            <SettingsRow
-              icon="user"
-              iconColor="#FB923C"
-              iconBg={ICON_COLORS.orange}
-              label="Your name"
-              value={userName}
-              onPress={handleEditName}
-            />
+        <FadeInView delay={50} direction="up">
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionLabel}>ACCOUNT</ThemedText>
+            <View style={styles.card}>
+              <SettingsRow
+                icon="user"
+                iconColor="#FB923C"
+                iconBg={ICON_COLORS.orange}
+                label="Your name"
+                value={userName}
+                onPress={handleEditName}
+              />
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Proof Photo Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionLabel}>PROOF PHOTO</ThemedText>
-          <View style={styles.card}>
-            <SettingsRow
-              icon="map-pin"
-              iconColor="#FB923C"
-              iconBg={ICON_COLORS.orange}
-              label="Update proof location"
-              onPress={handleUpdateProofLocation}
-            />
+        <FadeInView delay={100} direction="up">
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionLabel}>PROOF PHOTO</ThemedText>
+            <View style={styles.card}>
+              <SettingsRow
+                icon="map-pin"
+                iconColor="#FB923C"
+                iconBg={ICON_COLORS.orange}
+                label="Update proof location"
+                onPress={handleUpdateProofLocation}
+              />
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Shame Video Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionLabel}>SHAME VIDEO</ThemedText>
-          <View style={styles.card}>
-            <SettingsRow
-              icon="video"
-              iconColor="#9333EA"
-              iconBg={ICON_COLORS.purple}
-              label="Re-record shame video"
-              onPress={handleRerecordShameVideo}
-            />
+        <FadeInView delay={150} direction="up">
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionLabel}>SHAME VIDEO</ThemedText>
+            <View style={styles.card}>
+              <SettingsRow
+                icon="video"
+                iconColor="#9333EA"
+                iconBg={ICON_COLORS.purple}
+                label="Re-record shame video"
+                onPress={handleRerecordShameVideo}
+              />
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Punishment Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionLabel}>PUNISHMENT</ThemedText>
-          <View style={styles.card}>
-            <SettingsRow
-              icon="dollar-sign"
-              iconColor="#22C55E"
-              iconBg={ICON_COLORS.green}
-              label="Default amount"
-              value={`$${defaultPunishment}`}
-              onPress={handleChangePunishment}
-            />
-            <View style={styles.rowDivider} />
-            <SettingsRow
-              icon="credit-card"
-              iconColor="#3B82F6"
-              iconBg={ICON_COLORS.blue}
-              label="Payment method"
-              value={paymentMethod}
-              onPress={handleChangePayment}
-            />
+        <FadeInView delay={200} direction="up">
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionLabel}>PUNISHMENT</ThemedText>
+            <View style={styles.card}>
+              <SettingsRow
+                icon="dollar-sign"
+                iconColor="#22C55E"
+                iconBg={ICON_COLORS.green}
+                label="Default amount"
+                value={`$${defaultPunishment}`}
+                onPress={handleChangePunishment}
+              />
+              <View style={styles.rowDivider} />
+              <SettingsRow
+                icon="credit-card"
+                iconColor="#3B82F6"
+                iconBg={ICON_COLORS.blue}
+                label="Payment method"
+                value={paymentMethod}
+                onPress={handleChangePayment}
+              />
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Notifications Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionLabel}>NOTIFICATIONS</ThemedText>
-          <View style={styles.card}>
-            <SettingsRow
-              icon="bell"
-              iconColor="#3B82F6"
-              iconBg={ICON_COLORS.blue}
-              label="Alarm sound"
-              value="Default"
-              showChevron={false}
-            />
-            <View style={styles.rowDivider} />
-            <SettingsRow
-              icon="smartphone"
-              iconColor="#22C55E"
-              iconBg={ICON_COLORS.green}
-              label="Vibration"
-              showChevron={false}
-              rightElement={
-                <Toggle value={vibrationEnabled} onValueChange={handleToggleVibration} />
-              }
-            />
+        <FadeInView delay={250} direction="up">
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionLabel}>NOTIFICATIONS</ThemedText>
+            <View style={styles.card}>
+              <SettingsRow
+                icon="bell"
+                iconColor="#3B82F6"
+                iconBg={ICON_COLORS.blue}
+                label="Alarm sound"
+                value="Default"
+                showChevron={false}
+              />
+              <View style={styles.rowDivider} />
+              <SettingsRow
+                icon="smartphone"
+                iconColor="#22C55E"
+                iconBg={ICON_COLORS.green}
+                label="Vibration"
+                showChevron={false}
+                rightElement={
+                  <Toggle value={vibrationEnabled} onValueChange={handleToggleVibration} />
+                }
+              />
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Support Section */}
         <View style={styles.section}>

@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { FadeInView } from '@/components/FadeInView';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import {
@@ -245,53 +246,61 @@ export default function StatsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroCard}>
-          <View style={styles.heroIconCircle}>
-            <Feather name="zap" size={32} color="#FB923C" />
-          </View>
-          <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
-          <ThemedText style={styles.heroValue}>{stats.currentStreak} days</ThemedText>
-          <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
-        </View>
-
-        <View style={styles.twoColumnRow}>
-          <View style={styles.statCard}>
-            <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-              <Feather name="dollar-sign" size={18} color="#22C55E" />
+        <FadeInView delay={50} direction="up">
+          <View style={styles.heroCard}>
+            <View style={styles.heroIconCircle}>
+              <Feather name="zap" size={32} color="#FB923C" />
             </View>
-            <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
-            <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
-            <ThemedText style={styles.statSubtext}>this month</ThemedText>
+            <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
+            <ThemedText style={styles.heroValue}>{stats.currentStreak} days</ThemedText>
+            <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
           </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-              <Feather name="trending-down" size={18} color="#EF4444" />
-            </View>
-            <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
-            <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
-            <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
-          </View>
-        </View>
+        </FadeInView>
 
-        <View style={styles.wakeUpCard}>
-          <View style={styles.wakeUpHeader}>
-            <View style={styles.wakeUpTitleRow}>
-              <View style={[styles.wakeUpIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                <Feather name="clock" size={14} color="#22C55E" />
+        <FadeInView delay={100} direction="up">
+          <View style={styles.twoColumnRow}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                <Feather name="dollar-sign" size={18} color="#22C55E" />
               </View>
-              <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
+              <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
+              <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
+              <ThemedText style={styles.statSubtext}>this month</ThemedText>
             </View>
-            <ThemedText style={styles.wakeUpPercent}>{stats.wakeUpRate}%</ThemedText>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                <Feather name="trending-down" size={18} color="#EF4444" />
+              </View>
+              <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
+              <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
+              <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
+            </View>
           </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${stats.wakeUpRate}%` }]} />
-          </View>
-          <ThemedText style={styles.wakeUpSubtext}>
-            {stats.wakeUpDays} of {stats.totalDays} days this month
-          </ThemedText>
-        </View>
+        </FadeInView>
 
-        <ThemedText style={styles.sectionTitle}>This Week</ThemedText>
+        <FadeInView delay={150} direction="up">
+          <View style={styles.wakeUpCard}>
+            <View style={styles.wakeUpHeader}>
+              <View style={styles.wakeUpTitleRow}>
+                <View style={[styles.wakeUpIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                  <Feather name="clock" size={14} color="#22C55E" />
+                </View>
+                <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
+              </View>
+              <ThemedText style={styles.wakeUpPercent}>{stats.wakeUpRate}%</ThemedText>
+            </View>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${stats.wakeUpRate}%` }]} />
+            </View>
+            <ThemedText style={styles.wakeUpSubtext}>
+              {stats.wakeUpDays} of {stats.totalDays} days this month
+            </ThemedText>
+          </View>
+        </FadeInView>
+
+        <FadeInView delay={200} direction="up">
+          <ThemedText style={styles.sectionTitle}>This Week</ThemedText>
+        </FadeInView>
         {stats.weeklyData.length > 0 ? (
           <View style={styles.weekGrid}>
             {stats.weeklyData.map((item, index) => (

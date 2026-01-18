@@ -20,6 +20,8 @@ import { BottomNav } from '@/components/BottomNav';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { FadeInView } from '@/components/FadeInView';
+import { AnimatedCard } from '@/components/AnimatedCard';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -222,37 +224,42 @@ export default function BuddyScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Section */}
-        <View style={styles.heroSection}>
-          <View style={styles.heroBadge}>
-            <Feather name="zap" size={14} color="#FB923C" />
-            <ThemedText style={styles.heroBadgeText}>2x more likely to succeed</ThemedText>
+        <FadeInView delay={50} direction="up">
+          <View style={styles.heroSection}>
+            <View style={styles.heroBadge}>
+              <Feather name="zap" size={14} color="#FB923C" />
+              <ThemedText style={styles.heroBadgeText}>2x more likely to succeed</ThemedText>
+            </View>
+            <ThemedText style={styles.heroTitle}>Choose your accountability style</ThemedText>
+            <ThemedText style={styles.heroSubtitle}>Different ways to make sure you never snooze</ThemedText>
           </View>
-          <ThemedText style={styles.heroTitle}>Choose your accountability style</ThemedText>
-          <ThemedText style={styles.heroSubtitle}>Different ways to make sure you never snooze</ThemedText>
-        </View>
+        </FadeInView>
 
         {/* Mode Cards */}
         <View style={styles.modeList}>
-          {MODES.map(mode => (
-            <ModeCard
-              key={mode.id}
-              mode={mode}
-              isSelected={selectedMode === mode.id}
-              onSelect={() => handleSelectMode(mode.id)}
-            />
+          {MODES.map((mode, index) => (
+            <AnimatedCard key={mode.id} index={index} delayBase={100} delayIncrement={60}>
+              <ModeCard
+                mode={mode}
+                isSelected={selectedMode === mode.id}
+                onSelect={() => handleSelectMode(mode.id)}
+              />
+            </AnimatedCard>
           ))}
         </View>
 
         {/* Popular badge */}
-        <View style={styles.popularBadge}>
-          <View style={styles.popularIcon}>
-            <Feather name="bar-chart-2" size={18} color="#FB923C" />
+        <FadeInView delay={400} direction="up">
+          <View style={styles.popularBadge}>
+            <View style={styles.popularIcon}>
+              <Feather name="bar-chart-2" size={18} color="#FB923C" />
+            </View>
+            <View>
+              <ThemedText style={styles.popularTitle}>Most popular: 1v1 Battle</ThemedText>
+              <ThemedText style={styles.popularSubtitle}>78% of users choose this mode</ThemedText>
+            </View>
           </View>
-          <View>
-            <ThemedText style={styles.popularTitle}>Most popular: 1v1 Battle</ThemedText>
-            <ThemedText style={styles.popularSubtitle}>78% of users choose this mode</ThemedText>
-          </View>
-        </View>
+        </FadeInView>
       </ScrollView>
 
       {/* Bottom CTA */}
