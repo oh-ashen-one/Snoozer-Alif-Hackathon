@@ -337,7 +337,7 @@ export default function RootStackNavigator() {
       />
       <Stack.Screen
         name="PaymentMethod"
-        component={PaymentMethodScreen}
+        component={PaymentSettingsScreen}
         options={{
           headerShown: false,
         }}

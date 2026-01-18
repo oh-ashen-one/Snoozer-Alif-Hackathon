@@ -8,7 +8,6 @@ import {
   Linking,
   Share,
   Platform,
-  ActionSheetIOS,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -162,8 +161,6 @@ export default function SettingsScreen() {
 
   // State
   const [userName, setUserName] = useState('Alex');
-  const [defaultPunishment, setDefaultPunishment] = useState(5);
-  const [paymentMethod, setPaymentMethod] = useState('Venmo');
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   // Random default alarm sound
   const [alarmSound, setAlarmSound] = useState<AlarmSoundId>(() => {
@@ -258,39 +255,7 @@ export default function SettingsScreen() {
     }
   }, [userName]);
 
-  // Punishment handlers
-  const handleChangePunishment = useCallback(() => {
-    const options = ['$1', '$2', '$5', '$10', '$20', 'Cancel'];
-    const values = [1, 2, 5, 10, 20];
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex: options.length - 1,
-          title: 'Default Punishment Amount',
-        },
-        (buttonIndex) => {
-          if (buttonIndex < values.length) {
-            setDefaultPunishment(values[buttonIndex]);
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        'Default Punishment Amount',
-        'Select amount',
-        [
-          ...values.map((val) => ({
-            text: `$${val}`,
-            onPress: () => setDefaultPunishment(val),
-          })),
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
-    }
-  }, []);
-
+  // Payment handlers
   const handleChangePayment = useCallback(() => {
     navigation.navigate('PaymentMethod');
   }, [navigation]);
@@ -534,20 +499,10 @@ export default function SettingsScreen() {
             <ThemedText style={styles.sectionLabel}>PUNISHMENT</ThemedText>
             <View style={styles.card}>
               <SettingsRow
-                icon="dollar-sign"
-                iconColor="#22C55E"
-                iconBg={ICON_COLORS.green}
-                label="Default amount"
-                value={`$${defaultPunishment}`}
-                onPress={handleChangePunishment}
-              />
-              <View style={styles.rowDivider} />
-              <SettingsRow
                 icon="credit-card"
                 iconColor="#3B82F6"
                 iconBg={ICON_COLORS.blue}
-                label="Payment method"
-                value={paymentMethod}
+                label="Payment settings"
                 onPress={handleChangePayment}
               />
               <View style={styles.rowDivider} />
