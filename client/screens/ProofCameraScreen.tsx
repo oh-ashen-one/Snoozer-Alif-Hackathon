@@ -14,7 +14,7 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarmById } from '@/utils/storage';
 import { cancelAlarm } from '@/utils/notifications';
 import { saveProofPhoto } from '@/utils/fileSystem';
-import { logWakeUp } from '@/utils/tracking';
+import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
@@ -86,6 +86,8 @@ export default function ProofCameraScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (__DEV__) console.log('ALARM: Alarm dismissed');
 
+    let targetTime = '6:00 AM';
+    
     try {
       if (photoUri && !photoUri.startsWith('mock://')) {
         await saveProofPhoto(photoUri);
@@ -95,6 +97,13 @@ export default function ProofCameraScreen() {
       if (alarm?.notificationId) {
         await cancelAlarm(alarm.notificationId);
       }
+      
+      if (alarm?.time) {
+        const [hours, minutes] = alarm.time.split(':').map(Number);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        targetTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+      }
 
       await logWakeUp(alarmId, new Date(), false);
       if (__DEV__) console.log('[ProofCamera] Logged successful wake up');
@@ -102,10 +111,31 @@ export default function ProofCameraScreen() {
       if (__DEV__) console.log('[ProofCamera] Error during dismiss:', error);
     }
 
+    // Get stats for success screen
+    const streak = await getCurrentStreak();
+    const monthStats = await getMonthStats();
+    const now = new Date();
+    const wakeHours = now.getHours();
+    const wakeMinutes = now.getMinutes();
+    const wakePeriod = wakeHours >= 12 ? 'PM' : 'AM';
+    const wakeDisplayHours = wakeHours % 12 || 12;
+    const wakeTime = `${wakeDisplayHours}:${wakeMinutes.toString().padStart(2, '0')} ${wakePeriod}`;
+    const totalDays = monthStats.wakeUps + monthStats.snoozes;
+    const wakeUpRate = totalDays > 0 ? Math.round((monthStats.wakeUps / totalDays) * 100) : 100;
+
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'Home' }],
+        routes: [{ 
+          name: 'WakeUpSuccess',
+          params: {
+            streak,
+            moneySaved: monthStats.savedMoney,
+            wakeUpRate,
+            wakeTime,
+            targetTime,
+          }
+        }],
       })
     );
   };

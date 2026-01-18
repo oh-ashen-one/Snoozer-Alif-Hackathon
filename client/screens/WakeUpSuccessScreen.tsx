@@ -53,6 +53,8 @@ const CONFETTI_COLORS = [Colors.orange, Colors.green, Colors.text, Colors.red];
 export default function WakeUpSuccessScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<WakeUpSuccessRouteProp>();
+  const { streak = 1, moneySaved = 0, wakeUpRate = 100, wakeTime = '6:00 AM', targetTime = '6:00 AM' } = route.params ?? {};
 
   // Animation states
   const [loaded, setLoaded] = useState(false);
@@ -81,14 +83,14 @@ export default function WakeUpSuccessScreen() {
     })),
   []);
 
-  // Mock stats - in real app, these would come from route params or context
+  // Stats from route params
   const stats: WakeUpSuccessStats = {
-    streak: 13,
-    previousStreak: 12,
-    wakeTime: '6:02 AM',
-    targetTime: '6:00 AM',
-    moneySaved: 26,
-    wakeUpRate: 92,
+    streak,
+    previousStreak: Math.max(0, streak - 1),
+    wakeTime,
+    targetTime,
+    moneySaved,
+    wakeUpRate,
   };
 
   const todaysFact = useMemo(() =>

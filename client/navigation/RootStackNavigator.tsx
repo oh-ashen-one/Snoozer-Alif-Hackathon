@@ -44,7 +44,13 @@ export type RootStackParamList = {
   BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
-  WakeUpSuccess: undefined;
+  WakeUpSuccess: {
+    streak: number;
+    moneySaved: number;
+    wakeUpRate: number;
+    wakeTime: string;
+    targetTime: string;
+  };
   AddAlarm: { isOnboarding: boolean };
   ReferencePhoto: {
     alarmTime: string;
