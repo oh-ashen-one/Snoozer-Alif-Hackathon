@@ -57,11 +57,32 @@ export default function App() {
 
     const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data;
+      const actionId = response.actionIdentifier;
 
       if (data?.alarmId && navigationRef.current) {
         const alarmId = data.alarmId as string;
         const alarmLabel = (data.alarmLabel as string) || 'Alarm';
 
+        // Handle notification action buttons
+        if (actionId === 'WAKE_UP') {
+          // User pressed "I'm Up" - go to proof camera
+          navigationRef.current.navigate('ProofCamera', {
+            alarmId,
+            referencePhotoUri: (data.referencePhotoUri as string) || '',
+          });
+          return;
+        } else if (actionId === 'SNOOZE') {
+          // User pressed Snooze - go to alarm ringing (triggers punishment flow)
+          navigationRef.current.navigate('AlarmRinging', {
+            alarmId,
+            alarmLabel,
+            referencePhotoUri: (data.referencePhotoUri as string) || '',
+            shameVideoUri: (data.shameVideoUri as string) || '',
+          });
+          return;
+        }
+
+        // Default: User tapped the notification body - go to alarm ringing screen
         // Try to trigger CallKit for full-screen UI on iOS
         const callKitTriggered = triggerAlarmWithCallKit(alarmId, alarmLabel);
 
