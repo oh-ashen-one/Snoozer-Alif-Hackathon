@@ -173,26 +173,29 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
   const proofLabel = getProofTypeLabel(alarm.proofActivityType);
 
   // Build punishment text based on actual alarm settings
+  // Check both extraPunishments array AND individual boolean flags for compatibility
   const getPunishmentDisplay = () => {
     const parts: string[] = [];
     const extras = alarm.extraPunishments ?? [];
+    const alarmAny = alarm as any; // Access optional boolean flags
     
-    // Check money punishment
-    if (alarm.punishment && alarm.punishment > 0) {
+    // Check money punishment (check both moneyEnabled flag and punishment amount)
+    if ((alarmAny.moneyEnabled && alarm.punishment && alarm.punishment > 0) || 
+        (!alarmAny.hasOwnProperty('moneyEnabled') && alarm.punishment && alarm.punishment > 0)) {
       parts.push(`-$${alarm.punishment}`);
     }
     
-    // Check other punishments
-    if (extras.includes('shame_video')) {
+    // Check other punishments - check both array AND individual flags
+    if (extras.includes('shame_video') || alarmAny.shameVideoEnabled) {
       parts.push('Video');
     }
-    if (extras.includes('buddy_call')) {
+    if (extras.includes('buddy_call') || alarmAny.buddyNotifyEnabled) {
       parts.push('Buddy alert');
     }
-    if (extras.includes('group_chat')) {
+    if (extras.includes('group_chat') || alarmAny.socialShameEnabled) {
       parts.push('Social');
     }
-    if (extras.includes('donate_enemy')) {
+    if (extras.includes('donate_enemy') || alarmAny.antiCharityEnabled) {
       parts.push('Anti-charity');
     }
     
@@ -203,8 +206,9 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
     return parts.join(' + ');
   };
 
-  // Check if buddy notifications are enabled
-  const hasBuddyEnabled = (alarm.extraPunishments ?? []).includes('buddy_call');
+  // Check if buddy notifications are enabled (check both array and flag)
+  const hasBuddyEnabled = (alarm.extraPunishments ?? []).includes('buddy_call') || 
+                          (alarm as any).buddyNotifyEnabled;
 
   return (
     <View style={styles.nextAlarmCard}>
@@ -312,23 +316,31 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
   const selectedDays = alarm.days ?? [1, 2, 3, 4, 5]; // Use stored days or default to weekdays
   const proofLabel = getProofTypeLabel(alarm.proofActivityType);
 
-  // Build punishment display
+  // Build punishment display - check both extraPunishments array AND boolean flags
   const getPunishmentText = () => {
     const parts: string[] = [];
+    const extras = alarm.extraPunishments ?? [];
+    const alarmAny = alarm as any;
 
     // Add money punishment
-    const money = alarm.punishment ?? 2;
-    if (money > 0) {
+    const money = alarm.punishment ?? 0;
+    if ((alarmAny.moneyEnabled && money > 0) || 
+        (!alarmAny.hasOwnProperty('moneyEnabled') && money > 0)) {
       parts.push(`$${money}`);
     }
 
-    // Add extra punishments
-    const extras = alarm.extraPunishments ?? [];
-    if (extras.includes('shame_video')) {
-      parts.push('Shame video');
+    // Add extra punishments - check both array AND boolean flags
+    if (extras.includes('shame_video') || alarmAny.shameVideoEnabled) {
+      parts.push('Video');
     }
-    if (extras.includes('buddy_call')) {
-      parts.push('Buddy call');
+    if (extras.includes('buddy_call') || alarmAny.buddyNotifyEnabled) {
+      parts.push('Buddy');
+    }
+    if (extras.includes('group_chat') || alarmAny.socialShameEnabled) {
+      parts.push('Social');
+    }
+    if (extras.includes('donate_enemy') || alarmAny.antiCharityEnabled) {
+      parts.push('Anti-charity');
     }
 
     if (parts.length === 0) {
