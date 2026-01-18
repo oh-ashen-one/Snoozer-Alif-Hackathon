@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: Colors.text,
+    letterSpacing: 0.5,
   },
   winBadge: {
     marginLeft: Spacing.xs,

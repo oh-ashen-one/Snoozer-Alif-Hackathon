@@ -264,7 +264,7 @@ export default function StatsScreen() {
               <Text style={{ fontSize: 32 }}>⚡</Text>
             </View>
             <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
-            <ThemedText style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit>{stats.currentStreak} days</ThemedText>
+            <ThemedText style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{stats.currentStreak} days</ThemedText>
             <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
           </View>
         </FadeInView>
@@ -413,6 +413,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '700',
     color: Colors.orange,
+    letterSpacing: 1,
   },
   heroBest: {
     fontSize: 13,

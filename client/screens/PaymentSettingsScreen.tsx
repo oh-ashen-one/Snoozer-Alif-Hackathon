@@ -527,118 +527,27 @@ export default function PaymentSettingsScreen() {
 
         <View style={styles.divider} />
 
-        {/* Test Payment Flow Section */}
+        {/* Test Apple Cash Section */}
         <FadeInView delay={500} direction="up">
           <View style={styles.section}>
             <ThemedText style={styles.sectionLabel}>TEST YOUR SETUP</ThemedText>
             <ThemedText style={styles.sectionSub}>
-              Make sure everything works before your first alarm
+              Make sure Apple Cash is working before your first alarm
             </ThemedText>
 
-            <Pressable style={styles.testButton} onPress={handleTestPaymentFlow}>
+            <Pressable style={styles.testButton} onPress={handleTestPayment}>
               <Text style={{ fontSize: 20 }}>🧪</Text>
               <ThemedText style={styles.testButtonText}>
-                Test Payment Flow
+                Test Apple Cash
               </ThemedText>
             </Pressable>
 
             <ThemedText style={styles.testNote}>
-              This will walk you through the complete snooze punishment experience
-              and open iMessage with a real payment.
+              Opens iMessage with payment ready. Tap Send to complete Apple Cash transfer.
             </ThemedText>
           </View>
         </FadeInView>
       </ScrollView>
-
-      {/* Test Flow Step 1: Are you sure? */}
-      <Modal
-        visible={testFlowStep === 1}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmCard}>
-            <ThemedText style={styles.confirmTitle}>Are you sure?</ThemedText>
-            <ThemedText style={styles.confirmDescription}>
-              You'll lose{' '}
-              <Text style={styles.redText}>${displayAmount}</Text>, your shame
-              video will play, and {buddy?.name || 'your buddy'} gets notified.
-            </ThemedText>
-
-            <View style={styles.confirmButtons}>
-              <Pressable style={styles.cancelButton} onPress={handleTestCancel}>
-                <ThemedText style={styles.cancelButtonText}>Cancel Test</ThemedText>
-              </Pressable>
-              <Pressable style={styles.sureButton} onPress={handleTestContinue}>
-                <ThemedText style={styles.sureButtonText}>I'm sure</ThemedText>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Test Flow Step 2: Type insult */}
-      <Modal
-        visible={testFlowStep === 2}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.inputCard}>
-            <ThemedText style={styles.inputLabel}>
-              Type <Text style={styles.redText}>"{testInsult}"</Text> to confirm
-            </ThemedText>
-
-            <TextInput
-              style={styles.testInput}
-              value={testSnoozeText}
-              onChangeText={setTestSnoozeText}
-              placeholder="Type here..."
-              placeholderTextColor={Colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoFocus
-            />
-
-            <View style={styles.confirmButtons}>
-              <Pressable style={styles.goBackButton} onPress={handleTestBack}>
-                <ThemedText style={styles.goBackButtonText}>Go back</ThemedText>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.confirmTestButton,
-                  testSnoozeText.trim().toLowerCase() === testInsult.toLowerCase() &&
-                    styles.confirmTestButtonActive,
-                ]}
-                onPress={handleTestConfirmInsult}
-                disabled={testSnoozeText.trim().toLowerCase() !== testInsult.toLowerCase()}
-              >
-                <ThemedText
-                  style={[
-                    styles.confirmTestButtonText,
-                    testSnoozeText.trim().toLowerCase() === testInsult.toLowerCase() &&
-                      styles.confirmTestButtonTextActive,
-                  ]}
-                >
-                  Confirm
-                </ThemedText>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Test Flow Step 3: Payment Pressure Screen */}
-      <PaymentPressureScreen
-        visible={testFlowStep === 3}
-        amount={displayAmount}
-        recipientName={buddy?.name || 'Your buddy'}
-        recipientPhone={buddy?.phone || ''}
-        onPaymentSent={handleTestPaymentSent}
-        onShameTriggered={handleTestShameTriggered}
-      />
     </View>
   );
 }
@@ -1028,130 +937,5 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
-  },
-
-  // Modal Overlay
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.lg,
-  },
-
-  // Confirmation Card
-  confirmCard: {
-    width: '100%',
-    backgroundColor: Colors.bgElevated,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-  },
-  confirmTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-  },
-  confirmDescription: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  redText: {
-    color: Colors.red,
-    fontWeight: '600',
-  },
-  confirmButtons: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: Colors.border,
-    paddingVertical: 14,
-    borderRadius: BorderRadius.sm,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.text,
-  },
-  sureButton: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    paddingVertical: 14,
-    borderRadius: BorderRadius.sm,
-    alignItems: 'center',
-  },
-  sureButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.red,
-  },
-
-  // Input Card
-  inputCard: {
-    width: '100%',
-    backgroundColor: Colors.bgElevated,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-  },
-  inputLabel: {
-    fontSize: 15,
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: Spacing.lg,
-    lineHeight: 22,
-  },
-  testInput: {
-    backgroundColor: Colors.border,
-    borderWidth: 1,
-    borderColor: '#3F3A36',
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.lg,
-    fontSize: 16,
-    color: Colors.text,
-    textAlign: 'center',
-  },
-  goBackButton: {
-    flex: 1,
-    backgroundColor: Colors.border,
-    paddingVertical: 14,
-    borderRadius: BorderRadius.sm,
-    alignItems: 'center',
-  },
-  goBackButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.text,
-  },
-  confirmTestButton: {
-    flex: 1,
-    backgroundColor: Colors.border,
-    paddingVertical: 14,
-    borderRadius: BorderRadius.sm,
-    alignItems: 'center',
-  },
-  confirmTestButtonActive: {
-    backgroundColor: Colors.red,
-  },
-  confirmTestButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textMuted,
-  },
-  confirmTestButtonTextActive: {
-    color: '#ffffff',
   },
 });

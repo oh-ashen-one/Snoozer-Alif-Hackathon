@@ -627,7 +627,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: 14,
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   statCardDashed: {
     borderStyle: 'dashed',
@@ -652,6 +652,7 @@ const styles = StyleSheet.create({
   statSubLabel: {
     fontSize: 12,
     color: '#57534E',
+    marginTop: 2,
   },
   addBuddyText: {
     fontSize: 14,
