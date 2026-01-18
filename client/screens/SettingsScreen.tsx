@@ -449,7 +449,7 @@ export default function SettingsScreen() {
                 icon="map-pin"
                 iconColor="#FB923C"
                 iconBg={ICON_COLORS.orange}
-                label="Update proof location"
+                label="Update Proof Activity"
                 onPress={handleUpdateProofLocation}
               />
             </View>
