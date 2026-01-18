@@ -7,6 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
+import * as Linking from "expo-linking";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
@@ -19,6 +20,7 @@ import { isAlarmKitAvailable, addAlarmKitListener } from "@/utils/alarmKit";
 import { getAlarmById } from "@/utils/storage";
 import { ensureDirectories } from "@/utils/fileSystem";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { linkingConfig } from "@/utils/linking";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,7 +39,7 @@ const navTheme = {
 
 export default function App() {
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
-  const notificationResponseListener = useRef<Notifications.EventSubscription>();
+  const notificationResponseListener = useRef<Notifications.EventSubscription | null>(null);
 
   const onNavigationReady = useCallback(() => {
     SplashScreen.hideAsync();
@@ -157,7 +159,7 @@ export default function App() {
           <SafeAreaProvider>
             <GestureHandlerRootView style={styles.root}>
               <KeyboardProvider>
-                <NavigationContainer ref={navigationRef} onReady={onNavigationReady} theme={navTheme}>
+                <NavigationContainer ref={navigationRef} onReady={onNavigationReady} theme={navTheme} linking={linkingConfig}>
                   <RootStackNavigator />
                 </NavigationContainer>
                 <StatusBar style="light" />

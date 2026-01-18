@@ -204,7 +204,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
           <ThemedText style={{ fontSize: 18 }}>⚡</ThemedText>
         </View>
         <ThemedText style={styles.statLabel}>Streak</ThemedText>
-        <ThemedText style={styles.statValueGray}>0</ThemedText>
+        <ThemedText style={styles.statValueGray} numberOfLines={1} adjustsFontSizeToFit>0</ThemedText>
         <ThemedText style={styles.statSubLabel}>days</ThemedText>
       </View>
 
