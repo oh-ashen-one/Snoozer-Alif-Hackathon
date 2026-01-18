@@ -116,13 +116,12 @@ function Toggle({ value, onToggle }: ToggleProps) {
 interface PunishmentCardProps {
   emoji: string;
   title: string;
-  description: string;
   enabled: boolean;
   onToggle: () => void;
   children?: React.ReactNode;
 }
 
-function PunishmentCard({ emoji, title, description, enabled, onToggle, children }: PunishmentCardProps) {
+function PunishmentCard({ emoji, title, enabled, onToggle, children }: PunishmentCardProps) {
   return (
     <View style={styles.punishmentCard}>
       <View style={styles.punishmentHeader}>
@@ -131,7 +130,6 @@ function PunishmentCard({ emoji, title, description, enabled, onToggle, children
         </View>
         <View style={styles.punishmentInfo}>
           <Text style={styles.punishmentTitle}>{title}</Text>
-          <Text style={styles.punishmentDesc}>{description}</Text>
         </View>
         <Toggle value={enabled} onToggle={onToggle} />
       </View>
@@ -514,7 +512,6 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="💵"
               title="Money Stakes"
-              description="Pay your buddy via Apple Cash"
               enabled={moneyEnabled}
               onToggle={() => {
                 hapticForPunishment(getPunishmentLevel(amount, shameVideo));
@@ -554,7 +551,6 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="🎥"
               title="Shame Video"
-              description="Plays embarrassing video at MAX volume"
               enabled={shameVideo}
               onToggle={() => {
                 hapticForPunishment(getPunishmentLevel(amount, !shameVideo));
@@ -571,7 +567,6 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="💬"
               title="Buddy Notification"
-              description="Text your buddy that you failed"
               enabled={buddyNotify}
               onToggle={() => {
                 buttonPress('secondary');
@@ -591,7 +586,6 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="👥"
               title="Social Shame"
-              description="Post to group chat or social media"
               enabled={socialShame}
               onToggle={() => {
                 buttonPress('secondary');
@@ -608,7 +602,6 @@ export default function AddAlarmScreen() {
             <PunishmentCard
               emoji="😈"
               title="Anti-Charity"
-              description="Donate to a cause you hate"
               enabled={antiCharity}
               onToggle={() => {
                 buttonPress('secondary');
