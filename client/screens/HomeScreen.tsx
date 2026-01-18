@@ -325,6 +325,49 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
 
   const stakeText = getStakeText();
 
+  // Get list of enabled punishments for display
+  const getPunishmentParts = (): string[] => {
+    const parts: string[] = [];
+
+    if (alarmAny.shameVideoEnabled || extras.includes('shame_video')) {
+      parts.push('Video');
+    }
+    if (alarmAny.buddyNotifyEnabled || extras.includes('buddy_call')) {
+      parts.push('Buddy');
+    }
+    if (alarmAny.socialShameEnabled || extras.includes('group_chat')) {
+      parts.push('Social');
+    }
+    if (alarmAny.antiCharityEnabled || extras.includes('donate_enemy')) {
+      parts.push('Anti-charity');
+    }
+    if (alarmAny.emailBossEnabled) {
+      parts.push('Email boss');
+    }
+    if (alarmAny.tweetBadEnabled) {
+      parts.push('Tweet');
+    }
+    if (alarmAny.callBuddyEnabled) {
+      parts.push('Call buddy');
+    }
+    if (alarmAny.textWifesDadEnabled) {
+      parts.push("Wife's dad");
+    }
+    if (alarmAny.textExEnabled) {
+      parts.push('Text friend');
+    }
+    if (alarmAny.momEnabled) {
+      parts.push('Call mom');
+    }
+    if (alarmAny.grandmaEnabled) {
+      parts.push('Call grandma');
+    }
+
+    return parts;
+  };
+
+  const punishmentParts = getPunishmentParts();
+
   return (
     <View style={[
       styles.alarmCard,

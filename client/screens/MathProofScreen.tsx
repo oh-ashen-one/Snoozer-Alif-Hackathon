@@ -65,7 +65,7 @@ export default function MathProofScreen() {
   useFocusEffect(
     useCallback(() => {
       setCurrentScreen('MathProof');
-      killAllSounds();
+      // Don't kill sounds here - alarm should keep playing until all problems solved
     }, [])
   );
 
@@ -105,6 +105,9 @@ export default function MathProofScreen() {
       setProblemsSolved(newSolvedCount);
 
       if (newSolvedCount >= PROBLEMS_TO_SOLVE) {
+        // All problems solved - NOW we can kill the alarm
+        killAllSounds();
+        
         await logWakeUp(alarmId, new Date(), false, 0);
         const streak = await getCurrentStreak();
         
