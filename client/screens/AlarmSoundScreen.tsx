@@ -32,6 +32,20 @@ const ALARM_SOUNDS = [
   { id: 'escalator', name: 'The Escalator', description: 'Builds up intensity', file: require('@/assets/sounds/the-escalator.wav') },
   { id: 'ear-shatter', name: 'Ear Shatter', description: 'Piercing wake-up call', file: require('@/assets/sounds/ear-shatter.wav') },
   { id: 'high-pitch', name: 'High Pitch', description: 'Sharp frequency blast', file: require('@/assets/sounds/high-pitch.wav') },
+  { id: 'angry-goose', name: 'Angry Goose', description: 'Honking goose rampage', file: require('@/assets/sounds/angry-goose.wav') },
+  { id: 'air-horn', name: 'Air Horn Blasts', description: 'Stadium-level noise', file: require('@/assets/sounds/air-horn.wav') },
+  { id: 'screaming-goat', name: 'Screaming Goat', description: 'Viral goat screams', file: require('@/assets/sounds/screaming-goat.wav') },
+  { id: 'smoke-detector', name: 'Smoke Detector', description: 'Urgent beeping alert', file: require('@/assets/sounds/smoke-detector.wav') },
+  { id: 'car-alarm', name: 'Car Alarm', description: 'Parking lot nightmare', file: require('@/assets/sounds/car-alarm.wav') },
+  { id: 'baby-crying', name: 'Baby Crying', description: 'Impossible to ignore', file: require('@/assets/sounds/baby-crying.wav') },
+  { id: 'dog-barking', name: 'Dog Barking', description: 'Frantic barking frenzy', file: require('@/assets/sounds/dog-barking.wav') },
+  { id: 'drill-sergeant', name: 'Drill Sergeant', description: 'GET UP MAGGOT!', file: require('@/assets/sounds/drill-sergeant.wav') },
+  { id: 'submarine-alarm', name: 'Submarine Dive', description: 'Emergency dive klaxon', file: require('@/assets/sounds/submarine-alarm.wav') },
+  { id: 'chainsaw', name: 'Chainsaw', description: 'Revving chainsaw terror', file: require('@/assets/sounds/chainsaw.wav') },
+  { id: 'motorcycle', name: 'Loud Motorcycle', description: 'Harley engine roar', file: require('@/assets/sounds/motorcycle.wav') },
+  { id: 'rooster', name: 'Aggressive Rooster', description: 'Non-stop crowing', file: require('@/assets/sounds/rooster.wav') },
+  { id: 'police-siren', name: 'Police Siren', description: 'Cop car chase mode', file: require('@/assets/sounds/police-siren.wav') },
+  { id: 'broken-glass', name: 'Broken Glass', description: 'Shattering crash sounds', file: require('@/assets/sounds/broken-glass.wav') },
 ] as const;
 
 type AlarmSoundId = typeof ALARM_SOUNDS[number]['id'];

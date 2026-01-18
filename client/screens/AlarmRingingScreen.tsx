@@ -49,11 +49,14 @@ import { ThemedText } from '@/components/ThemedText';
 import { CheatWarningModal } from '@/components/CheatWarningModal';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getAlarms, getProofActivity, ProofActivity } from '@/utils/storage';
+import { getAlarms, getProofActivity, ProofActivity, getBuddyInfo, BuddyInfo } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
+import { AppleCashPrompt } from '@/components/AppleCashPrompt';
+
+const CALENDAR_CONNECTED_KEY = '@snoozer/calendar_connected';
 
 // Import local alarm sounds
 const ALARM_SOUND_FILES: Record<string, any> = {
@@ -65,6 +68,20 @@ const ALARM_SOUND_FILES: Record<string, any> = {
   escalator: require('@/assets/sounds/the-escalator.wav'),
   'ear-shatter': require('@/assets/sounds/ear-shatter.wav'),
   'high-pitch': require('@/assets/sounds/high-pitch.wav'),
+  'angry-goose': require('@/assets/sounds/angry-goose.wav'),
+  'air-horn': require('@/assets/sounds/air-horn.wav'),
+  'screaming-goat': require('@/assets/sounds/screaming-goat.wav'),
+  'smoke-detector': require('@/assets/sounds/smoke-detector.wav'),
+  'car-alarm': require('@/assets/sounds/car-alarm.wav'),
+  'baby-crying': require('@/assets/sounds/baby-crying.wav'),
+  'dog-barking': require('@/assets/sounds/dog-barking.wav'),
+  'drill-sergeant': require('@/assets/sounds/drill-sergeant.wav'),
+  'submarine-alarm': require('@/assets/sounds/submarine-alarm.wav'),
+  chainsaw: require('@/assets/sounds/chainsaw.wav'),
+  motorcycle: require('@/assets/sounds/motorcycle.wav'),
+  rooster: require('@/assets/sounds/rooster.wav'),
+  'police-siren': require('@/assets/sounds/police-siren.wav'),
+  'broken-glass': require('@/assets/sounds/broken-glass.wav'),
 };
 
 const ALARM_SOUND_IDS = Object.keys(ALARM_SOUND_FILES);
@@ -101,11 +118,15 @@ export default function AlarmRingingScreen() {
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+  const [buddyInfo, setBuddyInfo] = useState<BuddyInfo | null>(null);
+  const [alarmPunishment, setAlarmPunishment] = useState<number>(5);
+  const [showPaymentPrompt, setShowPaymentPrompt] = useState(params.showPaymentPrompt || false);
 
-  // Mock data for new UI elements - these would come from actual alarm settings
-  const reason = "You said you'd stop being late.";
-  const buddyName = 'Jake';
-  const penaltyAmount = 5;
+  // Use actual buddy info or defaults
+  const reason = alarmData.alarmLabel || "Time to wake up!";
+  const buddyName = buddyInfo?.name || 'Your buddy';
+  const penaltyAmount = alarmPunishment;
 
   const { startAlarm: startEscalatingAlarm, stopAlarm: stopEscalatingAlarm, volumePercent } = useEscalatingVolume(alarmSoundSource);
 
@@ -162,43 +183,68 @@ export default function AlarmRingingScreen() {
 
     getCurrentStreak().then(s => setStreak(s));
     getProofActivity().then(setProofActivity);
-    getCalendarEvents().then(events => {
-      setCalendarEvents(events);
-      if (__DEV__) console.log('[AlarmRinging] Calendar events:', events.length);
+    getBuddyInfo().then(buddy => {
+      if (__DEV__) console.log('[AlarmRinging] Buddy info:', buddy);
+      setBuddyInfo(buddy);
+    });
+    
+    // Check if calendar is connected before fetching events
+    AsyncStorage.getItem(CALENDAR_CONNECTED_KEY).then(connected => {
+      const isConnected = connected === 'true';
+      setIsCalendarConnected(isConnected);
+      if (__DEV__) console.log('[AlarmRinging] Calendar connected:', isConnected);
+      
+      if (isConnected) {
+        getCalendarEvents().then(events => {
+          setCalendarEvents(events);
+          if (__DEV__) console.log('[AlarmRinging] Calendar events:', events.length);
+        });
+      }
     });
   }, []);
 
   useEffect(() => {
     if (__DEV__) console.log('ALARM: Ringing screen mounted');
 
-    const loadFallbackAlarm = async () => {
-      if (!alarmData.alarmId) {
-        try {
-          const alarms = await getAlarms();
-          const enabledAlarm = alarms.find(a => a.enabled);
-          if (enabledAlarm) {
-            setAlarmData({
-              alarmId: enabledAlarm.id,
-              alarmLabel: enabledAlarm.label || 'Alarm',
-              referencePhotoUri: enabledAlarm.referencePhotoUri || '',
-              shameVideoUri: enabledAlarm.shameVideoUri || '',
-            });
-            if (__DEV__) console.log('[AlarmRinging] Loaded fallback alarm:', enabledAlarm.id);
-          } else {
-            if (__DEV__) console.log('[AlarmRinging] No alarms found, navigating home');
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [{ name: 'Home' }],
-              })
-            );
-          }
-        } catch (error) {
-          if (__DEV__) console.error('[AlarmRinging] Error loading fallback alarm:', error);
+    const loadAlarmData = async () => {
+      try {
+        const alarms = await getAlarms();
+        let targetAlarm = alarms.find(a => a.id === alarmData.alarmId);
+        
+        // If no specific alarm, find any enabled alarm
+        if (!targetAlarm && !alarmData.alarmId) {
+          targetAlarm = alarms.find(a => a.enabled);
         }
+        
+        if (targetAlarm) {
+          if (!alarmData.alarmId) {
+            setAlarmData({
+              alarmId: targetAlarm.id,
+              alarmLabel: targetAlarm.label || 'Alarm',
+              referencePhotoUri: targetAlarm.referencePhotoUri || '',
+              shameVideoUri: targetAlarm.shameVideoUri || '',
+            });
+          }
+          // Load punishment from alarm settings
+          if (targetAlarm.punishment) {
+            setAlarmPunishment(targetAlarm.punishment);
+            if (__DEV__) console.log('[AlarmRinging] Punishment amount:', targetAlarm.punishment);
+          }
+          if (__DEV__) console.log('[AlarmRinging] Loaded alarm:', targetAlarm.id);
+        } else if (!alarmData.alarmId) {
+          if (__DEV__) console.log('[AlarmRinging] No alarms found, navigating home');
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            })
+          );
+        }
+      } catch (error) {
+        if (__DEV__) console.error('[AlarmRinging] Error loading alarm:', error);
       }
     };
-    loadFallbackAlarm();
+    loadAlarmData();
   }, [alarmData.alarmId, navigation]);
 
   const stopAlarm = async () => {
@@ -333,6 +379,8 @@ export default function AlarmRingingScreen() {
         shameVideoUri: alarmData.shameVideoUri,
         alarmLabel: alarmData.alarmLabel,
         referencePhotoUri: alarmData.referencePhotoUri,
+        showPaymentAfter: !!buddyInfo?.phone,
+        buddyPhone: buddyInfo?.phone,
       });
     }
   };
@@ -413,14 +461,14 @@ export default function AlarmRingingScreen() {
           </View>
         </View>
 
-        {/* TODAY'S FIRST EVENT */}
-        {firstEvent && (
+        {/* TODAY'S FIRST EVENT - only show if calendar is connected */}
+        {isCalendarConnected && firstEvent ? (
           <View style={styles.eventCard}>
             <Feather name="calendar" size={18} color={Colors.textMuted} />
             <ThemedText style={styles.eventTime}>{formatEventTime(firstEvent.start)}</ThemedText>
             <ThemedText style={styles.eventTitle} numberOfLines={1}>{firstEvent.summary}</ThemedText>
           </View>
-        )}
+        ) : null}
 
         {/* WHY YOU SET THIS ALARM */}
         <View style={styles.reasonCard}>

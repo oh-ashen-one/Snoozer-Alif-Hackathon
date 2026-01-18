@@ -22,6 +22,7 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { scheduleSnoozeAlarm } from '@/utils/notifications';
 import { getAlarmById } from '@/utils/storage';
 import { getShameVideo } from '@/utils/fileSystem';
+import { useIMessage } from '@/hooks/useIMessage';
 
 // Check if we're in dev mode or on web (no video)
 const isDev = __DEV__;
@@ -43,7 +44,16 @@ type RouteProps = RouteProp<RootStackParamList, 'ShamePlayback'>;
 export default function ShamePlaybackScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { alarmId, shameVideoUri: routeVideoUri, alarmLabel, referencePhotoUri } = route.params;
+  const {
+    alarmId,
+    shameVideoUri: routeVideoUri,
+    alarmLabel,
+    referencePhotoUri,
+    showPaymentAfter,
+    buddyPhone,
+  } = route.params;
+
+  const { sendShameMessage } = useIMessage();
 
   const videoRef = useRef<Video>(null);
   const hasScheduledSnooze = useRef(false);
@@ -143,13 +153,30 @@ export default function ShamePlaybackScreen() {
     };
   }, [alarmId, routeVideoUri, alarmLabel, referencePhotoUri, videoUri, navigation, textPulse, borderPulse]);
 
-  const navigateBackToAlarm = () => {
+  const navigateBackToAlarm = async () => {
     if (__DEV__) console.log('ALARM: Shame video ended, returning to alarm');
+
+    // Send shame message to buddy (auto-opens Messages app)
+    if (buddyPhone) {
+      try {
+        await sendShameMessage(
+          { name: 'Buddy', phone: buddyPhone, type: 'buddy' },
+          alarmLabel || 'Your buddy',
+          5 // penalty amount - could be passed as param
+        );
+        if (__DEV__) console.log('[ShamePlayback] Shame message sent');
+      } catch (error) {
+        // Silent fail - don't block user flow
+        if (__DEV__) console.log('[ShamePlayback] Could not send shame message:', error);
+      }
+    }
+
     navigation.navigate('AlarmRinging', {
       alarmId,
       alarmLabel,
       referencePhotoUri,
       shameVideoUri: videoUri,
+      showPaymentPrompt: showPaymentAfter,
     });
   };
 

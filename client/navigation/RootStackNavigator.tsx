@@ -28,6 +28,7 @@ import PaymentMethodScreen from '@/screens/PaymentMethodScreen';
 import SplashLoadingScreen from '@/screens/SplashLoadingScreen';
 import AlarmSoundScreen from '@/screens/AlarmSoundScreen';
 import JoinCodeScreen from '@/screens/JoinCodeScreen';
+import InviteBuddyScreen from '@/screens/InviteBuddyScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
@@ -45,6 +46,9 @@ export type RootStackParamList = {
   WaitingForBuddy: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; isHost: boolean; code: string; buddyName: string };
   BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
   JoinCode: undefined;
+  InviteBuddyiMessage: {
+    returnTo?: string;
+  };
   Help: undefined;
   NotificationSetup: undefined;
   Legal: { type: 'terms' | 'privacy' };
@@ -97,6 +101,7 @@ export type RootStackParamList = {
     alarmLabel: string;
     referencePhotoUri: string;
     shameVideoUri: string;
+    showPaymentPrompt?: boolean;
   };
   ProofCamera: {
     alarmId: string;
@@ -112,6 +117,8 @@ export type RootStackParamList = {
     shameVideoUri: string;
     alarmLabel: string;
     referencePhotoUri: string;
+    showPaymentAfter?: boolean;
+    buddyPhone?: string;
   };
 };
 
@@ -212,6 +219,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="JoinCode"
         component={JoinCodeScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="InviteBuddyiMessage"
+        component={InviteBuddyScreen}
         options={{
           headerShown: false,
         }}

@@ -7,6 +7,8 @@ const KEYS = {
   REFERENCE_PHOTO: '@snoozer/reference_photo',
   SHAME_VIDEO: '@snoozer/shame_video',
   PROOF_ACTIVITY: '@snoozer/proof_activity',
+  BUDDY: '@snoozer/buddy',
+  SHAME_CONTACTS: '@snoozer/shame_contacts',
 };
 
 export interface Alarm {
@@ -127,6 +129,68 @@ export async function saveProofActivity(activity: ProofActivity): Promise<void> 
     await AsyncStorage.setItem(KEYS.PROOF_ACTIVITY, JSON.stringify(activity));
   } catch (error) {
     console.error('Error saving proof activity:', error);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUDDY STORAGE
+// ═══════════════════════════════════════════════════════════════
+
+export interface BuddyInfo {
+  name: string;
+  phone: string;
+  invitedAt: number;
+  hasApp: boolean;
+  joinedAt?: number;
+}
+
+export interface ShameContact {
+  name: string;
+  phone: string;
+  type: 'buddy' | 'escalation' | 'group';
+}
+
+export async function getBuddyInfo(): Promise<BuddyInfo | null> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.BUDDY);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error getting buddy info:', error);
+    return null;
+  }
+}
+
+export async function saveBuddyInfo(buddy: BuddyInfo): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.BUDDY, JSON.stringify(buddy));
+  } catch (error) {
+    console.error('Error saving buddy info:', error);
+  }
+}
+
+export async function clearBuddyInfo(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(KEYS.BUDDY);
+  } catch (error) {
+    console.error('Error clearing buddy info:', error);
+  }
+}
+
+export async function getShameContacts(): Promise<ShameContact[]> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.SHAME_CONTACTS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting shame contacts:', error);
+    return [];
+  }
+}
+
+export async function saveShameContacts(contacts: ShameContact[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.SHAME_CONTACTS, JSON.stringify(contacts));
+  } catch (error) {
+    console.error('Error saving shame contacts:', error);
   }
 }
 
