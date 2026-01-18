@@ -376,7 +376,7 @@ export default function AlarmRingingScreen() {
               activityIcon: 'camera',
               createdAt: targetAlarm.createdAt,
               isStepOnly: targetAlarm.proofActivityType === 'steps',
-              stepGoal: targetAlarm.stepGoal || (targetAlarm.proofActivityType === 'steps' ? 50 : 10),
+              stepGoal: targetAlarm.stepGoal || (targetAlarm.proofActivityType === 'steps' ? 10 : 10),
             };
             setProofActivity(proofFromAlarm);
             if (__DEV__) console.log('[AlarmRinging] Per-alarm proof activity:', targetAlarm.proofActivityType, targetAlarm.activityName);
@@ -522,7 +522,7 @@ export default function AlarmRingingScreen() {
   const handleDismiss = async () => {
     buttonPress('primary');
 
-    const stepGoal = proofActivity?.stepGoal || 50;
+    const stepGoal = proofActivity?.stepGoal || 10;
 
     // Route DIRECTLY to the chosen proof activity type
     switch (proofActivityType) {
