@@ -10,6 +10,7 @@ import RecordShameScreen from '@/screens/RecordShameScreen';
 import OnboardingCompleteScreen from '@/screens/OnboardingCompleteScreen';
 import AlarmRingingScreen from '@/screens/AlarmRingingScreen';
 import ProofCameraScreen from '@/screens/ProofCameraScreen';
+import StepMissionScreen from '@/screens/StepMissionScreen';
 import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
@@ -98,6 +99,11 @@ export type RootStackParamList = {
   ProofCamera: {
     alarmId: string;
     referencePhotoUri: string;
+  };
+  StepMission: {
+    alarmId: string;
+    referencePhotoUri: string;
+    onComplete: 'ProofCamera' | 'Home';
   };
   ShamePlayback: {
     alarmId: string;
@@ -254,6 +260,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="ProofCamera"
         component={ProofCameraScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="StepMission"
+        component={StepMissionScreen}
         options={{
           headerShown: false,
           gestureEnabled: false,

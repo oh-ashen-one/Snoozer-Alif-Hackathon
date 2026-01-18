@@ -175,28 +175,42 @@ export default function RecordShameScreen() {
   const handleUseVideo = async () => {
     if (!videoUri) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    console.log('[RecordShame] Using video, navigating to OnboardingComplete');
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      console.log('[RecordShame] Using video, navigating to OnboardingComplete');
 
-    let savedUri = videoUri;
+      let savedUri = videoUri;
 
-    // Only save if it's a real video
-    if (!videoUri.startsWith('mock://')) {
-      const tempId = Date.now().toString();
-      const filename = generateVideoFilename(tempId);
-      const result = await saveVideo(videoUri, filename);
-      if (result) savedUri = result;
+      // Only save if it's a real video
+      if (!videoUri.startsWith('mock://')) {
+        const tempId = Date.now().toString();
+        const filename = generateVideoFilename(tempId);
+        const result = await saveVideo(videoUri, filename);
+        if (result) savedUri = result;
+      }
+
+      navigation.navigate('OnboardingComplete', {
+        alarmTime,
+        alarmLabel,
+        referencePhotoUri,
+        shameVideoUri: savedUri,
+        punishment,
+        extraPunishments,
+        days,
+      });
+    } catch (error) {
+      console.error('[RecordShame] Error using video:', error);
+      // Continue without saved video - use original URI or empty string
+      navigation.navigate('OnboardingComplete', {
+        alarmTime,
+        alarmLabel,
+        referencePhotoUri,
+        shameVideoUri: videoUri.startsWith('mock://') ? '' : videoUri,
+        punishment,
+        extraPunishments,
+        days,
+      });
     }
-
-    navigation.navigate('OnboardingComplete', {
-      alarmTime,
-      alarmLabel,
-      referencePhotoUri,
-      shameVideoUri: savedUri,
-      punishment,
-      extraPunishments,
-      days,
-    });
   };
 
   const handleSkip = () => {

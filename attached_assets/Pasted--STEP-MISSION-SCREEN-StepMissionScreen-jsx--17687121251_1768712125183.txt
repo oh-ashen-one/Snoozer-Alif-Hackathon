@@ -1,0 +1,244 @@
+/**
+ * STEP MISSION SCREEN
+ * StepMissionScreen.jsx
+ * 
+ * ════════════════════════════════════════════════════════════════
+ * FLOW DIAGRAM
+ * ════════════════════════════════════════════════════════════════
+ * 
+ * ┌─────────────────────────────────────┐
+ * │                                     │
+ * │         🚶 WALK 10 STEPS            │
+ * │                                     │
+ * │        ┌─────────────────┐          │
+ * │        │                 │          │
+ * │        │       3/10      │          │
+ * │        │      steps      │          │
+ * │        │                 │          │
+ * │        └─────────────────┘          │
+ * │                                     │
+ * │     ━━━━━━━━━━━░░░░░░░░░░░░         │
+ * │              30%                    │
+ * │                                     │
+ * │     "Get out of bed. Walk to       │
+ * │      the bathroom. No cheating."    │
+ * │                                     │
+ * └─────────────────────────────────────┘
+ *                  ↓ (10 steps reached)
+ * ┌─────────────────────────────────────┐
+ * │                                     │
+ * │         ✅ MISSION COMPLETE         │
+ * │                                     │
+ * │         "You're moving. Good."      │
+ * │                                     │
+ * │         [Continue]                  │
+ * │                                     │
+ * └─────────────────────────────────────┘
+ *                  ↓
+ *         Next mission or dismiss
+ * 
+ * ════════════════════════════════════════════════════════════════
+ * ANTI-CHEAT
+ * ════════════════════════════════════════════════════════════════
+ * 
+ * - Pedometer uses device motion, hard to fake
+ * - Shaking phone triggers warning
+ * - Steps must be consistent pace (not sudden spikes)
+ * 
+ * ════════════════════════════════════════════════════════════════
+ */
+
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Vibration } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pedometer } from 'expo-sensors';
+
+const STEP_GOAL = 10;
+const SHAKE_THRESHOLD = 5; // Steps in 1 second = probably shaking
+
+export default function StepMissionScreen({ onComplete }) {
+  const [steps, setSteps] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const [lastStepTime, setLastStepTime] = useState(Date.now());
+  const [shakeWarning, setShakeWarning] = useState(false);
+
+  useEffect(() => {
+    let subscription;
+
+    const subscribe = async () => {
+      const isAvailable = await Pedometer.isAvailableAsync();
+      
+      if (!isAvailable) {
+        console.warn('Pedometer not available');
+        return;
+      }
+
+      subscription = Pedometer.watchStepCount((result) => {
+        const now = Date.now();
+        const timeDiff = (now - lastStepTime) / 1000; // seconds
+        const stepDiff = result.steps - steps;
+
+        // Anti-cheat: detect shaking (too many steps too fast)
+        if (stepDiff > SHAKE_THRESHOLD && timeDiff < 1) {
+          setShakeWarning(true);
+          Vibration.vibrate(500);
+          setTimeout(() => setShakeWarning(false), 2000);
+          return; // Don't count these steps
+        }
+
+        setLastStepTime(now);
+        setSteps(result.steps);
+
+        if (result.steps >= STEP_GOAL) {
+          setIsComplete(true);
+          Vibration.vibrate(200);
+        }
+      });
+    };
+
+    subscribe();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
+
+  const progress = Math.min(steps / STEP_GOAL, 1);
+
+  if (isComplete) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.successIcon}>✅</Text>
+          <Text style={styles.title}>Mission Complete</Text>
+          <Text style={styles.subtitle}>You're moving. Good.</Text>
+          
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.primaryButton} onPress={onComplete}>
+              <Text style={styles.primaryButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.missionIcon}>🚶</Text>
+        <Text style={styles.title}>Walk 10 Steps</Text>
+        
+        <View style={styles.stepCircle}>
+          <Text style={styles.stepCount}>{steps}</Text>
+          <Text style={styles.stepLabel}>/ {STEP_GOAL} steps</Text>
+        </View>
+
+        <View style={styles.progressBarBg}>
+          <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+        </View>
+
+        {shakeWarning ? (
+          <Text style={styles.warningText}>🚫 Nice try. Walk, don't shake.</Text>
+        ) : (
+          <Text style={styles.subtitle}>Get out of bed. Walk to the bathroom. No cheating.</Text>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+import { TouchableOpacity } from 'react-native';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0C0A09',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  missionIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  successIcon: {
+    fontSize: 80,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FAFAF9',
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#78716C',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 24,
+  },
+  stepCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: '#1C1917',
+    borderWidth: 4,
+    borderColor: '#FB923C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  stepCount: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#FB923C',
+  },
+  stepLabel: {
+    fontSize: 14,
+    color: '#78716C',
+  },
+  progressBarBg: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#292524',
+    borderRadius: 4,
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FB923C',
+    borderRadius: 4,
+  },
+  warningText: {
+    fontSize: 15,
+    color: '#EF4444',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#FB923C',
+    paddingVertical: 18,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#0C0A09',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

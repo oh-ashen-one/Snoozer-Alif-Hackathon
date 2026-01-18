@@ -106,4 +106,28 @@ export async function clearAllData(): Promise<void> {
   }
 }
 
+export interface ProofActivity {
+  activity: string;
+  activityIcon: string;
+  createdAt: number;
+}
+
+export async function getProofActivity(): Promise<ProofActivity | null> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.PROOF_ACTIVITY);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error getting proof activity:', error);
+    return null;
+  }
+}
+
+export async function saveProofActivity(activity: ProofActivity): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.PROOF_ACTIVITY, JSON.stringify(activity));
+  } catch (error) {
+    console.error('Error saving proof activity:', error);
+  }
+}
+
 export { KEYS };
