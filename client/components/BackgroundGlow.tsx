@@ -3,9 +3,10 @@ import { View, StyleSheet, Animated, Easing } from 'react-native';
 
 interface BackgroundGlowProps {
   color?: 'orange' | 'green' | 'red' | 'purple';
+  animated?: boolean;
 }
 
-export function BackgroundGlow({ color = 'orange' }: BackgroundGlowProps) {
+export function BackgroundGlow({ color = 'orange', animated = true }: BackgroundGlowProps) {
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const ring1Anim = useRef(new Animated.Value(0)).current;
   const ring2Anim = useRef(new Animated.Value(0)).current;
