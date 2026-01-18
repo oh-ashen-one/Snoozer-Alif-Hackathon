@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator, Alert, Platform, Text } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import { Swipeable, RectButton } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -319,7 +319,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
 
   return (
     <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-      <Pressable style={styles.alarmCard} onPress={onEdit}>
+      <RectButton style={styles.alarmCard} onPress={onEdit}>
         <View style={styles.alarmContent}>
           <View style={styles.alarmTopRow}>
             <View style={styles.alarmLeft}>
@@ -345,7 +345,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
           </View>
           <DayPills selectedDays={selectedDays} />
         </View>
-      </Pressable>
+      </RectButton>
     </Swipeable>
   );
 }
