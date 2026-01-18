@@ -12,6 +12,7 @@ const KEYS = {
   DEFAULT_PUNISHMENTS: '@snoozer/default_punishments',
   DEFAULT_AMOUNT: '@snoozer/default_amount',
   USER_NAME: '@snoozer/user_name',
+  PUNISHMENT_CONFIG: '@snoozer/punishment_config',
 };
 
 export async function getUserName(): Promise<string> {

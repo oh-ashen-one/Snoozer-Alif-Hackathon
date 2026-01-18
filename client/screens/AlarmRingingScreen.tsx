@@ -370,7 +370,14 @@ export default function AlarmRingingScreen() {
             ? targetAlarm.buddyNotifyEnabled
             : (targetAlarm.extraPunishments || []).includes('buddy_call');
           setBuddyNotifyEnabled(hasBuddyNotify);
-          
+
+          // Load additional punishment settings
+          setEmailBossEnabled(targetAlarm.emailBossEnabled ?? false);
+          setTweetBadEnabled(targetAlarm.tweetBadEnabled ?? false);
+          setCallBuddyEnabled(targetAlarm.callBuddyEnabled ?? false);
+          setTextWifesDadEnabled(targetAlarm.textWifesDadEnabled ?? false);
+          setTextExEnabled(targetAlarm.textExEnabled ?? false);
+
           if (__DEV__) console.log('[AlarmRinging] Punishments - money:', hasMoneyPunishment, 'shame:', hasShameVideo, 'buddy:', hasBuddyNotify);
           
           // Load per-alarm proof activity settings
