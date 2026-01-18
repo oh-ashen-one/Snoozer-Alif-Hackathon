@@ -83,39 +83,11 @@ export async function sendBuddyNotification(
   type: BuddyNotificationType,
   data: NotificationData
 ): Promise<string | null> {
-  try {
-    const template = NOTIFICATION_TEMPLATES[type];
-    
-    const title = interpolateTemplate(template.title, data);
-    const body = interpolateTemplate(template.body, data);
-    
-    if (__DEV__) {
-      console.log(`[BuddyNotification] Sending ${type}:`, { title, body });
-    }
-    
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: {
-          type,
-          action: template.action,
-          ...data,
-        },
-        sound: true,
-      },
-      trigger: null,
-    });
-    
-    if (__DEV__) {
-      console.log(`[BuddyNotification] Notification scheduled:`, notificationId);
-    }
-    
-    return notificationId;
-  } catch (error) {
-    console.error('[BuddyNotification] Failed to send notification:', error);
-    return null;
+  // PAUSED: Buddy notifications disabled for now
+  if (__DEV__) {
+    console.log(`[BuddyNotification] PAUSED - would send ${type}:`, data);
   }
+  return null;
 }
 
 export async function scheduleBuddyAlarmReminder(
@@ -123,58 +95,11 @@ export async function scheduleBuddyAlarmReminder(
   alarmTime: string,
   minutesBefore: number = 10
 ): Promise<string | null> {
-  try {
-    const [hours, minutes] = alarmTime.split(':').map(Number);
-    const now = new Date();
-    const alarmDate = new Date();
-    alarmDate.setHours(hours, minutes, 0, 0);
-    
-    if (alarmDate <= now) {
-      alarmDate.setDate(alarmDate.getDate() + 1);
-    }
-    
-    const reminderTime = new Date(alarmDate.getTime() - minutesBefore * 60 * 1000);
-    
-    if (reminderTime <= now) {
-      if (__DEV__) {
-        console.log('[BuddyNotification] Reminder time already passed, skipping');
-      }
-      return null;
-    }
-    
-    const secondsUntilReminder = Math.floor((reminderTime.getTime() - now.getTime()) / 1000);
-    
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    const formattedTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-    
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: `${buddyName} wakes in ${minutesBefore} min`,
-        body: `Their ${formattedTime} alarm is coming up`,
-        data: {
-          type: 'BUDDY_ALARM_SOON',
-          action: 'open_buddy_dashboard',
-          buddy: buddyName,
-          time: formattedTime,
-        },
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: secondsUntilReminder,
-      },
-    });
-    
-    if (__DEV__) {
-      console.log(`[BuddyNotification] Scheduled reminder for ${buddyName} in ${secondsUntilReminder}s`);
-    }
-    
-    return notificationId;
-  } catch (error) {
-    console.error('[BuddyNotification] Failed to schedule reminder:', error);
-    return null;
+  // PAUSED: Buddy notifications disabled for now
+  if (__DEV__) {
+    console.log(`[BuddyNotification] PAUSED - would schedule reminder for ${buddyName} at ${alarmTime}`);
   }
+  return null;
 }
 
 export async function notifyBuddySnoozed(

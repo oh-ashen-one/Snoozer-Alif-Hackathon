@@ -120,13 +120,14 @@ export async function scheduleSnoozeAlarm(alarm: Alarm, snoozeMinutes: number = 
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Wake Up! (Snoozed)',
-        body: alarm.label || 'Time to get up! No more snoozing!',
+        title: 'Still awake? 👀',
+        body: 'Just checking if you went back to sleep. You have 30 seconds to confirm or the alarm goes off!',
         data: { 
           alarmId: alarm.id,
           alarmLabel: alarm.label,
           referencePhotoUri: alarm.referencePhotoUri,
           shameVideoUri: alarm.shameVideoUri,
+          isRecheck: true,
         },
         sound: 'default',
         priority: Notifications.AndroidNotificationPriority.MAX,

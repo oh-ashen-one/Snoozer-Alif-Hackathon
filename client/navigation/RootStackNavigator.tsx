@@ -29,6 +29,7 @@ import LegalScreen from '@/screens/LegalScreen';
 import WakeUpSuccessScreen from '@/screens/WakeUpSuccessScreen';
 import PaymentSettingsScreen from '@/screens/PaymentSettingsScreen';
 import SplashLoadingScreen from '@/screens/SplashLoadingScreen';
+import ShameSentScreen from '@/screens/ShameSentScreen';
 import AlarmSoundScreen from '@/screens/AlarmSoundScreen';
 import JoinCodeScreen from '@/screens/JoinCodeScreen';
 import InviteBuddyScreen from '@/screens/InviteBuddyScreen';
@@ -161,6 +162,12 @@ export type RootStackParamList = {
     referencePhotoUri: string;
     showPaymentAfter?: boolean;
     buddyPhone?: string;
+  };
+  ShameSent: {
+    buddyName: string;
+    amount: number;
+    currentTime: string;
+    previousStreak: number;
   };
 };
 
@@ -369,6 +376,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="ShamePlayback"
         component={ShamePlaybackScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="ShameSent"
+        component={ShameSentScreen}
         options={{
           headerShown: false,
           gestureEnabled: false,
