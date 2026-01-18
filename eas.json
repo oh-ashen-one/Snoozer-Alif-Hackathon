@@ -4,6 +4,11 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "ios": {
+        "postInstall": "npx patch-package"
+      }
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
