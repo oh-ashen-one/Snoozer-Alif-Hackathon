@@ -63,7 +63,7 @@ type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
 
 type SnoozeStep = 0 | 1 | 2;
 
-const SNOOZE_CONFIRMATION = 'I FAIL';
+const SNOOZE_CONFIRMATION = "I'm such a fat chud...";
 const VIBRATION_PATTERN = [500, 500, 500, 500];
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -245,7 +245,7 @@ export default function AlarmRingingScreen() {
   };
 
   const handleSnoozeConfirm = async () => {
-    if (snoozeText.toUpperCase() === SNOOZE_CONFIRMATION) {
+    if (snoozeText.toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase()) {
       if (__DEV__) console.log('ALARM: User chose snooze');
       shameTriggerPattern();
       await stopAlarm();
@@ -428,16 +428,16 @@ export default function AlarmRingingScreen() {
               <Pressable
                 style={[
                   styles.confirmSnoozeButton,
-                  snoozeText.toUpperCase() === SNOOZE_CONFIRMATION && styles.confirmSnoozeButtonActive,
+                  snoozeText.toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonActive,
                 ]}
                 onPress={handleSnoozeConfirm}
-                disabled={snoozeText.toUpperCase() !== SNOOZE_CONFIRMATION}
+                disabled={snoozeText.toLowerCase() !== SNOOZE_CONFIRMATION.toLowerCase()}
                 testID="button-confirm-snooze"
               >
                 <ThemedText
                   style={[
                     styles.confirmSnoozeButtonText,
-                    snoozeText.toUpperCase() === SNOOZE_CONFIRMATION && styles.confirmSnoozeButtonTextActive,
+                    snoozeText.toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonTextActive,
                   ]}
                 >
                   Confirm
