@@ -166,7 +166,7 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
 
       {/* Time row */}
       <View style={styles.timeRow}>
-        <ThemedText style={styles.nextAlarmTime} numberOfLines={1} adjustsFontSizeToFit>{time}</ThemedText>
+        <ThemedText style={styles.nextAlarmTime}>{time}</ThemedText>
         <ThemedText style={styles.nextAlarmPeriod}>{period}</ThemedText>
       </View>
 
@@ -281,7 +281,7 @@ function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void
         <View style={styles.alarmTopRow}>
           <View style={styles.alarmLeft}>
             <View style={styles.alarmTimeRow}>
-              <ThemedText style={styles.alarmTime} numberOfLines={1} adjustsFontSizeToFit>{time}</ThemedText>
+              <ThemedText style={styles.alarmTime}>{time}</ThemedText>
               <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
             </View>
             <View style={styles.alarmSubtitleRow}>
@@ -542,7 +542,6 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '700',
     color: '#FAFAF9',
-    flexShrink: 1,
   },
   nextAlarmPeriod: {
     fontSize: 20,
@@ -694,7 +693,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '600',
     color: '#FAFAF9',
-    flexShrink: 1,
   },
   alarmPeriod: {
     fontSize: 14,
