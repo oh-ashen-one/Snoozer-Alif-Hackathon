@@ -14,6 +14,9 @@ import Animated, {
 import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import { FadeInView } from '@/components/FadeInView';
+import { AnimatedCard } from '@/components/AnimatedCard';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm } from '@/utils/storage';
@@ -419,21 +422,38 @@ export default function HomeScreen() {
 
         {nextAlarm ? (
           <>
-            <NextAlarmCard alarm={nextAlarm} />
-            <StatsRow onBuddyPress={handleBuddyPress} />
-            <SectionHeader onAddPress={handleAddAlarm} />
-            {alarms.map(alarm => (
-              <AlarmListItem
+            <FadeInView delay={100} direction="up">
+              <NextAlarmCard alarm={nextAlarm} />
+            </FadeInView>
+            <FadeInView delay={200} direction="up">
+              <StatsRow onBuddyPress={handleBuddyPress} />
+            </FadeInView>
+            <FadeInView delay={300} direction="up">
+              <SectionHeader onAddPress={handleAddAlarm} />
+            </FadeInView>
+            {alarms.map((alarm, index) => (
+              <AnimatedCard
                 key={alarm.id}
-                alarm={alarm}
-                onToggle={handleToggleAlarm(alarm.id)}
-              />
+                index={index}
+                delayBase={350}
+                delayIncrement={60}
+                direction="up"
+              >
+                <AlarmListItem
+                  alarm={alarm}
+                  onToggle={handleToggleAlarm(alarm.id)}
+                />
+              </AnimatedCard>
             ))}
           </>
         ) : (
           <>
-            <StatsRow onBuddyPress={handleBuddyPress} />
-            <EmptyState onAddAlarm={handleAddAlarm} />
+            <FadeInView delay={100} direction="up">
+              <StatsRow onBuddyPress={handleBuddyPress} />
+            </FadeInView>
+            <FadeInView delay={200} direction="up">
+              <EmptyState onAddAlarm={handleAddAlarm} />
+            </FadeInView>
           </>
         )}
       </ScrollView>
