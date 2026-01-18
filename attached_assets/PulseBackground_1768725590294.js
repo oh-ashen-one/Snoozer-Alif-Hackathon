@@ -1,74 +1,52 @@
+/**
+ * PULSE BACKGROUND COMPONENT
+ * 
+ * Drop this behind any screen for ambient glow effect
+ * 
+ * Usage:
+ * <View style={{ flex: 1 }}>
+ *   <PulseBackground />
+ *   {/* Your content here */}
+ * </View>
+ */
+
 import React from 'react';
-import { View, StyleSheet, Animated, Easing } from 'react-native';
-import type { DimensionValue } from 'react-native';
+import { View, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 
-type GlowColor = 'orange' | 'green' | 'red' | 'purple';
+const { width, height } = Dimensions.get('window');
 
-interface BackgroundGlowProps {
-  color?: GlowColor;
-  intensity?: number;
-  animated?: boolean;
-}
-
-interface PulseOrbProps {
-  top: DimensionValue;
-  left: DimensionValue;
-  size: number;
-  color: string;
-  blur: number;
-  duration: number;
-  delay?: number;
-  ringCount?: number;
-}
-
-interface PulseRingProps {
-  top: DimensionValue;
-  left: DimensionValue;
-  color: string;
-  duration: number;
-  delay: number;
-}
-
-const COLOR_VALUES = {
-  orange: '251, 146, 60',
-  green: '34, 197, 94',
-  red: '239, 68, 68',
-  purple: '124, 58, 237',
-};
-
-export function BackgroundGlow({ color = 'orange' }: BackgroundGlowProps) {
-  const primaryColor = COLOR_VALUES[color];
-  const accentColor1 = color === 'red' ? COLOR_VALUES.orange : COLOR_VALUES.red;
-  const accentColor2 = color === 'green' ? COLOR_VALUES.orange : COLOR_VALUES.green;
-
+export default function PulseBackground() {
   return (
     <View style={styles.container} pointerEvents="none">
+      {/* MAIN CENTER - Orange pulse */}
       <PulseOrb
         top="40%"
         left="50%"
         size={550}
-        color={primaryColor}
+        color="251, 146, 60"
         blur={90}
         duration={5000}
         ringCount={4}
       />
 
+      {/* UPPER RIGHT - Red accent */}
       <PulseOrb
         top="8%"
         left="75%"
         size={400}
-        color={accentColor1}
+        color="239, 68, 68"
         blur={70}
         duration={6000}
         delay={500}
         ringCount={2}
       />
 
+      {/* LOWER LEFT - Green accent */}
       <PulseOrb
         top="80%"
         left="20%"
         size={380}
-        color={accentColor2}
+        color="34, 197, 94"
         blur={65}
         duration={5500}
         delay={1200}
@@ -78,7 +56,11 @@ export function BackgroundGlow({ color = 'orange' }: BackgroundGlowProps) {
   );
 }
 
-function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount = 2 }: PulseOrbProps) {
+// ════════════════════════════════════════════════════════════════
+// PULSE ORB COMPONENT
+// ════════════════════════════════════════════════════════════════
+
+function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount = 2 }) {
   const pulseAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -115,6 +97,7 @@ function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount
 
   return (
     <>
+      {/* Main glow */}
       <Animated.View
         style={[
           styles.orb,
@@ -140,6 +123,7 @@ function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount
         />
       </Animated.View>
 
+      {/* Rings */}
       {Array.from({ length: ringCount }).map((_, i) => (
         <PulseRing
           key={i}
@@ -154,7 +138,11 @@ function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount
   );
 }
 
-function PulseRing({ top, left, color, duration, delay }: PulseRingProps) {
+// ════════════════════════════════════════════════════════════════
+// PULSE RING COMPONENT
+// ════════════════════════════════════════════════════════════════
+
+function PulseRing({ top, left, color, duration, delay }) {
   const ringAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -196,6 +184,10 @@ function PulseRing({ top, left, color, duration, delay }: PulseRingProps) {
     />
   );
 }
+
+// ════════════════════════════════════════════════════════════════
+// STYLES
+// ════════════════════════════════════════════════════════════════
 
 const styles = StyleSheet.create({
   container: {
