@@ -19,6 +19,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -209,6 +210,7 @@ export default function BuddyScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="orange" />
       {/* Header */}
       <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>Buddy</ThemedText>

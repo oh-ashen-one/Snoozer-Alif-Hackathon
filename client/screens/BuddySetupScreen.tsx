@@ -20,6 +20,7 @@ import * as Clipboard from 'expo-clipboard';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BuddySetup'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -753,6 +754,7 @@ export default function BuddySetupScreen({ route }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="orange" />
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} testID="button-back">
           <Feather name="arrow-left" size={24} color={Colors.text} />

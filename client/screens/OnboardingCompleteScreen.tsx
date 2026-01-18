@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { setOnboardingComplete } from '@/utils/storage';
@@ -83,6 +84,7 @@ export default function OnboardingCompleteScreen() {
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom + 48 }]}>
+      <BackgroundGlow color="green" />
       <View style={styles.content}>
         {/* Success icon */}
         <Animated.View style={[styles.successIcon, iconStyle]}>

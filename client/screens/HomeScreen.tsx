@@ -13,6 +13,7 @@ import Animated, {
 
 import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm } from '@/utils/storage';
@@ -370,6 +371,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <BackgroundGlow color="orange" />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[

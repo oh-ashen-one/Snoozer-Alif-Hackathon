@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Invite'>;
 type NavigationProp = NativeStackScreenProps<RootStackParamList, 'Invite'>['navigation'];
@@ -168,6 +169,7 @@ export default function InviteScreen({ route }: Props) {
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <BackgroundGlow color="orange" />
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} testID="button-back">
           <Feather name="arrow-left" size={24} color={Colors.text} />

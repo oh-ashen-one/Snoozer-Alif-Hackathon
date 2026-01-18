@@ -24,6 +24,7 @@ import Animated, {
 
 import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { clearAllData, setOnboardingComplete } from '@/utils/storage';
@@ -399,7 +400,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+      <BackgroundGlow color="orange" />
       <View style={styles.header}>
         <View style={styles.headerSpacer} />
         <ThemedText style={styles.headerTitle}>Settings</ThemedText>

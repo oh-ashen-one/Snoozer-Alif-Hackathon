@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import {
@@ -232,6 +233,7 @@ export default function StatsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="orange" />
       <View style={styles.header}>
         <View style={styles.headerSpacer} />
         <ThemedText style={styles.headerTitle}>Stats</ThemedText>

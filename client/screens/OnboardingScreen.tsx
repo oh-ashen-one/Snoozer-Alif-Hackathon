@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -337,6 +338,7 @@ export default function OnboardingScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <BackgroundGlow color="orange" />
       <View style={styles.topRow}>
         {step > 0 ? (
           <Pressable style={styles.backButton} onPress={handleBack}>

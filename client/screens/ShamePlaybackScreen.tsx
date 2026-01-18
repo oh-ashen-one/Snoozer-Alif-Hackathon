@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { scheduleSnoozeAlarm } from '@/utils/notifications';
@@ -194,6 +195,7 @@ export default function ShamePlaybackScreen() {
 
   return (
     <View style={styles.container}>
+      <BackgroundGlow color="red" />
       {/* Pulsing red border - all 4 sides */}
       <Animated.View style={[styles.borderTop, borderPulseStyle]} />
       <Animated.View style={[styles.borderBottom, borderPulseStyle]} />

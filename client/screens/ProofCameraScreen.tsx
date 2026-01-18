@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarmById } from '@/utils/storage';
@@ -118,6 +119,7 @@ export default function ProofCameraScreen() {
   if (photoUri) {
     return (
       <View style={styles.container}>
+        <BackgroundGlow color="green" />
         {photoUri.startsWith('mock://') ? (
           <View style={styles.mockPreview}>
             <Text style={styles.mockPreviewEmoji}>✅</Text>
@@ -143,6 +145,7 @@ export default function ProofCameraScreen() {
   // Camera state
   return (
     <View style={styles.container}>
+      <BackgroundGlow color="green" />
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
         <Pressable style={styles.backButton} onPress={handleBack}>

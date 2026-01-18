@@ -14,6 +14,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AddAlarm'>;
@@ -170,6 +171,7 @@ export default function AddAlarmScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="orange" />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}

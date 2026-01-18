@@ -20,6 +20,7 @@ import Animated, {
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -100,6 +101,7 @@ export default function HelpScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="orange" />
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>

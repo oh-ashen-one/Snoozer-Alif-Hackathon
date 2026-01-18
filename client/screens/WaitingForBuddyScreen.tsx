@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WaitingForBuddy'>;
 type NavigationProp = NativeStackScreenProps<RootStackParamList, 'WaitingForBuddy'>['navigation'];
@@ -130,6 +131,7 @@ export default function WaitingForBuddyScreen({ route }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="orange" />
       <View style={styles.header}>
         <View style={styles.headerSpacer} />
         <ThemedText style={styles.headerTitle}>Waiting</ThemedText>

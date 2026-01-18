@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HeaderButton } from '@react-navigation/elements';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+import IntroScreen from '@/screens/IntroScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import AddAlarmScreen from '@/screens/AddAlarmScreen';
 import ReferencePhotoScreen from '@/screens/ReferencePhotoScreen';
@@ -25,10 +25,10 @@ import HelpScreen from '@/screens/HelpScreen';
 import LegalScreen from '@/screens/LegalScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
-import { getOnboardingComplete } from '@/utils/storage';
 import { Colors } from '@/constants/theme';
 
 export type RootStackParamList = {
+  Intro: undefined;
   Onboarding: undefined;
   Home: undefined;
   Settings: undefined;
@@ -80,37 +80,23 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
-  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
-
-  useEffect(() => {
-    const checkOnboarding = async () => {
-      try {
-        const hasOnboarded = await getOnboardingComplete();
-        setInitialRoute(hasOnboarded ? 'Home' : 'Onboarding');
-      } catch (error) {
-        // If there's an error, default to onboarding
-        setInitialRoute('Onboarding');
-      }
-    };
-    checkOnboarding();
-  }, []);
-
-  if (!initialRoute) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={Colors.orange} />
-      </View>
-    );
-  }
 
   return (
     <Stack.Navigator
-      initialRouteName={initialRoute}
+      initialRouteName="Intro"
       screenOptions={{
         ...screenOptions,
         contentStyle: { backgroundColor: Colors.bg },
       }}
     >
+      <Stack.Screen
+        name="Intro"
+        component={IntroScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
       <Stack.Screen
         name="Onboarding"
         component={OnboardingScreen}
@@ -243,12 +229,3 @@ export default function RootStackNavigator() {
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.bg,
-  },
-});

@@ -1,0 +1,68 @@
+Read CLAUDE.md. Add consistent background glow effect to EVERY screen in the app.
+
+1. Create a reusable BackgroundGlow component in /src/components/BackgroundGlow.jsx:
+
+const BackgroundGlow = ({ color = 'orange', intensity = 0.08 }) => {
+  const colors = {
+    orange: `rgba(251, 146, 60, ${intensity})`,
+    green: `rgba(34, 197, 94, ${intensity})`,
+    red: `rgba(239, 68, 68, ${intensity})`,
+    purple: `rgba(124, 58, 237, ${intensity})`,
+  };
+  
+  return (
+    <View style={{
+      position: 'absolute',
+      top: '-20%',
+      left: '-20%',
+      width: '140%',
+      height: '70%',
+      pointerEvents: 'none',
+    }}>
+      <View style={{
+        width: '100%',
+        height: '100%',
+        backgroundColor: colors[color],
+        borderRadius: 9999,
+        opacity: 1,
+        transform: [{ scaleX: 1.5 }],
+      }} />
+    </View>
+  );
+};
+
+2. For React Native, use LinearGradient from expo-linear-gradient as alternative:
+   - Install if needed: expo install expo-linear-gradient
+   - Or use a simple View with backgroundColor and large borderRadius
+
+3. Apply to EVERY screen with these color rules:
+   - HomeScreen → orange
+   - AddAlarmScreen → orange
+   - OnboardingScreen → orange
+   - StatsScreen → orange
+   - BuddyScreen → orange
+   - SettingsScreen → orange
+   - ReferencePhotoScreen → green
+   - ProofCameraScreen → green
+   - OnboardingCompleteScreen → green
+   - AlarmRingingScreen → red (breathing animation)
+   - ShamePlaybackScreen → red
+   - RecordShameScreen → red
+
+4. Every screen must have:
+   - SafeAreaView with backgroundColor: '#0C0A09'
+   - BackgroundGlow as FIRST child (position absolute, behind content)
+   - Rest of content on top
+
+5. For AlarmRingingScreen, add breathing animation to the glow:
+   - Use Animated.Value for intensity
+   - Animate between 0.06 and 0.14 opacity
+   - Duration 2000ms, infinite loop
+
+Example screen structure:
+<SafeAreaView style={{ flex: 1, backgroundColor: '#0C0A09' }}>
+  <BackgroundGlow color="orange" />
+  {/* Rest of screen content */}
+</SafeAreaView>
+
+Apply to all screens. Verify #0C0A09 base color everywhere. No pure black.

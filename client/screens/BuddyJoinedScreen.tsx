@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BuddyJoined'>;
 type NavigationProp = NativeStackScreenProps<RootStackParamList, 'BuddyJoined'>['navigation'];
@@ -181,6 +182,7 @@ export default function BuddyJoinedScreen({ route }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="orange" />
       <Confetti />
 
       <View style={styles.content}>

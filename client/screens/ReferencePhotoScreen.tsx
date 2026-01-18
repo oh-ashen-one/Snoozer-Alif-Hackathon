@@ -15,8 +15,9 @@ import Animated, {
 
 import { ThemedText } from '@/components/ThemedText';
 import { ProgressDots } from '@/components/ProgressDots';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
-import { savePhoto, generatePhotoFilename } from '@/utils/fileSystem';
+import { saveReferencePhoto } from '@/utils/fileSystem';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -116,9 +117,7 @@ export default function ReferencePhotoScreen() {
 
     // Only save if it's a real photo
     if (!photoUri.startsWith('mock://')) {
-      const tempId = Date.now().toString();
-      const filename = generatePhotoFilename(tempId);
-      const result = await savePhoto(photoUri, filename);
+      const result = await saveReferencePhoto(photoUri);
       if (result) savedUri = result;
     }
 
@@ -134,6 +133,7 @@ export default function ReferencePhotoScreen() {
   if (phase === 'intro') {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackgroundGlow color="green" />
         <Animated.View style={[styles.introContent, fadeStyle]}>
           {/* Progress dots */}
           <View style={styles.progressContainer}>
@@ -196,6 +196,7 @@ export default function ReferencePhotoScreen() {
   if (phase === 'camera') {
     return (
       <View style={styles.container}>
+        <BackgroundGlow color="green" />
         {/* Top bar */}
         <View style={[styles.cameraTopBar, { paddingTop: insets.top + 16 }]}>
           <Pressable style={styles.backButton} onPress={() => setPhase('intro')}>
@@ -256,6 +257,7 @@ export default function ReferencePhotoScreen() {
   if (phase === 'confirm') {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackgroundGlow color="green" />
         <View style={styles.confirmContent}>
           {/* Success icon */}
           <View style={styles.successIcon}>

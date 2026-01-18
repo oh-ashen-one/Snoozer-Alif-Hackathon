@@ -16,6 +16,7 @@ import Animated, {
 
 import { ThemedText } from '@/components/ThemedText';
 import { ProgressDots } from '@/components/ProgressDots';
+import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { saveVideo, generateVideoFilename } from '@/utils/fileSystem';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
@@ -210,6 +211,7 @@ export default function RecordShameScreen() {
   if (videoUri) {
     return (
       <View style={styles.container}>
+        <BackgroundGlow color="red" />
         {videoUri.startsWith('mock://') ? (
           <MockVideoPreview />
         ) : (
@@ -239,6 +241,7 @@ export default function RecordShameScreen() {
   // Recording state
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BackgroundGlow color="red" />
       <View style={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
