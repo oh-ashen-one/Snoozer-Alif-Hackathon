@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { View, ScrollView, StyleSheet, Pressable, ActivityIndicator, Alert, Platform, Text } from 'react-native';
-import { Swipeable, RectButton } from 'react-native-gesture-handler';
+import { Swipeable, RectButton, TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -306,7 +306,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
   };
 
   const renderRightActions = () => (
-    <Pressable
+    <GHTouchableOpacity
       style={styles.deleteAction}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -314,7 +314,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
       }}
     >
       <ThemedText style={{ fontSize: 24 }}>🗑️</ThemedText>
-    </Pressable>
+    </GHTouchableOpacity>
   );
 
   return (

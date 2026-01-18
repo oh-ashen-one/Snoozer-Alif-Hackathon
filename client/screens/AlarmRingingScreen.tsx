@@ -57,6 +57,7 @@ import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import ShameMessageSent from '@/components/ShameMessageSent';
 import { notifyBuddySnoozed } from '@/utils/buddyNotifications';
 import { setCurrentScreen } from '@/utils/soundKiller';
+import { useIMessage } from '@/hooks/useIMessage';
 
 const CALENDAR_CONNECTED_KEY = '@snoozer/calendar_connected';
 
