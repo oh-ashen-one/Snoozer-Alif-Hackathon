@@ -21,6 +21,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import Header from '@/components/Header';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -108,12 +109,8 @@ export default function HelpScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Text style={{ fontSize: 24 }}>←</Text>
-        </Pressable>
-        <ThemedText style={styles.headerTitle}>FAQs</ThemedText>
-        <View style={styles.headerSpacer} />
+      <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md }}>
+        <Header type="nav" title="FAQs" onBackPress={handleBack} />
       </View>
 
       <ScrollView

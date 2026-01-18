@@ -31,6 +31,7 @@ import * as Linking from 'expo-linking';
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
+import Header from '@/components/Header';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import {
@@ -683,12 +684,8 @@ export default function PunishmentsScreen() {
       <BackgroundGlow color="orange" />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
-        <Pressable style={styles.backButton} onPress={handleBack}>
-          <Text style={{ fontSize: 24 }}>←</Text>
-        </Pressable>
-        <ThemedText style={styles.headerTitle}>Punishments</ThemedText>
-        <View style={styles.headerSpacer} />
+      <View style={{ paddingTop: insets.top + Spacing.sm, paddingHorizontal: Spacing.lg }}>
+        <Header type="nav" title="Punishments" onBackPress={handleBack} />
       </View>
 
       <ScrollView

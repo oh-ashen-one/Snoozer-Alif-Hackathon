@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
+import Header from '@/components/Header';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type LegalRouteProp = RouteProp<RootStackParamList, 'Legal'>;
@@ -115,14 +116,8 @@ export default function LegalScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-          <Text style={{ fontSize: 24, color: Colors.text }}>←</Text>
-        </Pressable>
-        <ThemedText style={styles.headerTitle}>
-          {isTerms ? 'Terms of Service' : 'Privacy Policy'}
-        </ThemedText>
-        <View style={styles.headerSpacer} />
+      <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md }}>
+        <Header type="nav" title={isTerms ? 'Terms of Service' : 'Privacy Policy'} onBackPress={handleBack} />
       </View>
 
       <ScrollView

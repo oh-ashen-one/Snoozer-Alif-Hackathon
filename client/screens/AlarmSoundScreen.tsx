@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
+import Header from '@/components/Header';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
@@ -142,12 +143,8 @@ export default function AlarmSoundScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
       
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={handleBack}>
-          <Text style={{ fontSize: 24 }}>←</Text>
-        </Pressable>
-        <ThemedText style={styles.headerTitle}>Alarm Sound</ThemedText>
-        <View style={styles.headerSpacer} />
+      <View style={{ paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md }}>
+        <Header type="nav" title="Alarm Sound" onBackPress={handleBack} />
       </View>
 
       <ScrollView

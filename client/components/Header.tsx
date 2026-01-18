@@ -9,7 +9,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 
 interface HeaderProps {
-  type?: 'home' | 'stats' | 'buddy' | 'settings' | 'edit';
+  type?: 'home' | 'stats' | 'buddy' | 'settings' | 'nav' | 'edit';
   greeting?: string;
   name?: string;
   title?: string;
@@ -63,6 +63,13 @@ export default function Header({
       return (
         <NavHeader
           title="Settings"
+          onBackPress={onBackPress}
+        />
+      );
+    case 'nav':
+      return (
+        <NavHeader
+          title={title || 'Back'}
           onBackPress={onBackPress}
         />
       );
