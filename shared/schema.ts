@@ -99,7 +99,40 @@ export const insertShameVideoSchema = createInsertSchema(shameVideos).pick({
   mimeType: true,
 });
 
+// Punishment contacts - store contact info for punishment recipients
+export const punishmentContacts = pgTable("punishment_contacts", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  deviceId: varchar("device_id").notNull().unique(),
+  bossEmail: text("boss_email"),
+  bossName: text("boss_name"),
+  exPhoneNumber: text("ex_phone_number"),
+  exName: text("ex_name"),
+  wifesDadPhoneNumber: text("wifes_dad_phone_number"),
+  wifesDadName: text("wifes_dad_name"),
+  momPhoneNumber: text("mom_phone_number"),
+  momName: text("mom_name"),
+  grandmaPhoneNumber: text("grandma_phone_number"),
+  grandmaName: text("grandma_name"),
+  buddyPhoneNumber: text("buddy_phone_number"),
+  buddyName: text("buddy_name"),
+  groupChatId: text("group_chat_id"),
+  twitterHandle: text("twitter_handle"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("punishment_contacts_device_idx").on(table.deviceId),
+]);
+
+export const insertPunishmentContactsSchema = createInsertSchema(punishmentContacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type AppUser = typeof appUsers.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type BuddyPair = typeof buddyPairs.$inferSelect;
 export type ShameVideo = typeof shameVideos.$inferSelect;
+export type PunishmentContacts = typeof punishmentContacts.$inferSelect;

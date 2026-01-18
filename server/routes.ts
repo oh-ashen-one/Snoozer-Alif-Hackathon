@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "node:http";
 import { db } from "./db";
-import { appUsers, invites, buddyPairs, shameVideos } from "../shared/schema";
+import { appUsers, invites, buddyPairs, shameVideos, punishmentContacts } from "../shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 import OpenAI from "openai";
 
@@ -583,6 +583,123 @@ Respond with ONLY this JSON format:
     } catch (error) {
       console.error("[ShameVideo] Error checking video:", error);
       res.status(500).json({ error: "Failed to check video" });
+    }
+  });
+
+  // ============ PUNISHMENT CONTACTS API ============
+
+  // POST /api/punishment-contacts - Save/update punishment contacts
+  app.post("/api/punishment-contacts", async (req: Request, res: Response) => {
+    try {
+      const {
+        deviceId,
+        bossEmail,
+        bossName,
+        exPhoneNumber,
+        exName,
+        wifesDadPhoneNumber,
+        wifesDadName,
+        momPhoneNumber,
+        momName,
+        grandmaPhoneNumber,
+        grandmaName,
+        buddyPhoneNumber,
+        buddyName,
+        groupChatId,
+        twitterHandle,
+      } = req.body;
+
+      if (!deviceId) {
+        res.status(400).json({ error: "Device ID required" });
+        return;
+      }
+
+      await db
+        .insert(punishmentContacts)
+        .values({
+          deviceId,
+          bossEmail,
+          bossName,
+          exPhoneNumber,
+          exName,
+          wifesDadPhoneNumber,
+          wifesDadName,
+          momPhoneNumber,
+          momName,
+          grandmaPhoneNumber,
+          grandmaName,
+          buddyPhoneNumber,
+          buddyName,
+          groupChatId,
+          twitterHandle,
+        })
+        .onConflictDoUpdate({
+          target: punishmentContacts.deviceId,
+          set: {
+            bossEmail,
+            bossName,
+            exPhoneNumber,
+            exName,
+            wifesDadPhoneNumber,
+            wifesDadName,
+            momPhoneNumber,
+            momName,
+            grandmaPhoneNumber,
+            grandmaName,
+            buddyPhoneNumber,
+            buddyName,
+            groupChatId,
+            twitterHandle,
+            updatedAt: new Date(),
+          },
+        });
+
+      console.log(`[PunishmentContacts] Saved contacts for device: ${deviceId.substring(0, 8)}...`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[PunishmentContacts] Error saving contacts:", error);
+      res.status(500).json({ error: "Failed to save contacts" });
+    }
+  });
+
+  // GET /api/punishment-contacts/:deviceId - Get punishment contacts for device
+  app.get("/api/punishment-contacts/:deviceId", async (req: Request, res: Response) => {
+    try {
+      const deviceId = req.params.deviceId as string;
+
+      const [contacts] = await db
+        .select()
+        .from(punishmentContacts)
+        .where(eq(punishmentContacts.deviceId, deviceId))
+        .limit(1);
+
+      if (!contacts) {
+        res.json({ contacts: null });
+        return;
+      }
+
+      res.json({
+        contacts: {
+          bossEmail: contacts.bossEmail,
+          bossName: contacts.bossName,
+          exPhoneNumber: contacts.exPhoneNumber,
+          exName: contacts.exName,
+          wifesDadPhoneNumber: contacts.wifesDadPhoneNumber,
+          wifesDadName: contacts.wifesDadName,
+          momPhoneNumber: contacts.momPhoneNumber,
+          momName: contacts.momName,
+          grandmaPhoneNumber: contacts.grandmaPhoneNumber,
+          grandmaName: contacts.grandmaName,
+          buddyPhoneNumber: contacts.buddyPhoneNumber,
+          buddyName: contacts.buddyName,
+          groupChatId: contacts.groupChatId,
+          twitterHandle: contacts.twitterHandle,
+        },
+        updatedAt: contacts.updatedAt,
+      });
+    } catch (error) {
+      console.error("[PunishmentContacts] Error fetching contacts:", error);
+      res.status(500).json({ error: "Failed to fetch contacts" });
     }
   });
 
