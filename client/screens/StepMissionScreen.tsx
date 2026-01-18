@@ -18,7 +18,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
+import { logWakeUp } from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'StepMission'>;
@@ -113,23 +113,10 @@ export default function StepMissionScreen() {
         referencePhotoUri,
       });
     } else {
-      // Step-only activity complete - log and go to success screen
+      // Step-only activity complete - log and go straight to stats
       try {
         await logWakeUp(alarmId, new Date(), false, 0);
-        const streak = await getCurrentStreak();
-        const monthStats = await getMonthStats();
-        const total = monthStats.wakeUps + monthStats.snoozes;
-        const wakeUpRate = total > 0
-          ? Math.round((monthStats.wakeUps / total) * 100)
-          : 100;
-
-        navigation.navigate('WakeUpSuccess', {
-          streak,
-          moneySaved: monthStats.savedMoney,
-          wakeUpRate,
-          wakeTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-          targetTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-        });
+        navigation.navigate('Stats');
       } catch (error) {
         console.error('[StepMission] Error logging wake up:', error);
         navigation.navigate('Home' as any);
@@ -188,7 +175,6 @@ export default function StepMissionScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <BackgroundGlow color="orange" animated={false} />
       <View style={styles.content}>
         <View style={styles.missionIcon}>
           <Text style={{ fontSize: 48 }}>🧭</Text>
