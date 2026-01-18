@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
@@ -17,7 +16,6 @@ import {
   getMonthStats,
   getWeekData,
   getWakeUpHistory,
-  seedMockData,
   type MonthStats,
   type DayStatus as TrackingDayStatus,
   type WakeLogEntry,
@@ -230,12 +228,6 @@ export default function StatsScreen() {
     }, [loadStats])
   );
 
-  const handleSeedMockData = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await seedMockData();
-    await loadStats();
-  }, [loadStats]);
-
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer, { paddingTop: insets.top }]}>
@@ -322,6 +314,7 @@ export default function StatsScreen() {
         ) : (
           <View style={styles.emptyWeek}>
             <ThemedText style={styles.emptyText}>No data yet</ThemedText>
+            <ThemedText style={styles.emptySubtext}>Your week will fill in as alarms go off</ThemedText>
           </View>
         )}
 
@@ -336,9 +329,7 @@ export default function StatsScreen() {
           <View style={styles.emptyActivity}>
             <Text style={{ fontSize: 32 }}>📥</Text>
             <ThemedText style={styles.emptyText}>No activity yet</ThemedText>
-            <Pressable style={styles.seedButton} onPress={handleSeedMockData}>
-              <ThemedText style={styles.seedButtonText}>Load sample data</ThemedText>
-            </Pressable>
+            <ThemedText style={styles.emptySubtext}>Stats will appear as you use your alarms</ThemedText>
           </View>
         )}
       </ScrollView>
@@ -622,6 +613,7 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 16,
   },
   emptyActivity: {
     backgroundColor: Colors.bgElevated,
@@ -636,16 +628,10 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
   },
-  seedButton: {
-    backgroundColor: 'rgba(251, 146, 60, 0.15)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 8,
-  },
-  seedButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FB923C',
+  emptySubtext: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
