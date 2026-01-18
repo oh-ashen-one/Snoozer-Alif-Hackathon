@@ -110,12 +110,20 @@ export default function App() {
   useEffect(() => {
     if (Platform.OS === 'web') return;
 
+    let backgroundTimer: NodeJS.Timeout | null = null;
+
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'background' || nextAppState === 'inactive') {
-        // App going to background - show reminder
-        sendKeepOpenReminder();
+        // Delay notification to avoid triggering on brief transitions (sign-in, share sheets, etc.)
+        backgroundTimer = setTimeout(() => {
+          sendKeepOpenReminder();
+        }, 5000); // 5 second delay
       } else if (nextAppState === 'active') {
-        // App returning to foreground - cancel reminder
+        // App returning to foreground - cancel pending reminder and dismiss any shown
+        if (backgroundTimer) {
+          clearTimeout(backgroundTimer);
+          backgroundTimer = null;
+        }
         cancelKeepOpenReminder();
       }
     };
@@ -124,6 +132,9 @@ export default function App() {
 
     return () => {
       subscription.remove();
+      if (backgroundTimer) {
+        clearTimeout(backgroundTimer);
+      }
     };
   }, []);
 
