@@ -337,7 +337,9 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
               </View>
             </View>
             <View style={styles.alarmRight}>
-              <Toggle value={alarm.enabled} onValueChange={onToggle} />
+              <GHTouchableOpacity onPress={onToggle} activeOpacity={1}>
+                <Toggle value={alarm.enabled} onValueChange={onToggle} />
+              </GHTouchableOpacity>
               <Pressable style={styles.testButton} onPress={onTest}>
                 <ThemedText style={styles.testButtonText}>Test</ThemedText>
               </Pressable>

@@ -691,6 +691,130 @@ export default function AlarmRingingScreen() {
   // Get first calendar event for today
   const firstEvent = calendarEvents.length > 0 ? calendarEvents[0] : null;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PAY-ONLY MODE UI
+  // Shown when ONLY money punishment is enabled (no shame video, no buddy notify)
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (isPayOnlyMode) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Red pulsing background glow */}
+        <View style={styles.payOnlyGlowContainer}>
+          <Animated.View style={[styles.payOnlyOrb, timeAnimatedStyle]} />
+          <Animated.View style={[styles.payOnlyRing, { opacity: 0.3 }]} />
+          <Animated.View style={[styles.payOnlyRing, { opacity: 0.2, transform: [{ scale: 1.5 }] }]} />
+          <Animated.View style={[styles.payOnlyRing, { opacity: 0.1, transform: [{ scale: 2 }] }]} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.payOnlyScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header: ALARM RINGING with pulsing dots */}
+          <View style={styles.payOnlyHeader}>
+            <Animated.View style={[styles.payOnlyDot, timeAnimatedStyle]} />
+            <ThemedText style={styles.payOnlyHeaderText}>ALARM RINGING</ThemedText>
+            <Animated.View style={[styles.payOnlyDot, timeAnimatedStyle]} />
+          </View>
+
+          {/* Volume indicator */}
+          <View style={styles.payOnlyVolumeSection}>
+            <Text style={{ fontSize: 20 }}>{'\u{1F50A}'}</Text>
+            <View style={styles.payOnlyVolumeBarBg}>
+              <Animated.View
+                style={[
+                  styles.payOnlyVolumeBarFill,
+                  { width: `${volumePercent}%` },
+                ]}
+              />
+            </View>
+            <ThemedText style={styles.payOnlyVolumeText}>{Math.round(volumePercent)}%</ThemedText>
+          </View>
+
+          {/* PAY TO STOP card */}
+          <View style={styles.payOnlyCard}>
+            <View style={styles.payOnlyCardHeader}>
+              <ThemedText style={styles.payOnlyCardLabel}>PAY TO STOP</ThemedText>
+            </View>
+
+            <View style={styles.payOnlyAmountRow}>
+              <ThemedText style={styles.payOnlyDollarSign}>$</ThemedText>
+              <ThemedText style={styles.payOnlyAmount}>{penaltyAmount}</ThemedText>
+            </View>
+
+            <View style={styles.payOnlyRecipient}>
+              <ThemedText style={styles.payOnlyToText}>goes to</ThemedText>
+              <ThemedText style={styles.payOnlyBuddyName}>{buddyName}</ThemedText>
+            </View>
+
+            <View style={styles.payOnlyBadge}>
+              <Text style={{ fontSize: 16 }}>{'\uF8FF'}</Text>
+              <ThemedText style={styles.payOnlyBadgeText}>Apple Cash</ThemedText>
+            </View>
+          </View>
+
+          {/* What happens checklist */}
+          <View style={styles.payOnlyChecklist}>
+            <View style={styles.payOnlyCheckRow}>
+              <View style={styles.payOnlyCheckIcon}>
+                <ThemedText style={styles.payOnlyCheckMark}>{'\u2713'}</ThemedText>
+              </View>
+              <ThemedText style={styles.payOnlyCheckText}>Alarm stops immediately</ThemedText>
+            </View>
+            <View style={styles.payOnlyCheckRow}>
+              <View style={styles.payOnlyCheckIcon}>
+                <ThemedText style={styles.payOnlyCheckMark}>{'\u2713'}</ThemedText>
+              </View>
+              <ThemedText style={styles.payOnlyCheckText}>{buddyName} gets ${penaltyAmount}</ThemedText>
+            </View>
+          </View>
+
+          {/* CTA Button */}
+          <Pressable
+            style={styles.payOnlyCTAButton}
+            onPress={handlePayOnlyPayment}
+            testID="button-pay-to-stop"
+          >
+            <Text style={{ fontSize: 22 }}>{'\u{1F4AC}'}</Text>
+            <ThemedText style={styles.payOnlyCTAText}>Open iMessage to Pay</ThemedText>
+          </Pressable>
+
+          {/* Instructions */}
+          <View style={styles.payOnlyInstructions}>
+            <View style={styles.payOnlyStep}>
+              <View style={styles.payOnlyStepNum}>
+                <ThemedText style={styles.payOnlyStepNumText}>1</ThemedText>
+              </View>
+              <ThemedText style={styles.payOnlyStepText}>Tap send in iMessage</ThemedText>
+            </View>
+            <ThemedText style={styles.payOnlyArrow}>{'\u2192'}</ThemedText>
+            <View style={styles.payOnlyStep}>
+              <View style={styles.payOnlyStepNum}>
+                <ThemedText style={styles.payOnlyStepNumText}>2</ThemedText>
+              </View>
+              <ThemedText style={styles.payOnlyStepText}>Tap {'\uF8FF'} Pay</ThemedText>
+            </View>
+          </View>
+
+          {/* Warning */}
+          <ThemedText style={styles.payOnlyWarning}>
+            This is the only way to stop the alarm
+          </ThemedText>
+        </ScrollView>
+
+        <CheatWarningModal
+          visible={cheatModalVisible}
+          cheatType={detectedCheat}
+          onDismiss={() => setCheatModalVisible(false)}
+        />
+      </View>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NORMAL ALARM RINGING UI (with all punishments)
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Background Glow */}
@@ -1465,5 +1589,245 @@ const styles = StyleSheet.create({
   snoozeCost: {
     color: Colors.red,
     fontWeight: '600',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PAY-ONLY MODE STYLES
+  // ═══════════════════════════════════════════════════════════════════════════
+  payOnlyGlowContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+    pointerEvents: 'none',
+  },
+  payOnlyOrb: {
+    position: 'absolute',
+    top: '15%',
+    left: '50%',
+    marginLeft: -250,
+    width: 500,
+    height: 500,
+    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    borderRadius: 250,
+    opacity: 0.5,
+  },
+  payOnlyRing: {
+    position: 'absolute',
+    top: '25%',
+    left: '50%',
+    marginLeft: -75,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 2,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  payOnlyScrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  payOnlyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  payOnlyDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.red,
+  },
+  payOnlyHeaderText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.red,
+    letterSpacing: 2,
+  },
+  payOnlyVolumeSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+    marginBottom: 32,
+    padding: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 12,
+  },
+  payOnlyVolumeBarBg: {
+    flex: 1,
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  payOnlyVolumeBarFill: {
+    height: '100%',
+    backgroundColor: Colors.red,
+    borderRadius: 3,
+  },
+  payOnlyVolumeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.red,
+    minWidth: 45,
+    textAlign: 'right',
+  },
+  payOnlyCard: {
+    width: '100%',
+    backgroundColor: 'rgba(28, 25, 23, 0.9)',
+    borderWidth: 2,
+    borderColor: 'rgba(34, 197, 94, 0.4)',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  payOnlyCardHeader: {
+    marginBottom: 8,
+  },
+  payOnlyCardLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.green,
+    letterSpacing: 2,
+  },
+  payOnlyAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  payOnlyDollarSign: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.green,
+    marginTop: 8,
+  },
+  payOnlyAmount: {
+    fontSize: 72,
+    fontWeight: '800',
+    color: Colors.green,
+    lineHeight: 80,
+  },
+  payOnlyRecipient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  payOnlyToText: {
+    fontSize: 15,
+    color: Colors.textMuted,
+  },
+  payOnlyBuddyName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  payOnlyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 100,
+  },
+  payOnlyBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  payOnlyChecklist: {
+    width: '100%',
+    gap: 10,
+    marginBottom: 24,
+  },
+  payOnlyCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  payOnlyCheckIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  payOnlyCheckMark: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.green,
+  },
+  payOnlyCheckText: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+  },
+  payOnlyCTAButton: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.green,
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  payOnlyCTAText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.bg,
+  },
+  payOnlyInstructions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 20,
+  },
+  payOnlyStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  payOnlyStepNum: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  payOnlyStepNumText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textMuted,
+  },
+  payOnlyStepText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  payOnlyArrow: {
+    fontSize: 14,
+    color: Colors.border,
+  },
+  payOnlyWarning: {
+    fontSize: 13,
+    color: Colors.red,
+    textAlign: 'center',
   },
 });
