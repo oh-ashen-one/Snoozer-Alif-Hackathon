@@ -14,9 +14,10 @@ import { queryClient } from "@/lib/query-client";
 
 import RootStackNavigator, { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { addNotificationResponseListener } from "@/utils/notifications";
+import { addNotificationResponseListener, triggerAlarmWithCallKit } from "@/utils/notifications";
 import { sendKeepOpenReminder, cancelKeepOpenReminder } from "@/utils/reminderNotification";
 import { isAlarmKitAvailable, addAlarmKitListener } from "@/utils/alarmKit";
+import { setupCallKit, addCallKitListeners, isCallKitAvailable } from "@/utils/callKitAlarm";
 import { getAlarmById } from "@/utils/storage";
 import { ensureDirectories } from "@/utils/fileSystem";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -56,14 +57,23 @@ export default function App() {
 
     const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data;
-      
+
       if (data?.alarmId && navigationRef.current) {
-        navigationRef.current.navigate('AlarmRinging', {
-          alarmId: data.alarmId as string,
-          alarmLabel: (data.alarmLabel as string) || 'Alarm',
-          referencePhotoUri: (data.referencePhotoUri as string) || '',
-          shameVideoUri: (data.shameVideoUri as string) || '',
-        });
+        const alarmId = data.alarmId as string;
+        const alarmLabel = (data.alarmLabel as string) || 'Alarm';
+
+        // Try to trigger CallKit for full-screen UI on iOS
+        const callKitTriggered = triggerAlarmWithCallKit(alarmId, alarmLabel);
+
+        // If CallKit not available (Android or fallback), navigate directly
+        if (!callKitTriggered) {
+          navigationRef.current.navigate('AlarmRinging', {
+            alarmId,
+            alarmLabel,
+            referencePhotoUri: (data.referencePhotoUri as string) || '',
+            shameVideoUri: (data.shameVideoUri as string) || '',
+          });
+        }
       }
     };
 
@@ -83,17 +93,27 @@ export default function App() {
     notificationResponseListener.current = addNotificationResponseListener(handleNotificationResponse);
 
     // Listen for notifications received while app is in foreground
-    // This auto-navigates to AlarmRingingScreen when notification arrives
+    // This triggers CallKit for full-screen alarm UI (iOS) or navigates directly (Android/fallback)
     notificationReceivedListener.current = Notifications.addNotificationReceivedListener((notification) => {
       const data = notification.request.content.data;
 
       if (data?.alarmId && navigationRef.current) {
-        navigationRef.current.navigate('AlarmRinging', {
-          alarmId: data.alarmId as string,
-          alarmLabel: (data.alarmLabel as string) || 'Alarm',
-          referencePhotoUri: (data.referencePhotoUri as string) || '',
-          shameVideoUri: (data.shameVideoUri as string) || '',
-        });
+        const alarmId = data.alarmId as string;
+        const alarmLabel = (data.alarmLabel as string) || 'Alarm';
+
+        // Try to trigger CallKit for full-screen UI on iOS
+        const callKitTriggered = triggerAlarmWithCallKit(alarmId, alarmLabel);
+
+        // If CallKit not available (Android or fallback), navigate directly
+        if (!callKitTriggered) {
+          navigationRef.current.navigate('AlarmRinging', {
+            alarmId,
+            alarmLabel,
+            referencePhotoUri: (data.referencePhotoUri as string) || '',
+            shameVideoUri: (data.shameVideoUri as string) || '',
+          });
+        }
+        // If CallKit triggered, the CallKit listener will handle navigation
       }
     });
 
@@ -180,6 +200,52 @@ export default function App() {
       if (unsubscribe) {
         unsubscribe();
       }
+    };
+  }, []);
+
+  // CallKit setup and listeners for full-screen alarm UI
+  useEffect(() => {
+    if (!isCallKitAvailable()) return;
+
+    // Initialize CallKit
+    setupCallKit();
+
+    // Add event listeners for user interaction with CallKit UI
+    const unsubscribe = addCallKitListeners({
+      // User tapped "Accept" on the incoming call UI
+      onAnswer: async (alarmId: string) => {
+        if (!navigationRef.current) return;
+
+        // Get alarm data from storage
+        const alarm = await getAlarmById(alarmId);
+
+        // Navigate to AlarmRinging screen
+        navigationRef.current.navigate('AlarmRinging', {
+          alarmId,
+          alarmLabel: alarm?.label || 'Alarm',
+          referencePhotoUri: alarm?.referencePhotoUri || '',
+          shameVideoUri: alarm?.shameVideoUri || '',
+        });
+      },
+      // User tapped "Decline" on the incoming call UI - treat as snooze/punishment
+      onDecline: async (alarmId: string) => {
+        if (!navigationRef.current) return;
+
+        // Get alarm data from storage
+        const alarm = await getAlarmById(alarmId);
+
+        // Navigate to ShamePlayback (punishment)
+        navigationRef.current.navigate('ShamePlayback', {
+          alarmId,
+          shameVideoUri: alarm?.shameVideoUri || '',
+          alarmLabel: alarm?.label || 'Alarm',
+          referencePhotoUri: alarm?.referencePhotoUri || '',
+        });
+      },
+    });
+
+    return () => {
+      unsubscribe();
     };
   }, []);
 

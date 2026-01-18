@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Alarm } from './storage';
 import { isAlarmKitAvailable, scheduleAlarmKitAlarm, cancelAlarmKitAlarm } from './alarmKit';
+import { isCallKitAvailable, displayAlarmCall } from './callKitAlarm';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -169,4 +170,20 @@ export function addNotificationResponseListener(
 
 export async function getLastNotificationResponse(): Promise<Notifications.NotificationResponse | null> {
   return await Notifications.getLastNotificationResponseAsync();
+}
+
+// Trigger CallKit full-screen alarm UI (iOS only)
+// Returns true if CallKit was triggered, false if fallback is needed
+export function triggerAlarmWithCallKit(alarmId: string, label: string): boolean {
+  if (!isCallKitAvailable()) {
+    return false;
+  }
+
+  const callUUID = displayAlarmCall(alarmId, label);
+  if (callUUID) {
+    if (__DEV__) console.log('[Notifications] Triggered CallKit alarm:', alarmId);
+    return true;
+  }
+
+  return false;
 }

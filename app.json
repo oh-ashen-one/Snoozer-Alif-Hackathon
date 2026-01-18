@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.snoozer.app",
       "infoPlist": {
         "NSAlarmKitUsageDescription": "Snoozer needs to schedule alarms that will ring even when your phone is on silent or Focus mode, so you never oversleep.",
-        "UIBackgroundModes": ["audio", "fetch", "processing"]
+        "UIBackgroundModes": ["audio", "fetch", "processing", "voip"]
       }
     },
     "android": {
@@ -60,6 +60,13 @@
         "expo-contacts",
         {
           "contactsPermission": "Allow Snoozer to access your contacts to share accountability with friends."
+        }
+      ],
+      [
+        "react-native-callkeep",
+        {
+          "alertTitle": "Wake Up Alarm",
+          "alertDescription": "Snoozer needs to display full-screen alarms"
         }
       ]
     ],

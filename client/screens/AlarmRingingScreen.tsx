@@ -1038,6 +1038,75 @@ export default function AlarmRingingScreen() {
               <View style={styles.snoozeLine} />
             </View>
 
+            {/* Punishment List */}
+            <View style={styles.punishmentList}>
+              {textWifesDadEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F474}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Text wife's dad</ThemedText>
+                </View>
+              )}
+              {textExEnabled && exPhoneNumber && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F494}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Text ex "i miss u"</ThemedText>
+                </View>
+              )}
+              {emailBossEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F4E7}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Email your boss</ThemedText>
+                </View>
+              )}
+              {shameVideoEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F3AC}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Shame video plays</ThemedText>
+                </View>
+              )}
+              {moneyEnabled && penaltyAmount > 0 && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F4B8}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Pay ${penaltyAmount}</ThemedText>
+                </View>
+              )}
+              {callBuddyEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F4DE}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Call buddy</ThemedText>
+                </View>
+              )}
+              {momEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F469}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Call mom</ThemedText>
+                </View>
+              )}
+              {grandmaEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F475}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Call grandma</ThemedText>
+                </View>
+              )}
+              {buddyNotifyEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F4F1}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Notify {buddyName}</ThemedText>
+                </View>
+              )}
+              {socialShameEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F4AC}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Group chat shamed</ThemedText>
+                </View>
+              )}
+              {antiCharityEnabled && (
+                <View style={styles.punishmentItem}>
+                  <Text style={styles.punishmentEmoji}>{'\u{1F5F3}'}</Text>
+                  <ThemedText style={styles.punishmentItemText}>Donate to enemy</ThemedText>
+                </View>
+              )}
+            </View>
           </>
         ) : (
           <View style={styles.noPunishmentCard}>
@@ -1437,6 +1506,28 @@ const styles = StyleSheet.create({
   notifyText: {
     fontSize: 12,
     color: Colors.red,
+  },
+
+  // PUNISHMENT LIST
+  punishmentList: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    marginBottom: 16,
+  },
+  punishmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  punishmentEmoji: {
+    fontSize: 20,
+  },
+  punishmentItemText: {
+    fontSize: 15,
+    color: Colors.text,
+    fontWeight: '500',
   },
 
   // NO PUNISHMENT CARD
