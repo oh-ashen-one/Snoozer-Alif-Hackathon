@@ -22,6 +22,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { saveReferencePhoto } from '@/utils/fileSystem';
 import { KEYS } from '@/utils/storage';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { useAlarms } from '@/hooks/useAlarms';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofSetup'>;
@@ -60,6 +61,7 @@ export default function ProofSetupScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { alarmTime, alarmLabel, isOnboarding, punishment, extraPunishments, days } = route.params;
+  const { alarms, updateAlarm } = useAlarms();
 
   const [step, setStep] = useState<Step>('activity');
   const [activity, setActivity] = useState('');
@@ -129,35 +131,51 @@ export default function ProofSetupScreen() {
   const handleSave = async () => {
     if (!photoUri) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    console.log('[ProofSetup] Saving activity and photo');
-
-    let savedUri = photoUri;
-
-    if (!photoUri.startsWith('mock://')) {
-      const result = await saveReferencePhoto(photoUri);
-      if (result) savedUri = result;
-    }
-
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      console.log('[ProofSetup] Saving activity and photo');
+
+      let savedUri = photoUri;
+
+      if (!photoUri.startsWith('mock://')) {
+        const result = await saveReferencePhoto(photoUri);
+        if (result) savedUri = result;
+      }
+
+      // Save activity to AsyncStorage
       await AsyncStorage.setItem(KEYS.PROOF_ACTIVITY, JSON.stringify({
         activity: activity.trim(),
         activityIcon,
         createdAt: Date.now(),
       }));
-    } catch (error) {
-      console.log('[ProofSetup] Failed to save activity:', error);
-    }
 
-    navigation.navigate('RecordShame', {
-      alarmTime,
-      alarmLabel,
-      referencePhotoUri: savedUri,
-      isOnboarding,
-      punishment,
-      extraPunishments,
-      days,
-    });
+      // If coming from settings, update alarm and go back to settings
+      if (isOnboarding === false) {
+        console.log('[ProofSetup] Updating proof activity from settings');
+        const firstAlarm = alarms[0];
+        if (firstAlarm) {
+          await updateAlarm(firstAlarm.id, { referencePhotoUri: savedUri });
+        }
+        navigation.navigate('Settings');
+        return;
+      }
+
+      // Onboarding flow - continue to shame video
+      navigation.navigate('RecordShame', {
+        alarmTime,
+        alarmLabel,
+        referencePhotoUri: savedUri,
+        isOnboarding,
+        punishment,
+        extraPunishments,
+        days,
+      });
+    } catch (error) {
+      console.error('[ProofSetup] Error saving:', error);
+      if (isOnboarding === false) {
+        navigation.navigate('Settings');
+      }
+    }
   };
 
   if (step === 'activity') {

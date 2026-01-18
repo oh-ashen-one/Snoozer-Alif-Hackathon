@@ -213,7 +213,7 @@ export default function SettingsScreen() {
   }, [navigation]);
 
   const handleUpdateProofLocation = useCallback(() => {
-    navigation.navigate('ReferencePhoto', {
+    navigation.navigate('ProofSetup', {
       alarmTime: '',
       alarmLabel: '',
       isOnboarding: false,
