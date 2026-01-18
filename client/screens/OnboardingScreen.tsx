@@ -5,9 +5,6 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -187,7 +184,6 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const [step, setStep] = useState(0);
-  const [name, setName] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
 

@@ -1,199 +1,113 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
-import type { DimensionValue } from 'react-native';
-
-type GlowColor = 'orange' | 'green' | 'red' | 'purple';
 
 interface BackgroundGlowProps {
-  color?: GlowColor;
-  intensity?: number;
-  animated?: boolean;
+  color?: 'orange' | 'green' | 'red' | 'purple';
 }
-
-interface PulseOrbProps {
-  top: DimensionValue;
-  left: DimensionValue;
-  size: number;
-  color: string;
-  blur: number;
-  duration: number;
-  delay?: number;
-  ringCount?: number;
-}
-
-interface PulseRingProps {
-  top: DimensionValue;
-  left: DimensionValue;
-  color: string;
-  duration: number;
-  delay: number;
-}
-
-const COLOR_VALUES = {
-  orange: '251, 146, 60',
-  green: '34, 197, 94',
-  red: '239, 68, 68',
-  purple: '124, 58, 237',
-};
 
 export function BackgroundGlow({ color = 'orange' }: BackgroundGlowProps) {
-  const primaryColor = COLOR_VALUES[color];
-  const accentColor1 = color === 'red' ? COLOR_VALUES.orange : COLOR_VALUES.red;
-  const accentColor2 = color === 'green' ? COLOR_VALUES.orange : COLOR_VALUES.green;
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const ring1Anim = useRef(new Animated.Value(0)).current;
+  const ring2Anim = useRef(new Animated.Value(0)).current;
+  const ring3Anim = useRef(new Animated.Value(0)).current;
+  const ring4Anim = useRef(new Animated.Value(0)).current;
 
-  return (
-    <View style={styles.container} pointerEvents="none">
-      <PulseOrb
-        top="40%"
-        left="50%"
-        size={550}
-        color={primaryColor}
-        blur={90}
-        duration={5000}
-        ringCount={4}
-      />
+  const colors = {
+    orange: { bg: 'rgba(251, 146, 60, 0.5)', shadow: '#FB923C', ring: 'rgba(251, 146, 60, 0.3)' },
+    green: { bg: 'rgba(34, 197, 94, 0.5)', shadow: '#22C55E', ring: 'rgba(34, 197, 94, 0.3)' },
+    red: { bg: 'rgba(239, 68, 68, 0.5)', shadow: '#EF4444', ring: 'rgba(239, 68, 68, 0.3)' },
+    purple: { bg: 'rgba(124, 58, 237, 0.5)', shadow: '#7C3AED', ring: 'rgba(124, 58, 237, 0.3)' },
+  };
 
-      <PulseOrb
-        top="8%"
-        left="75%"
-        size={400}
-        color={accentColor1}
-        blur={70}
-        duration={6000}
-        delay={500}
-        ringCount={2}
-      />
+  const activeColor = colors[color];
 
-      <PulseOrb
-        top="80%"
-        left="20%"
-        size={380}
-        color={accentColor2}
-        blur={65}
-        duration={5500}
-        delay={1200}
-        ringCount={2}
-      />
-    </View>
-  );
-}
-
-function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount = 2 }: PulseOrbProps) {
-  const pulseAnim = React.useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    const animation = Animated.loop(
+  useEffect(() => {
+    Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: duration / 2,
+          duration: 2500,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
-          delay,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0,
-          duration: duration / 2,
+          duration: 2500,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ])
-    );
-    animation.start();
-    return () => animation.stop();
+    ).start();
+
+    const startRing = (anim: Animated.Value, delay: number) => {
+      setTimeout(() => {
+        Animated.loop(
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 5000,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          })
+        ).start();
+      }, delay);
+    };
+
+    startRing(ring1Anim, 0);
+    startRing(ring2Anim, 1250);
+    startRing(ring3Anim, 2500);
+    startRing(ring4Anim, 3750);
   }, []);
 
-  const scale = pulseAnim.interpolate({
+  const pulseScale = pulseAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0.85, 1.15],
   });
 
-  const opacity = pulseAnim.interpolate({
+  const pulseOpacity = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.15, 0.3],
+    outputRange: [0.4, 0.75],
+  });
+
+  const getRingStyle = (anim: Animated.Value) => ({
+    transform: [
+      { translateX: -90 },
+      { translateY: -90 },
+      {
+        scale: anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.3, 2.5],
+        }),
+      },
+    ],
+    opacity: anim.interpolate({
+      inputRange: [0, 0.7, 1],
+      outputRange: [0.5, 0.15, 0],
+    }),
   });
 
   return (
-    <>
+    <View style={styles.container} pointerEvents="none">
       <Animated.View
         style={[
           styles.orb,
           {
-            top,
-            left,
-            width: size,
-            height: size,
-            transform: [{ translateX: -size / 2 }, { translateY: -size / 2 }, { scale }],
-            opacity,
+            backgroundColor: activeColor.bg,
+            shadowColor: activeColor.shadow,
+            transform: [
+              { translateX: -250 },
+              { translateY: -250 },
+              { scale: pulseScale },
+            ],
+            opacity: pulseOpacity,
           },
         ]}
-      >
-        <View
-          style={[
-            styles.orbInner,
-            {
-              backgroundColor: `rgba(${color}, 0.25)`,
-              shadowColor: `rgb(${color})`,
-              shadowRadius: blur,
-            },
-          ]}
-        />
-      </Animated.View>
+      />
 
-      {Array.from({ length: ringCount }).map((_, i) => (
-        <PulseRing
-          key={i}
-          top={top}
-          left={left}
-          color={color}
-          duration={duration}
-          delay={delay + i * (duration / ringCount / 1.5)}
-        />
-      ))}
-    </>
-  );
-}
-
-function PulseRing({ top, left, color, duration, delay }: PulseRingProps) {
-  const ringAnim = React.useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    const animation = Animated.loop(
-      Animated.timing(ringAnim, {
-        toValue: 1,
-        duration,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-        delay,
-      })
-    );
-    animation.start();
-    return () => animation.stop();
-  }, []);
-
-  const scale = ringAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 2.5],
-  });
-
-  const opacity = ringAnim.interpolate({
-    inputRange: [0, 0.7, 1],
-    outputRange: [0.7, 0.4, 0],
-  });
-
-  return (
-    <Animated.View
-      style={[
-        styles.ring,
-        {
-          top,
-          left,
-          borderColor: `rgba(${color}, 0.5)`,
-          transform: [{ translateX: -100 }, { translateY: -100 }, { scale }],
-          opacity,
-        },
-      ]}
-    />
+      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring1Anim)]} />
+      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring2Anim)]} />
+      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring3Anim)]} />
+      <Animated.View style={[styles.ring, { borderColor: activeColor.ring }, getRingStyle(ring4Anim)]} />
+    </View>
   );
 }
 
@@ -204,19 +118,23 @@ const styles = StyleSheet.create({
   },
   orb: {
     position: 'absolute',
-    borderRadius: 9999,
-  },
-  orbInner: {
-    flex: 1,
-    borderRadius: 9999,
+    top: '12%',
+    left: '50%',
+    width: 500,
+    height: 500,
+    borderRadius: 250,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.8,
+    shadowRadius: 80,
   },
   ring: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 3,
+    top: '12%',
+    left: '50%',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 2,
+    backgroundColor: 'transparent',
   },
 });
