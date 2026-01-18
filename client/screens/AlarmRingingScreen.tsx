@@ -650,9 +650,9 @@ export default function AlarmRingingScreen() {
     setSnoozeStep(1);
   };
 
-  // Execute snooze directly (skipping text entry step)
+  // Execute snooze directly - go straight to punishment execution
   const executeSnooze = async () => {
-    if (__DEV__) console.log('ALARM: User chose snooze - showing payment prompt');
+    if (__DEV__) console.log('ALARM: User chose snooze - going directly to punishment');
     shameTriggerPattern();
 
     try {
@@ -667,7 +667,8 @@ export default function AlarmRingingScreen() {
       if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
     }
 
-    setShowPaymentPrompt(true);
+    // Go directly to punishment execution (skip PaymentPressureScreen)
+    await handleShameDismiss();
   };
 
   const handleAreYouSure = async () => {

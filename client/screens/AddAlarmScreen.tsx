@@ -27,10 +27,11 @@ import {
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { useAlarms } from '@/hooks/useAlarms';
-import { getAlarmById, getDefaultPunishments, getPunishmentConfig, PunishmentConfig } from '@/utils/storage';
+import { getAlarmById, getDefaultPunishments, getPunishmentConfig, savePunishmentConfig, PunishmentConfig } from '@/utils/storage';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import Header from '@/components/Header';
+import { PunishmentList, PUNISHMENT_OPTIONS } from '@/components/PunishmentList';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AddAlarm'>;
@@ -114,40 +115,6 @@ function Toggle({ value, onToggle }: ToggleProps) {
   );
 }
 
-interface PunishmentCardProps {
-  emoji: string;
-  title: string;
-  enabled: boolean;
-  onToggle: () => void;
-  children?: React.ReactNode;
-  comingSoon?: boolean;
-}
-
-function PunishmentCard({ emoji, title, enabled, onToggle, children, comingSoon }: PunishmentCardProps) {
-  return (
-    <View style={[styles.punishmentCard, comingSoon && styles.punishmentCardDisabled]}>
-      <View style={styles.punishmentHeader}>
-        <View style={[styles.punishmentIconContainer, comingSoon && { opacity: 0.5 }]}>
-          <Text style={{ fontSize: 20 }}>{emoji}</Text>
-        </View>
-        <View style={styles.punishmentInfo}>
-          <Text style={[styles.punishmentTitle, comingSoon && { color: Colors.textMuted }]}>{title}</Text>
-        </View>
-        {comingSoon ? (
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonText}>Coming Soon</Text>
-          </View>
-        ) : (
-          <Toggle value={enabled} onToggle={onToggle} />
-        )}
-      </View>
-      {!comingSoon && enabled && children ? (
-        <View style={styles.punishmentExpanded}>{children}</View>
-      ) : null}
-    </View>
-  );
-}
-
 export default function AddAlarmScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
@@ -173,25 +140,16 @@ export default function AddAlarmScreen() {
 
   const [moneyEnabled, setMoneyEnabled] = useState(false);
   const [amount, setAmount] = useState(5);
-  const [shameVideo, setShameVideo] = useState(false);
-  const [buddyNotify, setBuddyNotify] = useState(false);
-  const [socialShame, setSocialShame] = useState(false);
-  const [antiCharity, setAntiCharity] = useState(false);
-  const [emailBoss, setEmailBoss] = useState(false);
-  const [tweetBad, setTweetBad] = useState(false);
-  const [callBuddy, setCallBuddy] = useState(false);
-  const [textWifesDad, setTextWifesDad] = useState(false);
-  const [textEx, setTextEx] = useState(false);
 
   const [escalatingVolume, setEscalatingVolume] = useState(true);
   const [wakeRecheck, setWakeRecheck] = useState(true);
 
-  // Global punishment config (phone numbers, emails)
-  const [globalPunishmentConfig, setGlobalPunishmentConfig] = useState<PunishmentConfig>({});
+  const [enabledPunishments, setEnabledPunishments] = useState<string[]>(['shame_video']);
+  const [punishmentConfig, setPunishmentConfig] = useState<PunishmentConfig>({});
+  const [expandedPunishment, setExpandedPunishment] = useState<string | null>(null);
 
-  // Load global punishment defaults when creating a new alarm (not editing)
   useEffect(() => {
-    if (editAlarmId) return; // Skip if editing - we'll load from the alarm itself
+    if (editAlarmId) return;
 
     const loadGlobalDefaults = async () => {
       try {
@@ -200,21 +158,8 @@ export default function AddAlarmScreen() {
           getPunishmentConfig(),
         ]);
 
-        // Store the config for later use
-        setGlobalPunishmentConfig(config);
-
-        // Map punishment IDs from global settings to local toggle states
-        // PunishmentsScreen IDs → AddAlarmScreen states
-        setShameVideo(defaultPunishments.includes('shame_video'));
-        setCallBuddy(defaultPunishments.includes('buddy_call')); // buddy_call = Auto-call your buddy
-        setSocialShame(defaultPunishments.includes('group_chat'));
-        setTextWifesDad(defaultPunishments.includes('wife_dad'));
-        setEmailBoss(defaultPunishments.includes('email_boss'));
-        setTweetBad(defaultPunishments.includes('twitter'));
-        setTextEx(defaultPunishments.includes('text_ex'));
-        // Note: mom and grandma_call are enabled in settings but marked "Coming Soon" in add alarm
-        // They use same config data but can't be toggled per-alarm yet
-        setAntiCharity(defaultPunishments.includes('donate_enemy'));
+        setEnabledPunishments(defaultPunishments);
+        setPunishmentConfig(config);
 
         if (__DEV__) console.log('[AddAlarm] Loaded global punishment defaults:', defaultPunishments);
       } catch (error) {
@@ -225,19 +170,16 @@ export default function AddAlarmScreen() {
     loadGlobalDefaults();
   }, [editAlarmId]);
 
-  // Load alarm data when editing
   useEffect(() => {
     if (!editAlarmId) return;
 
     const loadAlarm = async () => {
-      // Also load global punishment config for phone numbers/emails
       const config = await getPunishmentConfig();
-      setGlobalPunishmentConfig(config);
+      setPunishmentConfig(config);
 
       const alarm = await getAlarmById(editAlarmId);
       if (!alarm) return;
 
-      // Parse time from HH:MM format
       const [hours24, mins] = alarm.time.split(':').map(Number);
       const isPMValue = hours24 >= 12;
       const hour12 = hours24 % 12 || 12;
@@ -250,24 +192,20 @@ export default function AddAlarmScreen() {
       setAmount(alarm.punishment ?? 5);
       setMoneyEnabled((alarm.punishment ?? 0) > 0);
 
-      // Parse extra punishments
-      const extras = alarm.extraPunishments ?? [];
-      setShameVideo(alarm.shameVideoEnabled ?? extras.includes('shame_video'));
-      setBuddyNotify(alarm.buddyNotifyEnabled ?? extras.includes('buddy_call'));
-      setSocialShame(alarm.socialShameEnabled ?? extras.includes('group_chat'));
-      setAntiCharity(alarm.antiCharityEnabled ?? extras.includes('donate_enemy'));
-      setEmailBoss(alarm.emailBossEnabled ?? false);
-      setTweetBad(alarm.tweetBadEnabled ?? false);
-      setCallBuddy(alarm.callBuddyEnabled ?? false);
-      setTextWifesDad(alarm.textWifesDadEnabled ?? false);
-      setTextEx(alarm.textExEnabled ?? false);
+      const enabled: string[] = [];
+      if (alarm.shameVideoEnabled) enabled.push('shame_video');
+      if (alarm.callBuddyEnabled) enabled.push('buddy_call');
+      if (alarm.socialShameEnabled) enabled.push('group_chat');
+      if (alarm.textWifesDadEnabled) enabled.push('wife_dad');
+      if (alarm.emailBossEnabled) enabled.push('email_boss');
+      if (alarm.tweetBadEnabled) enabled.push('twitter');
+      if (alarm.textExEnabled) enabled.push('text_ex');
+      setEnabledPunishments(enabled);
 
-      // Parse proof activity type
       if (alarm.proofActivityType) {
         setSelectedProof(alarm.proofActivityType);
       }
 
-      // Store existing data we want to preserve
       setExistingAlarmData({
         referencePhotoUri: alarm.referencePhotoUri,
         shameVideoUri: alarm.shameVideoUri,
@@ -326,22 +264,33 @@ export default function AddAlarmScreen() {
 
   const formatMinute = (m: number) => m.toString().padStart(2, '0');
 
+  const handleTogglePunishment = useCallback((id: string) => {
+    setEnabledPunishments(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(p => p !== id);
+      }
+      return [...prev, id];
+    });
+  }, []);
+
+  const handleSaveConfig = useCallback(async (config: PunishmentConfig) => {
+    setPunishmentConfig(config);
+    await savePunishmentConfig(config);
+    setExpandedPunishment(null);
+  }, []);
+
   const handleSave = async () => {
-    const hasShameVideo = shameVideo;
+    const hasShameVideo = enabledPunishments.includes('shame_video');
     const level = getPunishmentLevel(amount, hasShameVideo);
     alarmCreatedPattern(level);
 
     const hour24 = isPM ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
     const timeString = `${hour24.toString().padStart(2, '0')}:${formatMinute(minute)}`;
 
-    const extraPunishments: string[] = [];
-    if (shameVideo) extraPunishments.push('shame_video');
-    if (socialShame) extraPunishments.push('group_chat');
-    // buddyNotify and antiCharity are "Coming Soon" - not included
+    const extraPunishments = enabledPunishments.filter(p => !PUNISHMENT_OPTIONS.find(o => o.id === p)?.comingSoon);
 
     try {
       if (isEditing && editAlarmId) {
-        // Update existing alarm
         await updateAlarm(editAlarmId, {
           time: timeString,
           label: activityName || 'Wake up',
@@ -351,25 +300,22 @@ export default function AddAlarmScreen() {
           proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
           stepGoal: selectedProof === 'steps' ? 10 : undefined,
           activityName: activityName,
-          // Explicit punishment toggles
           moneyEnabled: moneyEnabled,
-          shameVideoEnabled: shameVideo,
-          buddyNotifyEnabled: buddyNotify,
-          socialShameEnabled: socialShame,
-          antiCharityEnabled: antiCharity,
-          emailBossEnabled: emailBoss,
-          tweetBadEnabled: tweetBad,
-          callBuddyEnabled: callBuddy,
-          textWifesDadEnabled: textWifesDad,
-          textExEnabled: textEx,
-          // Preserve existing data
+          shameVideoEnabled: enabledPunishments.includes('shame_video'),
+          buddyNotifyEnabled: enabledPunishments.includes('buddy_call'),
+          socialShameEnabled: enabledPunishments.includes('group_chat'),
+          antiCharityEnabled: enabledPunishments.includes('donate_enemy'),
+          emailBossEnabled: enabledPunishments.includes('email_boss'),
+          tweetBadEnabled: enabledPunishments.includes('twitter'),
+          callBuddyEnabled: enabledPunishments.includes('buddy_call'),
+          textWifesDadEnabled: enabledPunishments.includes('wife_dad'),
+          textExEnabled: enabledPunishments.includes('text_ex'),
           referencePhotoUri: existingAlarmData?.referencePhotoUri ?? null,
           shameVideoUri: existingAlarmData?.shameVideoUri ?? null,
           enabled: existingAlarmData?.enabled ?? true,
         });
         if (__DEV__) console.log('[AddAlarm] Alarm updated:', editAlarmId, 'proofType:', selectedProof);
       } else {
-        // Create new alarm
         await addAlarm({
           time: timeString,
           label: activityName || 'Wake up',
@@ -382,17 +328,16 @@ export default function AddAlarmScreen() {
           proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
           stepGoal: selectedProof === 'steps' ? 10 : undefined,
           activityName: activityName,
-          // Explicit punishment toggles
           moneyEnabled: moneyEnabled,
-          shameVideoEnabled: shameVideo,
-          buddyNotifyEnabled: buddyNotify,
-          socialShameEnabled: socialShame,
-          antiCharityEnabled: antiCharity,
-          emailBossEnabled: emailBoss,
-          tweetBadEnabled: tweetBad,
-          callBuddyEnabled: callBuddy,
-          textWifesDadEnabled: textWifesDad,
-          textExEnabled: textEx,
+          shameVideoEnabled: enabledPunishments.includes('shame_video'),
+          buddyNotifyEnabled: enabledPunishments.includes('buddy_call'),
+          socialShameEnabled: enabledPunishments.includes('group_chat'),
+          antiCharityEnabled: enabledPunishments.includes('donate_enemy'),
+          emailBossEnabled: enabledPunishments.includes('email_boss'),
+          tweetBadEnabled: enabledPunishments.includes('twitter'),
+          callBuddyEnabled: enabledPunishments.includes('buddy_call'),
+          textWifesDadEnabled: enabledPunishments.includes('wife_dad'),
+          textExEnabled: enabledPunishments.includes('text_ex'),
         });
         if (__DEV__) console.log('[AddAlarm] Alarm created with proofType:', selectedProof);
       }
@@ -408,7 +353,7 @@ export default function AddAlarmScreen() {
     }
   };
 
-  const punishmentCount = [moneyEnabled, shameVideo, socialShame].filter(Boolean).length;
+  const punishmentCount = [moneyEnabled, ...enabledPunishments.filter(p => !PUNISHMENT_OPTIONS.find(o => o.id === p)?.comingSoon)].filter(Boolean).length;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -441,7 +386,7 @@ export default function AddAlarmScreen() {
                 </Pressable>
               </View>
 
-              <Text style={styles.timeColon}>:</Text>
+              <Text style={styles.timeSeparator}>:</Text>
 
               <View style={styles.timeColumn}>
                 <Pressable style={styles.timeArrow} onPress={incrementMinute}>
@@ -453,38 +398,47 @@ export default function AddAlarmScreen() {
                 </Pressable>
               </View>
 
-              <View style={styles.periodColumn}>
+              <View style={styles.amPmContainer}>
                 <Pressable
-                  style={[styles.periodOption, !isPM && styles.periodOptionActive]}
-                  onPress={() => { selectionChanged(); setIsPM(false); }}
+                  style={[styles.amPmButton, !isPM && styles.amPmButtonActive]}
+                  onPress={() => {
+                    selectionChanged();
+                    setIsPM(false);
+                  }}
                 >
-                  <Text style={[styles.periodText, !isPM && styles.periodTextActive]}>AM</Text>
+                  <Text style={[styles.amPmText, !isPM && styles.amPmTextActive]}>AM</Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.periodOption, isPM && styles.periodOptionActive]}
-                  onPress={() => { selectionChanged(); setIsPM(true); }}
+                  style={[styles.amPmButton, isPM && styles.amPmButtonActive]}
+                  onPress={() => {
+                    selectionChanged();
+                    setIsPM(true);
+                  }}
                 >
-                  <Text style={[styles.periodText, isPM && styles.periodTextActive]}>PM</Text>
+                  <Text style={[styles.amPmText, isPM && styles.amPmTextActive]}>PM</Text>
                 </Pressable>
               </View>
             </View>
+          </View>
+        </FadeInView>
 
-            <View style={styles.repeatSection}>
-              <View style={styles.daysRow}>
-                {DAYS.map((day, index) => (
-                  <Pressable
-                    key={index}
-                    style={[styles.dayButton, selectedDays.includes(index) && styles.dayButtonActive]}
-                    onPress={() => toggleDay(index)}
-                  >
-                    <Text style={[styles.dayText, selectedDays.includes(index) && styles.dayTextActive]}>
-                      {day}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Text style={styles.repeatLabel}>{getRepeatLabel()}</Text>
+        <FadeInView delay={75} direction="up">
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>REPEAT</Text>
+            <View style={styles.daysRow}>
+              {DAYS.map((day, index) => (
+                <Pressable
+                  key={index}
+                  style={[styles.dayButton, selectedDays.includes(index) && styles.dayButtonActive]}
+                  onPress={() => toggleDay(index)}
+                >
+                  <Text style={[styles.dayText, selectedDays.includes(index) && styles.dayTextActive]}>
+                    {day}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
+            <Text style={styles.repeatLabel}>{getRepeatLabel()}</Text>
           </View>
         </FadeInView>
 
@@ -492,59 +446,59 @@ export default function AddAlarmScreen() {
 
         <FadeInView delay={100} direction="up">
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>PROOF OF WAKE</Text>
-            <Text style={styles.sectionSub}>What you must do to dismiss</Text>
+            <Text style={styles.sectionTitle}>PROOF ACTIVITY</Text>
+            <Text style={styles.sectionSub}>What you'll do to dismiss the alarm</Text>
 
             <Pressable
               style={styles.proofSelector}
               onPress={() => setShowProofPicker(!showProofPicker)}
             >
-              <View style={styles.proofIconContainer}>
-                <Text style={{ fontSize: 22 }}>{selectedProofData?.emoji}</Text>
+              <View style={styles.proofSelectorLeft}>
+                <Text style={{ fontSize: 24 }}>{selectedProofData?.emoji}</Text>
+                <View style={styles.proofSelectorInfo}>
+                  <Text style={styles.proofSelectorName}>{selectedProofData?.name}</Text>
+                  <Text style={styles.proofSelectorDesc}>{selectedProofData?.description}</Text>
+                </View>
               </View>
-              <View style={styles.proofSelectorInfo}>
-                <Text style={styles.proofSelectorName}>{selectedProofData?.name}</Text>
-                <Text style={styles.proofSelectorDesc}>{selectedProofData?.description}</Text>
-              </View>
-              <Text style={{ fontSize: 20, color: Colors.textMuted }}>{showProofPicker ? '▲' : '›'}</Text>
+              {showProofPicker ? <ChevronUp color={Colors.orange} /> : <ChevronDown />}
             </Pressable>
 
             {showProofPicker ? (
               <View style={styles.proofOptions}>
-                {PROOF_ACTIVITIES.map((proof) => (
+                {PROOF_ACTIVITIES.map(proof => (
                   <Pressable
                     key={proof.id}
-                    style={[styles.proofOption, selectedProof === proof.id && styles.proofOptionActive]}
+                    style={[
+                      styles.proofOption,
+                      selectedProof === proof.id && styles.proofOptionActive,
+                    ]}
                     onPress={() => {
+                      selectionChanged();
                       setSelectedProof(proof.id);
-                      // Update activity name to match the proof type's default
                       if (proof.defaultActivity) {
                         setActivityName(proof.defaultActivity);
                       }
                       setShowProofPicker(false);
-                      selectionChanged();
                     }}
                   >
-                    <Text style={{ fontSize: 18 }}>{proof.emoji}</Text>
-                    <Text style={[styles.proofOptionName, selectedProof === proof.id && styles.proofOptionNameActive]}>
-                      {proof.name}
-                    </Text>
-                    {selectedProof === proof.id ? (
-                      <Text style={{ fontSize: 18, color: Colors.orange }}>✓</Text>
-                    ) : null}
+                    <Text style={{ fontSize: 20 }}>{proof.emoji}</Text>
+                    <View style={styles.proofOptionInfo}>
+                      <Text style={styles.proofOptionName}>{proof.name}</Text>
+                      <Text style={styles.proofOptionDesc}>{proof.description}</Text>
+                    </View>
                   </Pressable>
                 ))}
               </View>
             ) : null}
 
             {selectedProof === 'photo_activity' ? (
-              <View style={styles.activityInput}>
-                <Text style={styles.inputLabel}>Activity name</Text>
+              <View style={styles.activitySection}>
+                <Text style={styles.activityLabel}>What activity?</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={styles.activityInput}
                   value={activityName}
                   onChangeText={setActivityName}
-                  placeholder="Brush teeth"
+                  placeholder="e.g., Brush teeth"
                   placeholderTextColor={Colors.textMuted}
                 />
                 <View style={styles.suggestions}>
@@ -579,215 +533,64 @@ export default function AddAlarmScreen() {
             <Text style={styles.sectionTitle}>PUNISHMENT</Text>
             <Text style={styles.sectionSub}>What happens when you snooze</Text>
 
-            <PunishmentCard
-              emoji="💵"
-              title="Money Stakes"
-              enabled={moneyEnabled}
-              onToggle={() => {
-                hapticForPunishment(getPunishmentLevel(amount, shameVideo));
-                setMoneyEnabled(!moneyEnabled);
-              }}
-            >
-              <View style={styles.amountRow}>
-                {AMOUNTS.map((amt) => (
+            <View style={styles.moneyCard}>
+              <View style={styles.moneyHeader}>
+                <View style={styles.moneyIconContainer}>
+                  <Text style={{ fontSize: 20 }}>💵</Text>
+                </View>
+                <View style={styles.moneyInfo}>
+                  <Text style={styles.moneyTitle}>Money Stakes</Text>
+                </View>
+                <Toggle value={moneyEnabled} onToggle={() => {
+                  hapticForPunishment(getPunishmentLevel(amount, enabledPunishments.includes('shame_video')));
+                  setMoneyEnabled(!moneyEnabled);
+                }} />
+              </View>
+              {moneyEnabled ? (
+                <View style={styles.moneyExpanded}>
+                  <View style={styles.amountRow}>
+                    {AMOUNTS.map((amt) => (
+                      <Pressable
+                        key={amt}
+                        style={[styles.amountButton, amount === amt && styles.amountButtonActive]}
+                        onPress={() => {
+                          hapticForPunishment(getPunishmentLevel(amt, enabledPunishments.includes('shame_video')));
+                          setAmount(amt);
+                        }}
+                      >
+                        <Text style={[styles.amountText, amount === amt && styles.amountTextActive]}>
+                          ${amt}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
                   <Pressable
-                    key={amt}
-                    style={[styles.amountButton, amount === amt && styles.amountButtonActive]}
-                    onPress={() => {
-                      hapticForPunishment(getPunishmentLevel(amt, shameVideo));
-                      setAmount(amt);
-                    }}
+                    style={styles.recipientCard}
+                    onPress={() => navigation.navigate('Settings')}
                   >
-                    <Text style={[styles.amountText, amount === amt && styles.amountTextActive]}>
-                      ${amt}
-                    </Text>
+                    <View style={[styles.recipientAvatar, { backgroundColor: Colors.border }]}>
+                      <Text style={{ fontSize: 18 }}>⚙️</Text>
+                    </View>
+                    <View style={styles.recipientInfo}>
+                      <Text style={styles.recipientLabel}>Recipient</Text>
+                      <Text style={styles.recipientName}>Set up in settings</Text>
+                    </View>
+                    <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
                   </Pressable>
-                ))}
-              </View>
-              <Pressable
-                style={styles.recipientCard}
-                onPress={() => navigation.navigate('Settings')}
-              >
-                <View style={[styles.recipientAvatar, { backgroundColor: Colors.border }]}>
-                  <Text style={{ fontSize: 18 }}>⚙️</Text>
                 </View>
-                <View style={styles.recipientInfo}>
-                  <Text style={styles.recipientLabel}>Recipient</Text>
-                  <Text style={styles.recipientName}>Set up in settings</Text>
-                </View>
-                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
-              </Pressable>
-            </PunishmentCard>
+              ) : null}
+            </View>
 
-            <PunishmentCard
-              emoji="🎥"
-              title="Shame Video"
-              enabled={shameVideo}
-              onToggle={() => {
-                hapticForPunishment(getPunishmentLevel(amount, !shameVideo));
-                setShameVideo(!shameVideo);
-              }}
-            >
-              <Pressable style={styles.recordVideoBtn}>
-                <Text style={{ fontSize: 18 }}>🎬</Text>
-                <Text style={styles.recordVideoBtnText}>Record Shame Video</Text>
-                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
-              </Pressable>
-            </PunishmentCard>
-
-            <PunishmentCard
-              emoji="👥"
-              title="Social Shame"
-              enabled={socialShame}
-              onToggle={() => {
-                buttonPress('secondary');
-                setSocialShame(!socialShame);
-              }}
-            >
-              <Pressable style={styles.selectGroupBtn}>
-                <Text style={{ fontSize: 18 }}>💬</Text>
-                <Text style={styles.selectGroupBtnText}>Select Group Chat</Text>
-                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
-              </Pressable>
-            </PunishmentCard>
-
-            <PunishmentCard
-              emoji="💬"
-              title="Buddy Notification"
-              enabled={buddyNotify}
-              onToggle={() => {
-                buttonPress('secondary');
-                setBuddyNotify(!buddyNotify);
-              }}
-            >
-              <View style={styles.messagePreview}>
-                <Text style={styles.messagePreviewLabel}>They'll receive:</Text>
-                <View style={styles.messagePreviewBubble}>
-                  <Text style={styles.messagePreviewText}>
-                    Hey! Your buddy snoozed at {hour}:{formatMinute(minute)} {isPM ? 'PM' : 'AM'}! They owe you.
-                  </Text>
-                </View>
-              </View>
-            </PunishmentCard>
-
-            <PunishmentCard
-              emoji="😈"
-              title="Anti-Charity"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            >
-              <Pressable style={styles.selectCharityBtn}>
-                <Text style={styles.selectCharityBtnText}>Choose organization...</Text>
-                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
-              </Pressable>
-            </PunishmentCard>
-
-            <PunishmentCard
-              emoji="📞"
-              title="Auto-call your buddy"
-              enabled={callBuddy}
-              onToggle={() => {
-                buttonPress('secondary');
-                setCallBuddy(!callBuddy);
-              }}
-            />
-
-            <PunishmentCard
-              emoji="👴"
-              title="Text your wife's dad"
-              enabled={textWifesDad}
-              onToggle={() => {
-                buttonPress('secondary');
-                setTextWifesDad(!textWifesDad);
-              }}
-            />
-
-            <PunishmentCard
-              emoji="👩"
-              title="Auto-call your mom"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            />
-
-            <PunishmentCard
-              emoji="🐦"
-              title="Tweet something bad"
-              enabled={tweetBad}
-              onToggle={() => {
-                buttonPress('secondary');
-                setTweetBad(!tweetBad);
-              }}
-            />
-
-            <PunishmentCard
-              emoji="😳"
-              title="Text friend something embarrassing"
-              enabled={textEx}
-              onToggle={() => {
-                buttonPress('secondary');
-                setTextEx(!textEx);
-              }}
-            />
-
-            <PunishmentCard
-              emoji="📧"
-              title="Email your boss"
-              enabled={emailBoss}
-              onToggle={() => {
-                buttonPress('secondary');
-                setEmailBoss(!emailBoss);
-              }}
-            />
-
-            <PunishmentCard
-              emoji="👵"
-              title="Auto-call your grandma"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            />
-
-            <PunishmentCard
-              emoji="🔥"
-              title="Update Tinder bio"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            />
-
-            <PunishmentCard
-              emoji="📸"
-              title="Like your ex's old photo"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            />
-
-            <PunishmentCard
-              emoji="💸"
-              title="Venmo your ex $1"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            />
-
-            <PunishmentCard
-              emoji="🗳️"
-              title="Donate to a party you hate"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            />
-
-            <PunishmentCard
-              emoji="🥶"
-              title="Drop thermostat to 55°F"
-              enabled={false}
-              onToggle={() => {}}
-              comingSoon
-            />
+            <View style={styles.punishmentListWrapper}>
+              <PunishmentList
+                enabledPunishments={enabledPunishments}
+                onTogglePunishment={handleTogglePunishment}
+                punishmentConfig={punishmentConfig}
+                onSaveConfig={handleSaveConfig}
+                expandedPunishment={expandedPunishment}
+                onExpandPunishment={setExpandedPunishment}
+              />
+            </View>
 
             <View style={styles.stakesHint}>
               <Text style={{ fontSize: 16 }}>💡</Text>
@@ -848,23 +651,17 @@ export default function AddAlarmScreen() {
               <Text style={styles.summaryValue}>{getRepeatLabel()}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Dismiss</Text>
+              <Text style={styles.summaryLabel}>Proof</Text>
               <Text style={styles.summaryValue}>{selectedProofData?.name}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Penalty</Text>
-              <Text style={styles.summaryValue}>
-                {[
-                  moneyEnabled && `$${amount}`,
-                  shameVideo && 'Video',
-                  socialShame && 'Social',
-                ].filter(Boolean).join(' + ') || 'None'}
-              </Text>
+              <Text style={styles.summaryLabel}>Punishments</Text>
+              <Text style={styles.summaryValue}>{punishmentCount} active</Text>
             </View>
           </View>
         </FadeInView>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: insets.bottom + 40 }} />
       </ScrollView>
     </View>
   );
@@ -877,112 +674,99 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  headerButton: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  saveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.orange,
+    paddingBottom: Spacing.md,
   },
   scrollView: {
     flex: 1,
   },
   content: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.md,
   },
   timeSection: {
-    marginBottom: Spacing.lg,
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
   },
   timePickerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    gap: Spacing.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   timeColumn: {
     alignItems: 'center',
   },
   timeArrow: {
-    width: 48,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: Spacing.sm,
   },
   timeDigit: {
     fontSize: 56,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.text,
-    minWidth: 80,
-    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
-  timeColon: {
+  timeSeparator: {
     fontSize: 48,
-    fontWeight: '300',
+    fontWeight: '700',
     color: Colors.textMuted,
-    marginBottom: 8,
+    marginHorizontal: Spacing.sm,
   },
-  periodColumn: {
-    marginLeft: Spacing.md,
-    gap: Spacing.sm,
+  amPmContainer: {
+    marginLeft: Spacing.lg,
+    gap: Spacing.xs,
   },
-  periodOption: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+  amPmButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
-  periodOptionActive: {
+  amPmButtonActive: {
     backgroundColor: Colors.orange,
-    borderColor: Colors.orange,
   },
-  periodText: {
-    fontSize: 15,
+  amPmText: {
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.textMuted,
   },
-  periodTextActive: {
+  amPmTextActive: {
     color: Colors.bg,
   },
-  repeatSection: {
-    alignItems: 'center',
-    marginTop: Spacing.lg,
-    gap: Spacing.sm,
+  section: {
+    marginBottom: Spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    color: Colors.textMuted,
+    marginBottom: Spacing.xs,
+  },
+  sectionSub: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginBottom: Spacing.md,
   },
   daysRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   dayButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.bgCard,
+    flex: 1,
+    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.bgCard,
   },
   dayButtonActive: {
     backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderWidth: 1,
     borderColor: 'rgba(251, 146, 60, 0.3)',
   },
   dayText: {
@@ -995,46 +779,32 @@ const styles = StyleSheet.create({
   },
   repeatLabel: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
   divider: {
     height: 1,
     backgroundColor: Colors.border,
     marginVertical: Spacing.lg,
   },
-  section: {
-    marginBottom: Spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.textMuted,
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  sectionSub: {
-    fontSize: 14,
-    color: Colors.textMuted,
-    marginBottom: Spacing.md,
-  },
   proofSelector: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.md,
+  },
+  proofSelectorLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.md,
   },
-  proofIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(251, 146, 60, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   proofSelectorInfo: {
-    flex: 1,
+    gap: 2,
   },
   proofSelectorName: {
     fontSize: 16,
@@ -1044,19 +814,19 @@ const styles = StyleSheet.create({
   proofSelectorDesc: {
     fontSize: 13,
     color: Colors.textMuted,
-    marginTop: 2,
   },
   proofOptions: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.sm,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.md,
     overflow: 'hidden',
   },
   proofOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
+    padding: Spacing.lg,
     gap: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -1064,49 +834,52 @@ const styles = StyleSheet.create({
   proofOptionActive: {
     backgroundColor: 'rgba(251, 146, 60, 0.1)',
   },
-  proofOptionName: {
+  proofOptionInfo: {
     flex: 1,
+    gap: 2,
+  },
+  proofOptionName: {
     fontSize: 15,
-    color: Colors.textSecondary,
+    fontWeight: '500',
+    color: Colors.text,
   },
-  proofOptionNameActive: {
-    color: Colors.orange,
-    fontWeight: '600',
-  },
-  activityInput: {
-    marginTop: Spacing.md,
-  },
-  inputLabel: {
+  proofOptionDesc: {
     fontSize: 13,
     color: Colors.textMuted,
+  },
+  activitySection: {
+    marginBottom: Spacing.md,
+  },
+  activityLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text,
     marginBottom: Spacing.sm,
   },
-  textInput: {
-    backgroundColor: Colors.bgCard,
+  activityInput: {
+    backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    padding: Spacing.md,
     fontSize: 16,
     color: Colors.text,
     borderWidth: 1,
     borderColor: Colors.border,
+    marginBottom: Spacing.sm,
   },
   suggestions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
-    marginTop: Spacing.sm,
   },
   suggestionChip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: BorderRadius.full,
   },
   suggestionChipActive: {
     backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderWidth: 1,
     borderColor: 'rgba(251, 146, 60, 0.3)',
   },
   suggestionText: {
@@ -1117,87 +890,62 @@ const styles = StyleSheet.create({
     color: Colors.orange,
   },
   ctaPreviewBox: {
-    marginTop: Spacing.lg,
-    alignItems: 'center',
-    gap: Spacing.sm,
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
   },
   ctaPreviewLabel: {
     fontSize: 12,
     color: Colors.textMuted,
+    marginBottom: Spacing.sm,
   },
   ctaPreviewButton: {
     backgroundColor: Colors.green,
-    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.md,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
   },
   ctaPreviewText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.bg,
   },
-  punishmentCard: {
+  moneyCard: {
     backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.md,
     overflow: 'hidden',
   },
-  punishmentCardDisabled: {
-    opacity: 0.6,
-  },
-  comingSoonBadge: {
-    backgroundColor: 'rgba(120, 113, 108, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
-  comingSoonText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: Colors.textMuted,
-  },
-  punishmentHeader: {
+  moneyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.md,
-    gap: Spacing.md,
+    padding: Spacing.lg,
   },
-  punishmentIconContainer: {
+  moneyIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: Colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: Spacing.md,
   },
-  punishmentInfo: {
+  moneyInfo: {
     flex: 1,
   },
-  punishmentTitle: {
+  moneyTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     color: Colors.text,
   },
-  punishmentDesc: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  punishmentExpanded: {
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-  },
-  toggle: {
-    width: 52,
-    height: 32,
-    borderRadius: 16,
-    padding: 3,
-  },
-  toggleKnob: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: Colors.text,
+  moneyExpanded: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: Spacing.md,
   },
   amountRow: {
     flexDirection: 'row',
@@ -1207,23 +955,23 @@ const styles = StyleSheet.create({
   amountButton: {
     flex: 1,
     paddingVertical: Spacing.md,
+    alignItems: 'center',
     backgroundColor: Colors.bgCard,
     borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: 'transparent',
   },
   amountButtonActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    borderColor: 'rgba(239, 68, 68, 0.4)',
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderColor: 'rgba(251, 146, 60, 0.3)',
   },
   amountText: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: Colors.textMuted,
   },
   amountTextActive: {
-    color: Colors.red,
+    color: Colors.orange,
   },
   recipientCard: {
     flexDirection: 'row',
@@ -1231,96 +979,29 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
-    gap: Spacing.md,
   },
   recipientAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.orange,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  recipientAvatarText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
+    marginRight: Spacing.md,
   },
   recipientInfo: {
     flex: 1,
   },
   recipientLabel: {
-    fontSize: 11,
-    color: Colors.textMuted,
-  },
-  recipientName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  changeBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.border,
-    borderRadius: BorderRadius.sm,
-  },
-  changeBtnText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  recordVideoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-  },
-  recordVideoBtnText: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.text,
-  },
-  messagePreview: {
-    gap: Spacing.sm,
-  },
-  messagePreviewLabel: {
     fontSize: 12,
     color: Colors.textMuted,
   },
-  messagePreviewBubble: {
-    backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-  },
-  messagePreviewText: {
+  recipientName: {
     fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  selectGroupBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-  },
-  selectGroupBtnText: {
-    flex: 1,
-    fontSize: 14,
+    fontWeight: '500',
     color: Colors.text,
   },
-  selectCharityBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-  },
-  selectCharityBtnText: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textMuted,
+  punishmentListWrapper: {
+    marginTop: Spacing.sm,
   },
   stakesHint: {
     flexDirection: 'row',
@@ -1329,7 +1010,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(251, 146, 60, 0.1)',
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
   },
   stakesHintText: {
     flex: 1,
@@ -1338,54 +1019,72 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   stakesHintBold: {
-    fontWeight: '700',
+    fontWeight: '600',
+    color: Colors.text,
   },
   noPunishmentWarning: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
   },
   warningText: {
     flex: 1,
     fontSize: 13,
-    color: Colors.orange,
+    color: Colors.red,
+    lineHeight: 18,
   },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bgElevated,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-    gap: Spacing.md,
-  },
-  toggleInfo: {
-    flex: 1,
-  },
-  toggleTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  toggleSubtitle: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  summaryCard: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.border,
+    marginBottom: Spacing.sm,
+  },
+  toggleInfo: {
+    flex: 1,
+    marginLeft: Spacing.md,
+  },
+  toggleTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  toggleSubtitle: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  toggle: {
+    width: 52,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  toggleKnob: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.text,
+  },
+  summaryCard: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.xl,
   },
   summaryTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: Colors.text,
     marginBottom: Spacing.md,
   },
@@ -1393,6 +1092,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   summaryLabel: {
     fontSize: 14,
@@ -1400,7 +1101,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     color: Colors.text,
   },
 });

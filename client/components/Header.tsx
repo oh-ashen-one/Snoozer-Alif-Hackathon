@@ -15,7 +15,6 @@ interface HeaderProps {
   title?: string;
   emoji?: string;
   filter?: 'week' | 'month' | 'year';
-  onSettingsPress?: () => void;
   onBackPress?: () => void;
   onAddPress?: () => void;
   onFilterChange?: (filter: 'week' | 'month' | 'year') => void;
@@ -29,8 +28,8 @@ export default function Header({
   greeting = 'Good morning',
   name = '',
   title = '',
+  emoji,
   filter = 'week',
-  onSettingsPress,
   onBackPress,
   onAddPress,
   onFilterChange,
@@ -44,7 +43,6 @@ export default function Header({
         <HomeHeader
           greeting={greeting}
           name={name}
-          onSettingsPress={onSettingsPress}
         />
       );
     case 'stats':
@@ -90,17 +88,15 @@ export default function Header({
   }
 }
 
-function HomeHeader({ 
-  greeting, 
-  name, 
-  onSettingsPress 
-}: { 
-  greeting: string; 
-  name: string; 
-  onSettingsPress?: () => void;
+function HomeHeader({
+  greeting,
+  name,
+}: {
+  greeting: string;
+  name: string;
 }) {
   const emoji = getTimeEmoji();
-  
+
   return (
     <View style={styles.capsule}>
       <View style={styles.left}>
@@ -112,12 +108,6 @@ function HomeHeader({
           <Text style={styles.name}>{name}</Text>
         </View>
       </View>
-      <Pressable 
-        style={styles.iconBtn} 
-        onPress={onSettingsPress}
-      >
-        <Text style={styles.iconText}>{'\u2699\uFE0F'}</Text>
-      </Pressable>
     </View>
   );
 }
@@ -331,19 +321,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
-  },
-
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(28, 25, 23, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  iconText: {
-    fontSize: 18,
   },
 
   chipGroup: {
