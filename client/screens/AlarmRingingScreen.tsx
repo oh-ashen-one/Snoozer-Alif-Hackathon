@@ -784,7 +784,7 @@ export default function AlarmRingingScreen() {
               amount: penaltyAmount,
               currentTime,
               previousStreak: streak,
-              executedPunishments: ['anti_charity'],
+              executedPunishments: ['money_sent'],
               moneyEnabled: true,
             },
           }],

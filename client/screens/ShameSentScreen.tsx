@@ -38,6 +38,7 @@ const PUNISHMENT_MESSAGES: Record<string, { title: string; subtitle: string; ico
   text_ex: { title: 'Texted your ex', subtitle: '"imysm" - she knows now.', icon: '💔' },
   social_shame: { title: 'Group chat knows', subtitle: 'Everyone saw your failure.', icon: '💬' },
   anti_charity: { title: 'Donated money', subtitle: 'To a cause you hate. Congrats.', icon: '🗳️' },
+  money_sent: { title: 'Sent money to buddy', subtitle: 'They got paid because you snoozed.', icon: '💸' },
 };
 
 export default function ShameSentScreen() {
