@@ -57,7 +57,7 @@ const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'shame_video', label: 'Shame video plays', description: 'At max volume', icon: '🎬', color: '#EF4444' },
   { id: 'buddy_call', label: 'Auto-call your buddy', description: 'Jake gets woken up too', icon: '📞', color: '#FB923C' },
   { id: 'group_chat', label: 'Text the group chat', description: '"The boys" on iMessage', icon: '💬', color: '#7C3AED' },
-  { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444' },
+  { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444', configurable: true },
   { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899' },
   { id: 'twitter', label: 'Tweet something bad', description: '"I overslept again lol"', icon: '🐦', color: '#1DA1F2' },
   { id: 'text_ex', label: 'Text your ex "I miss u"', description: 'From your actual number', icon: '💔', color: '#EF4444', configurable: true },
@@ -107,6 +107,7 @@ interface PunishmentRowProps {
 function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand }: PunishmentRowProps) {
   const [bossEmail, setBossEmail] = useState(config.email_boss?.bossEmail || '');
   const [exPhoneNumber, setExPhoneNumber] = useState(config.text_ex?.exPhoneNumber || '');
+  const [wifesDadPhone, setWifesDadPhone] = useState(config.wife_dad?.phoneNumber || '');
 
   // Sync local state when config changes
   useEffect(() => {
@@ -115,6 +116,9 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
     }
     if (punishment.id === 'text_ex') {
       setExPhoneNumber(config.text_ex?.exPhoneNumber || '');
+    }
+    if (punishment.id === 'wife_dad') {
+      setWifesDadPhone(config.wife_dad?.phoneNumber || '');
     }
   }, [config, punishment.id]);
 
@@ -160,6 +164,36 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
     });
   }, [exPhoneNumber, config, onSaveConfig]);
 
+  const handleTestWifesDad = useCallback(async () => {
+    if (!wifesDadPhone) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const messages = [
+      "Hey Robert, quick question - is it normal for grown adults to hit snooze 5 times? Asking for a friend (me).",
+      "Good morning! Just wanted you to know your daughter married someone who can't wake up on time.",
+      "Hi, it's me. I overslept again. Please don't tell her.",
+      "Robert, I need advice. How did you raise such an early riser? Asking because I clearly wasn't.",
+      "Hey! Random thought at 6am - do you think I'm good enough for your daughter? I can't even wake up.",
+      "Morning! I'm supposed to be at work but I'm still in bed. Life advice?",
+      "Hi Robert! Quick poll: is hitting snooze 7 times a red flag?",
+      "Hey, hypothetically, if someone snoozed their alarm 5 times, would that be grounds for disappointment?",
+      "Good morning sir. I have failed. Again. The alarm won.",
+      "Robert, I'm texting you from bed at 6am because I can't adult properly.",
+    ];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    const isAvailable = await SMS.isAvailableAsync();
+    if (isAvailable) {
+      await SMS.sendSMSAsync([wifesDadPhone], randomMessage);
+    }
+  }, [wifesDadPhone]);
+
+  const handleSaveWifesDadConfig = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSaveConfig({
+      ...config,
+      wife_dad: { phoneNumber: wifesDadPhone },
+    });
+  }, [wifesDadPhone, config, onSaveConfig]);
+
   const content = (
     <View style={styles.punishmentLeft}>
       <ThemedText style={[styles.punishmentIcon, punishment.comingSoon && styles.comingSoonIcon]}>{punishment.icon}</ThemedText>
@@ -188,12 +222,19 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
 
       {/* Show saved email when configured and not expanded */}
       {enabled && punishment.id === 'email_boss' && config.email_boss?.bossEmail && !expanded && (
-        <Pressable style={styles.savedConfigRow} onPress={onExpand}>
+        <View style={styles.savedConfigRow}>
           <ThemedText style={styles.savedConfigText}>
             📧 {config.email_boss.bossEmail}
           </ThemedText>
-          <ThemedText style={styles.editText}>Edit</ThemedText>
-        </Pressable>
+          <View style={styles.savedConfigButtons}>
+            <Pressable style={styles.savedConfigButton} onPress={handleTestEmail}>
+              <ThemedText style={styles.testLinkText}>Test</ThemedText>
+            </Pressable>
+            <Pressable style={styles.savedConfigButton} onPress={onExpand}>
+              <ThemedText style={styles.editText}>Edit</ThemedText>
+            </Pressable>
+          </View>
+        </View>
       )}
 
       {/* Email Boss Configuration */}
@@ -265,6 +306,49 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
               style={[styles.saveButton, !exPhoneNumber && styles.buttonDisabled]}
               onPress={handleSaveTextExConfig}
               disabled={!exPhoneNumber}
+            >
+              <ThemedText style={styles.saveButtonText}>Save</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Show saved wife's dad number when configured and not expanded */}
+      {enabled && punishment.id === 'wife_dad' && config.wife_dad?.phoneNumber && !expanded && (
+        <Pressable style={styles.savedConfigRow} onPress={onExpand}>
+          <ThemedText style={styles.savedConfigText}>
+            📱 {config.wife_dad.phoneNumber}
+          </ThemedText>
+          <ThemedText style={styles.editText}>Edit</ThemedText>
+        </Pressable>
+      )}
+
+      {/* Wife's Dad Configuration */}
+      {expanded && punishment.id === 'wife_dad' && (
+        <View style={styles.configSection}>
+          <ThemedText style={styles.configLabel}>What is your wife's dad's number?</ThemedText>
+          <TextInput
+            style={styles.configInput}
+            placeholder="+1 555 123 4567"
+            placeholderTextColor={Colors.textMuted}
+            value={wifesDadPhone}
+            onChangeText={setWifesDadPhone}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.configButtons}>
+            <Pressable
+              style={[styles.testButton, !wifesDadPhone && styles.buttonDisabled]}
+              onPress={handleTestWifesDad}
+              disabled={!wifesDadPhone}
+            >
+              <ThemedText style={styles.testButtonText}>Test</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[styles.saveButton, !wifesDadPhone && styles.buttonDisabled]}
+              onPress={handleSaveWifesDadConfig}
+              disabled={!wifesDadPhone}
             >
               <ThemedText style={styles.saveButtonText}>Save</ThemedText>
             </Pressable>
@@ -591,6 +675,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textMuted,
     flex: 1,
+  },
+  savedConfigTextGreen: {
+    fontSize: 13,
+    color: Colors.green,
+    flex: 1,
+    fontWeight: '500',
   },
   savedConfigButtons: {
     flexDirection: 'row',

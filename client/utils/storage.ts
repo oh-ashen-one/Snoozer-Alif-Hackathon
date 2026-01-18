@@ -341,6 +341,9 @@ export interface PunishmentConfig {
   text_ex?: {
     exPhoneNumber: string;
   };
+  wife_dad?: {
+    phoneNumber: string;
+  };
 }
 
 export async function getPunishmentConfig(): Promise<PunishmentConfig> {

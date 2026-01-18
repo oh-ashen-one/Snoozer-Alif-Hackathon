@@ -295,11 +295,33 @@ export function useIMessage() {
 
   /**
    * Send text to wife's dad
-   * Opens Messages with embarrassing text
+   * Opens Messages with random embarrassing text
    */
   const textWifesDad = useCallback(async (phoneNumber: string): Promise<boolean> => {
-    const message = "Hey Robert, quick question - is it normal for grown adults to hit snooze 5 times? Asking for a friend (me).";
-    return await openIMessage(phoneNumber, message);
+    const messages = [
+      "Hey Robert, quick question - is it normal for grown adults to hit snooze 5 times? Asking for a friend (me).",
+      "Good morning! Just wanted you to know your daughter married someone who can't wake up on time.",
+      "Hi, it's me. I overslept again. Please don't tell her.",
+      "Robert, I need advice. How did you raise such an early riser? Asking because I clearly wasn't.",
+      "Hey! Random thought at 6am - do you think I'm good enough for your daughter? I can't even wake up.",
+      "Morning! I'm supposed to be at work but I'm still in bed. Life advice?",
+      "Hi Robert! Quick poll: is hitting snooze 7 times a red flag?",
+      "Hey, hypothetically, if someone snoozed their alarm 5 times, would that be grounds for disappointment?",
+      "Good morning sir. I have failed. Again. The alarm won.",
+      "Robert, I'm texting you from bed at 6am because I can't adult properly.",
+      "Hi! Just checking in. Also I overslept. Unrelated.",
+      "Hey Robert, what time did you wake up? I'm conducting research on functional humans.",
+      "Morning! Remember when you trusted me with your daughter? Anyway, I overslept again.",
+      "Hi, it's your favorite son-in-law (by default). I can't wake up.",
+      "Robert, on a scale of 1-10, how disappointed are you that I snoozed 5 times today?",
+      "Good morning! I'm not at work yet because my bed is too comfortable. Thoughts?",
+      "Hey, just wanted you to know I'm a work in progress. Emphasis on progress. Okay mostly emphasis on work needed.",
+      "Hi Robert! Fun fact: I've been hitting snooze for 45 minutes. Your daughter chose this.",
+      "Morning sir! I overslept but I'm texting you about it so that's accountability right?",
+      "Hey! I know it's early but I wanted to share that I'm still in bed when I shouldn't be. Bonding!",
+    ];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    return await openIMessage(phoneNumber, randomMessage);
   }, [openIMessage]);
 
   /**

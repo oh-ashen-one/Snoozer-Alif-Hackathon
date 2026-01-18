@@ -48,7 +48,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { CheatWarningModal } from '@/components/CheatWarningModal';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getAlarms, getProofActivity, ProofActivity, getBuddyInfo, BuddyInfo, getUserName } from '@/utils/storage';
+import * as SMS from 'expo-sms';
+import { getAlarms, getProofActivity, ProofActivity, getBuddyInfo, BuddyInfo, getUserName, getPunishmentConfig, PunishmentConfig } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
@@ -220,6 +221,8 @@ export default function AlarmRingingScreen() {
   const [callBuddyEnabled, setCallBuddyEnabled] = useState(false);
   const [textWifesDadEnabled, setTextWifesDadEnabled] = useState(false);
   const [textExEnabled, setTextExEnabled] = useState(false);
+  const [exPhoneNumber, setExPhoneNumber] = useState<string>('');
+  const [textExSent, setTextExSent] = useState(false);
   const [motivationalQuote] = useState(() => 
     MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]
   );
@@ -377,6 +380,14 @@ export default function AlarmRingingScreen() {
           setCallBuddyEnabled(targetAlarm.callBuddyEnabled ?? false);
           setTextWifesDadEnabled(targetAlarm.textWifesDadEnabled ?? false);
           setTextExEnabled(targetAlarm.textExEnabled ?? false);
+
+          // Load ex phone number from punishment config
+          if (targetAlarm.textExEnabled) {
+            const config = await getPunishmentConfig();
+            if (config.text_ex?.exPhoneNumber) {
+              setExPhoneNumber(config.text_ex.exPhoneNumber);
+            }
+          }
 
           if (__DEV__) console.log('[AlarmRinging] Punishments - money:', hasMoneyPunishment, 'shame:', hasShameVideo, 'buddy:', hasBuddyNotify);
           
@@ -648,6 +659,16 @@ export default function AlarmRingingScreen() {
     buttonPress('secondary');
     setSnoozeStep(0);
     setSnoozeText('');
+  };
+
+  const handleTextEx = async () => {
+    if (!exPhoneNumber) return;
+    buttonPress('primary');
+    const isAvailable = await SMS.isAvailableAsync();
+    if (isAvailable) {
+      await SMS.sendSMSAsync([exPhoneNumber], 'I miss you');
+      setTextExSent(true);
+    }
   };
 
   const handlePaymentSent = async () => {
@@ -928,7 +949,7 @@ export default function AlarmRingingScreen() {
         </View>
 
         {/* SNOOZE = HEADER - only show if any punishment is enabled */}
-        {(moneyEnabled || shameVideoEnabled || buddyNotifyEnabled) ? (
+        {(moneyEnabled || shameVideoEnabled || buddyNotifyEnabled || (textExEnabled && exPhoneNumber)) ? (
           <>
             <View style={styles.snoozeHeader}>
               <View style={styles.snoozeLine} />
@@ -952,6 +973,22 @@ export default function AlarmRingingScreen() {
                   <ThemedText style={styles.punishmentAmount}>SHAME</ThemedText>
                   <ThemedText style={styles.punishmentDesc}>MAX volume</ThemedText>
                 </View>
+              ) : null}
+
+              {textExEnabled && exPhoneNumber ? (
+                <Pressable 
+                  style={[styles.punishmentCard, textExSent && styles.punishmentCardSent]} 
+                  onPress={handleTextEx}
+                  disabled={textExSent}
+                >
+                  <Text style={{ fontSize: 44 }}>{'\u{1F494}'}</Text>
+                  <ThemedText style={styles.punishmentAmount}>
+                    {textExSent ? 'SENT' : 'TEXT EX'}
+                  </ThemedText>
+                  <ThemedText style={styles.punishmentDesc}>
+                    {textExSent ? 'Message opened' : '"I miss you"'}
+                  </ThemedText>
+                </Pressable>
               ) : null}
             </View>
 
@@ -1321,6 +1358,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     alignItems: 'center',
     gap: 4,
+  },
+  punishmentCardSent: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderColor: 'rgba(34, 197, 94, 0.4)',
+    opacity: 0.7,
   },
   punishmentAmount: {
     fontSize: 24,
