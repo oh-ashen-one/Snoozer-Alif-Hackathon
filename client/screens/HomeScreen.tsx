@@ -419,11 +419,31 @@ export default function HomeScreen() {
   const handleToggleAlarm = useCallback(
     (id: string) => {
       return () => {
+        if (__DEV__) console.log('[Home] Toggling alarm:', id);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         toggleAlarm(id);
       };
     },
     [toggleAlarm]
+  );
+
+  const handleDeleteAlarm = useCallback(
+    (id: string) => {
+      if (__DEV__) console.log('[Home] Deleting alarm:', id);
+      Alert.alert(
+        'Delete Alarm',
+        'Are you sure you want to delete this alarm?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => deleteAlarm(id),
+          },
+        ]
+      );
+    },
+    [deleteAlarm]
   );
 
   const handleTestAlarm = useCallback(
@@ -485,7 +505,7 @@ export default function HomeScreen() {
                 <AlarmListItem
                   alarm={alarm}
                   onToggle={handleToggleAlarm(alarm.id)}
-                  onDelete={() => deleteAlarm(alarm.id)}
+                  onDelete={() => handleDeleteAlarm(alarm.id)}
                   onTest={handleTestAlarm(alarm)}
                 />
               </AnimatedCard>
