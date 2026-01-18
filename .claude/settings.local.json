@@ -36,7 +36,10 @@
       "Bash(then)",
       "Bash(echo:*)",
       "Bash(fi)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(identify:*)",
+      "Bash(python3:*)",
+      "Bash(eas build:*)"
     ]
   }
 }
