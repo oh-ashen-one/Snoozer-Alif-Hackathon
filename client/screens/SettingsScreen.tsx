@@ -595,10 +595,6 @@ export default function SettingsScreen() {
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <ThemedText style={styles.versionText}>Snoozer v1.0</ThemedText>
-        <View style={styles.madeWithRow}>
-          <ThemedText style={styles.madeWithText}>Made with </ThemedText>
-          <Feather name="heart" size={12} color="#EF4444" />
-        </View>
       </View>
     </View>
   );
@@ -706,9 +702,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: Spacing.md,
   },
-  rowEmoji: {
-    fontSize: 18,
-  },
   rowText: {
     fontSize: 16,
     color: Colors.text,
@@ -748,10 +741,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   versionText: {
-    fontSize: 12,
-    color: '#57534E',
-  },
-  madeWithText: {
     fontSize: 12,
     color: '#57534E',
   },
