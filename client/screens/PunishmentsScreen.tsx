@@ -13,6 +13,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,7 +33,11 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import {
   getDefaultPunishments,
   saveDefaultPunishments,
+  getPunishmentConfig,
+  savePunishmentConfig,
+  PunishmentConfig,
 } from '@/utils/storage';
+import { openURL } from '@/utils/linking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

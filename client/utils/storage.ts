@@ -333,6 +333,32 @@ export async function saveDefaultPunishments(punishments: string[]): Promise<voi
   }
 }
 
+// Punishment configuration for punishments that need setup
+export interface PunishmentConfig {
+  email_boss?: {
+    bossEmail: string;
+  };
+  // Future punishments can add their config here
+}
+
+export async function getPunishmentConfig(): Promise<PunishmentConfig> {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.PUNISHMENT_CONFIG);
+    return data ? JSON.parse(data) : {};
+  } catch (error) {
+    console.error('Error getting punishment config:', error);
+    return {};
+  }
+}
+
+export async function savePunishmentConfig(config: PunishmentConfig): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.PUNISHMENT_CONFIG, JSON.stringify(config));
+  } catch (error) {
+    console.error('Error saving punishment config:', error);
+  }
+}
+
 export async function getDefaultAmount(): Promise<number> {
   try {
     const data = await AsyncStorage.getItem(KEYS.DEFAULT_AMOUNT);
