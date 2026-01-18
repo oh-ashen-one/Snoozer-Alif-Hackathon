@@ -360,6 +360,9 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
               <Pressable style={styles.testButton} onPress={onTest}>
                 <ThemedText style={styles.testButtonText}>Test</ThemedText>
               </Pressable>
+              <Pressable style={styles.editButton} onPress={onEdit}>
+                <ThemedText style={{ fontSize: 14 }}>✏️</ThemedText>
+              </Pressable>
               <Pressable style={styles.deleteButton} onPress={onDelete}>
                 <ThemedText style={{ fontSize: 14 }}>🗑️</ThemedText>
               </Pressable>
@@ -908,6 +911,14 @@ const styles = StyleSheet.create({
   alarmButtonsRow: {
     flexDirection: 'row',
     gap: 6,
+  },
+  editButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(251, 146, 60, 0.12)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 146, 60, 0.2)',
   },
   deleteButton: {
     paddingVertical: 4,
