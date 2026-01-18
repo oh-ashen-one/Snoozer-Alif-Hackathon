@@ -5,6 +5,7 @@ import { AppState, AppStateStatus } from 'react-native';
 
 const ALARM_STATE_KEY = '@snoozer_active_alarm';
 const HEARTBEAT_INTERVAL = 10000; // 10 seconds
+const STALE_THRESHOLD = 30000; // 30 seconds - if heartbeat is older than this, alarm was interrupted
 
 interface AlarmData {
   alarmId: string;
@@ -13,9 +14,12 @@ interface AlarmData {
   shameVideoUri: string;
 }
 
+type AlarmStatus = 'ringing' | 'dismissed';
+
 interface StoredAlarmState extends AlarmData {
   lastHeartbeat: number;
   startedAt: number;
+  status: AlarmStatus;
 }
 
 type CheatType = 'photo_too_old' | 'time_manipulation' | 'app_killed' | 'shake_detected' | 'clock_drift';
@@ -30,13 +34,15 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const alarmStartTime = useRef<number | null>(null);
 
-  const saveAlarmState = useCallback(async (alarmData: AlarmData) => {
+  const saveAlarmState = useCallback(async (alarmData: AlarmData, status: AlarmStatus = 'ringing') => {
     try {
-      await AsyncStorage.setItem(ALARM_STATE_KEY, JSON.stringify({
+      const state: StoredAlarmState = {
         ...alarmData,
         lastHeartbeat: Date.now(),
-        startedAt: alarmStartTime.current,
-      }));
+        startedAt: alarmStartTime.current || Date.now(),
+        status,
+      };
+      await AsyncStorage.setItem(ALARM_STATE_KEY, JSON.stringify(state));
     } catch (error) {
       if (__DEV__) console.error('Failed to save alarm state:', error);
     }
@@ -56,10 +62,20 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
       if (stored) {
         const alarmState: StoredAlarmState = JSON.parse(stored);
         const timeSinceHeartbeat = Date.now() - alarmState.lastHeartbeat;
-        
-        if (timeSinceHeartbeat > 30000) {
+
+        // Only consider it interrupted if:
+        // 1. Status is 'ringing' (not properly dismissed)
+        // 2. Heartbeat is stale (app was killed/crashed)
+        if (alarmState.status === 'ringing' && timeSinceHeartbeat > STALE_THRESHOLD) {
+          if (__DEV__) console.log('[AntiCheat] Detected interrupted alarm:', alarmState.alarmId, 'stale for:', timeSinceHeartbeat, 'ms');
           onAlarmInterrupted?.(alarmState);
           return alarmState;
+        }
+
+        // If status is 'dismissed', the alarm was handled properly - clear it
+        if (alarmState.status === 'dismissed') {
+          if (__DEV__) console.log('[AntiCheat] Found dismissed alarm state, clearing');
+          await AsyncStorage.removeItem(ALARM_STATE_KEY);
         }
       }
       return null;
