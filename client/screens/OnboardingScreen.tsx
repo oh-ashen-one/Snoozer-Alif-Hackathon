@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -212,9 +212,13 @@ interface PunishmentCardProps {
   configValue: string;
   onToggle: () => void;
   onConfigChange: (value: string) => void;
+  // Optional props for shame_video special case
+  isVideoCard?: boolean;
+  videoRecorded?: boolean;
+  onRecordVideo?: () => void;
 }
 
-const PunishmentCard = ({ item, isEnabled, configValue, onToggle, onConfigChange }: PunishmentCardProps) => {
+const PunishmentCard = ({ item, isEnabled, configValue, onToggle, onConfigChange, isVideoCard, videoRecorded, onRecordVideo }: PunishmentCardProps) => {
   const handleToggle = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onToggle();
@@ -242,6 +246,16 @@ const PunishmentCard = ({ item, isEnabled, configValue, onToggle, onConfigChange
             autoCapitalize="none"
             autoCorrect={false}
           />
+        </View>
+      )}
+      {isEnabled && isVideoCard && onRecordVideo && (
+        <View style={styles.inputRow}>
+          <Pressable style={styles.recordButton} onPress={onRecordVideo}>
+            <Text style={styles.recordButtonEmoji}>{videoRecorded ? '✅' : '🎬'}</Text>
+            <Text style={styles.recordButtonText}>
+              {videoRecorded ? 'Video recorded' : 'Record video'}
+            </Text>
+          </Pressable>
         </View>
       )}
     </View>
@@ -315,12 +329,21 @@ const HabitCard = ({ habit, isSelected, onSelect }: HabitCardProps) => {
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
   const [step, setStep] = useState(0);
   const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
 
   // Punishment setup state
   const [enabledPunishments, setEnabledPunishments] = useState<string[]>([]);
   const [punishmentConfig, setPunishmentConfig] = useState<PunishmentConfig>({});
+  const [shameVideoUri, setShameVideoUri] = useState<string | null>(null);
+
+  // Read video URI from route params (returned from RecordShameScreen)
+  useEffect(() => {
+    if (route.params?.shameVideoUri) {
+      setShameVideoUri(route.params.shameVideoUri);
+    }
+  }, [route.params?.shameVideoUri]);
 
   const handleTogglePunishment = useCallback((id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -355,10 +378,21 @@ export default function OnboardingScreen() {
     setStep(prev => prev - 1);
   }, []);
 
+  const handleRecordVideo = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('RecordShame', {
+      alarmTime: '',
+      alarmLabel: '',
+      referencePhotoUri: '',
+      isOnboarding: true,
+      returnTo: 'Onboarding',
+    });
+  }, [navigation]);
+
   // Check if all enabled punishments have required config
   const isConfigComplete = useCallback(() => {
     return enabledPunishments.every(id => {
-      if (id === 'shame_video') return true;
+      if (id === 'shame_video') return !!shameVideoUri;
 
       const contactItem = CONTACT_PUNISHMENTS.find(p => p.id === id);
       if (contactItem) {
@@ -372,7 +406,7 @@ export default function OnboardingScreen() {
 
       return true;
     });
-  }, [enabledPunishments, getConfigValue]);
+  }, [enabledPunishments, getConfigValue, shameVideoUri]);
 
   const handleContinue = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -443,6 +477,9 @@ export default function OnboardingScreen() {
                     configValue={item.configKey ? getConfigValue(item.id, item.configKey) : ''}
                     onToggle={() => handleTogglePunishment(item.id)}
                     onConfigChange={(value) => item.configKey && handleConfigChange(item.id, item.configKey, value)}
+                    isVideoCard={item.id === 'shame_video'}
+                    videoRecorded={!!shameVideoUri}
+                    onRecordVideo={handleRecordVideo}
                   />
                 ))}
               </FadeInView>

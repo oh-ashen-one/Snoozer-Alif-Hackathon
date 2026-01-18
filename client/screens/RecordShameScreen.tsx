@@ -60,13 +60,14 @@ export default function RecordShameScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { 
-    alarmTime, 
-    alarmLabel, 
-    referencePhotoUri, 
-    isOnboarding, 
-    punishment, 
-    extraPunishments, 
+  const {
+    alarmTime,
+    alarmLabel,
+    referencePhotoUri,
+    isOnboarding,
+    returnTo,
+    punishment,
+    extraPunishments,
     days,
     proofActivityType,
     activityName,
@@ -212,6 +213,13 @@ export default function RecordShameScreen() {
           await updateAlarm(firstAlarm.id, { shameVideoUri: savedUri });
         }
         navigation.navigate('Settings');
+        return;
+      }
+
+      // If returning to onboarding punishment setup
+      if (returnTo === 'Onboarding') {
+        console.log('[RecordShame] Returning to Onboarding with video');
+        navigation.navigate('Onboarding', { shameVideoUri: savedUri });
         return;
       }
 
