@@ -79,6 +79,27 @@ export const joinInviteSchema = z.object({
   code: z.string().length(6).regex(/^[A-Z0-9]+$/),
 });
 
+// Shame videos - store one video per user
+export const shameVideos = pgTable("shame_videos", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  deviceId: varchar("device_id").notNull().unique(), // Unique device identifier
+  videoData: text("video_data").notNull(), // Base64 encoded video
+  mimeType: varchar("mime_type", { length: 50 }).notNull().default('video/mp4'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("shame_videos_device_idx").on(table.deviceId),
+]);
+
+export const insertShameVideoSchema = createInsertSchema(shameVideos).pick({
+  deviceId: true,
+  videoData: true,
+  mimeType: true,
+});
+
 export type AppUser = typeof appUsers.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type BuddyPair = typeof buddyPairs.$inferSelect;
+export type ShameVideo = typeof shameVideos.$inferSelect;
