@@ -19,7 +19,6 @@ import { Feather } from '@expo/vector-icons';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { setOnboardingComplete } from '@/utils/storage';
 import { useAuth } from '@/contexts/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -76,15 +75,11 @@ export default function IntroScreen() {
   // Navigate after successful sign-in
   useEffect(() => {
     if (isAuthenticated) {
-      const navigateAfterAuth = async () => {
-        // Mark onboarding complete and go to Home
-        await setOnboardingComplete(true);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-      };
-      navigateAfterAuth();
+      // Go to Onboarding flow (Name → Goals → Habit → Set Alarm → etc.)
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Onboarding' }],
+      });
     }
   }, [isAuthenticated, navigation]);
 
@@ -515,12 +510,11 @@ export default function IntroScreen() {
         {__DEV__ && (
           <Pressable
             style={styles.skipButton}
-            onPress={async () => {
+            onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              await setOnboardingComplete(true);
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'Home' }],
+                routes: [{ name: 'Onboarding' }],
               });
             }}
           >

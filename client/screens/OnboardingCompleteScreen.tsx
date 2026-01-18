@@ -18,6 +18,7 @@ import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { setOnboardingComplete } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'OnboardingComplete'>;
@@ -71,11 +72,12 @@ export default function OnboardingCompleteScreen() {
       days,
     });
 
-    // Navigate to sign-in to complete setup
+    // Mark onboarding as complete and go to Home
+    await setOnboardingComplete(true);
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'Intro' }],
+        routes: [{ name: 'Home' }],
       })
     );
   };

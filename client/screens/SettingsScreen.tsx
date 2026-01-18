@@ -303,7 +303,7 @@ export default function SettingsScreen() {
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
-        message: "I'm using Snoozer to stop hitting snooze! No more excuses. Download it: https://snoozer.app",
+        message: "I'm using Snoozer to stop hitting snooze! No more excuses. Download it: https://snoozer.replit.app",
         title: 'Snoozer',
       });
     } catch (error) {
