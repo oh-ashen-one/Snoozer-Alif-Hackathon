@@ -219,9 +219,9 @@ export default function ProofCameraScreen() {
     setVerificationReason(null);
   };
 
-  const handleConfirm = async () => {
-    // Block if still verifying or verification failed
-    if (verifying || verificationStatus !== 'passed') return;
+  const handleConfirm = async (skipVerification = false) => {
+    // Block if still verifying or verification failed (unless skipping)
+    if (!skipVerification && (verifying || verificationStatus !== 'passed')) return;
 
     // Validate photo freshness (anti-cheat)
     if (photoTimestamp && !validatePhotoFreshness(photoTimestamp)) {
@@ -391,6 +391,17 @@ export default function ProofCameraScreen() {
             </View>
           ) : null}
 
+          {/* Skip button - only show when verification fails */}
+          {verificationStatus === 'failed' ? (
+            <Pressable 
+              testID="button-skip-verification" 
+              style={styles.skipButton} 
+              onPress={() => handleConfirm(true)}
+            >
+              <ThemedText style={styles.skipButtonText}>Skip verification</ThemedText>
+            </Pressable>
+          ) : null}
+
           {/* Always show retake button */}
           <Pressable 
             testID="button-retake-proof" 
@@ -415,7 +426,7 @@ export default function ProofCameraScreen() {
               styles.greenButton, 
               (verificationStatus !== 'passed') && styles.greenButtonDisabled
             ]}
-            onPress={handleConfirm}
+            onPress={() => handleConfirm()}
             disabled={verificationStatus !== 'passed'}
           >
             {verificationStatus === 'verifying' ? (
@@ -760,6 +771,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.red,
     flex: 1,
+  },
+  skipButton: {
+    width: '100%',
+    paddingVertical: 14,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.textMuted,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  skipButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.textMuted,
   },
 
   // Verification overlay
