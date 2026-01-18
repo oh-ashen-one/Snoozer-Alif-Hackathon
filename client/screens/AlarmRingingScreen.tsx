@@ -65,7 +65,7 @@ type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
 
 type SnoozeStep = 0 | 1 | 2;
 
-const SNOOZE_CONFIRMATION = "I'm such a fat chud...";
+const SNOOZE_CONFIRMATION = "im fuch a fat chud";
 const VIBRATION_PATTERN = [500, 500, 500, 500];
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
