@@ -225,11 +225,12 @@ export default function StatsScreen() {
         };
       });
 
-      const totalDays = timeframeStats.wakeUps + timeframeStats.snoozes;
-      const wakeUpRate = totalDays > 0 ? Math.round((timeframeStats.wakeUps / totalDays) * 100) : 0;
+      // Get actual days based on filter (use real days in current month)
+      const daysInCurrentMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+      const actualTotalDays = filter === 'year' ? 365 : filter === 'month' ? daysInCurrentMonth : 7;
 
-      // Get default total days based on filter
-      const defaultTotalDays = filter === 'year' ? 365 : filter === 'month' ? 30 : 7;
+      const loggedDays = timeframeStats.wakeUps + timeframeStats.snoozes;
+      const wakeUpRate = loggedDays > 0 ? Math.round((timeframeStats.wakeUps / loggedDays) * 100) : 0;
 
       setStats({
         currentStreak,
@@ -238,10 +239,10 @@ export default function StatsScreen() {
         moneyLost: timeframeStats.lostMoney,
         wakeUpRate,
         wakeUpDays: timeframeStats.wakeUps,
-        totalDays: totalDays || defaultTotalDays,
+        totalDays: actualTotalDays,
         weeklyData,
         recentActivity,
-        hasData: totalDays > 0,
+        hasData: loggedDays > 0,
       });
     } catch (error) {
       if (__DEV__) console.log('[Stats] Error loading stats:', error);
