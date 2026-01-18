@@ -13,6 +13,7 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarmById } from '@/utils/storage';
 import { cancelAlarm } from '@/utils/notifications';
 import { saveProofPhoto } from '@/utils/fileSystem';
+import { logWakeUp } from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
@@ -93,6 +94,9 @@ export default function ProofCameraScreen() {
       if (alarm?.notificationId) {
         await cancelAlarm(alarm.notificationId);
       }
+
+      await logWakeUp(alarmId, new Date(), false);
+      if (__DEV__) console.log('[ProofCamera] Logged successful wake up');
     } catch (error) {
       if (__DEV__) console.log('[ProofCamera] Error during dismiss:', error);
     }

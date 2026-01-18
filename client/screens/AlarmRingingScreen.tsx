@@ -19,6 +19,7 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getAlarms } from '@/utils/storage';
+import { logWakeUp } from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AlarmRinging'>;
@@ -221,6 +222,14 @@ export default function AlarmRingingScreen() {
       if (__DEV__) console.log('ALARM: User chose snooze');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       await stopAlarm();
+      
+      try {
+        await logWakeUp(alarmData.alarmId, new Date(), true, 1);
+        if (__DEV__) console.log('[AlarmRinging] Logged snooze');
+      } catch (error) {
+        if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
+      }
+      
       navigation.navigate('ShamePlayback', {
         alarmId: alarmData.alarmId,
         shameVideoUri: alarmData.shameVideoUri,

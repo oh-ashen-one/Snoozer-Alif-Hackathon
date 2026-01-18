@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -10,6 +10,17 @@ import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import {
+  getCurrentStreak,
+  getBestStreak,
+  getMonthStats,
+  getWeekData,
+  getWakeUpHistory,
+  seedMockData,
+  type MonthStats,
+  type DayStatus as TrackingDayStatus,
+  type WakeLogEntry,
+} from '@/utils/tracking';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -29,30 +40,17 @@ interface ActivityItem {
   type: ActivityType;
 }
 
-// Mock data
-const MOCK_STATS = {
-  currentStreak: 12,
-  bestStreak: 21,
-  moneySaved: 48,
-  moneyLost: 6,
-  wakeUpRate: 89,
-  wakeUpDays: 25,
-  totalDays: 28,
-  weeklyData: [
-    { day: 'M', status: 'success' as DayStatus },
-    { day: 'T', status: 'success' as DayStatus },
-    { day: 'W', status: 'failed' as DayStatus },
-    { day: 'T', status: 'success' as DayStatus },
-    { day: 'F', status: 'success' as DayStatus },
-    { day: 'S', status: 'today' as DayStatus },
-    { day: 'S', status: 'future' as DayStatus },
-  ],
-  recentActivity: [
-    { icon: 'check-circle', iconColor: '#22C55E', text: 'Woke up on time', time: '6:02 AM', type: 'success' as ActivityType },
-    { icon: 'award', iconColor: '#FB923C', text: 'New streak record!', time: 'Yesterday', type: 'streak' as ActivityType },
-    { icon: 'moon', iconColor: '#EF4444', text: 'Snoozed once', time: '6:45 AM', type: 'failed' as ActivityType },
-  ],
-};
+interface Stats {
+  currentStreak: number;
+  bestStreak: number;
+  moneySaved: number;
+  moneyLost: number;
+  wakeUpRate: number;
+  wakeUpDays: number;
+  totalDays: number;
+  weeklyData: WeekDay[];
+  recentActivity: ActivityItem[];
+}
 
 // Day circle component
 function DayCircle({ day, status }: WeekDay) {
@@ -136,10 +134,104 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<Stats>({
+    currentStreak: 0,
+    bestStreak: 0,
+    moneySaved: 0,
+    moneyLost: 0,
+    wakeUpRate: 0,
+    wakeUpDays: 0,
+    totalDays: 30,
+    weeklyData: [],
+    recentActivity: [],
+  });
+
+  const loadStats = useCallback(async () => {
+    try {
+      const [currentStreak, bestStreak, monthStats, weekData, history] = await Promise.all([
+        getCurrentStreak(),
+        getBestStreak(),
+        getMonthStats(),
+        getWeekData(),
+        getWakeUpHistory(7),
+      ]);
+
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const weeklyData: WeekDay[] = weekData.map(day => {
+        let status: DayStatus = 'future';
+        if (day.date < todayStr) {
+          status = day.status === 'success' ? 'success' : day.status === 'fail' ? 'failed' : 'future';
+        } else if (day.date === todayStr) {
+          status = day.status === 'success' ? 'success' : day.status === 'fail' ? 'failed' : 'today';
+        }
+        return { day: day.dayOfWeek.charAt(0), status };
+      });
+
+      const recentActivity: ActivityItem[] = history.slice(0, 5).map(entry => {
+        if (entry.snoozed) {
+          return {
+            icon: 'moon',
+            iconColor: '#EF4444',
+            text: `Snoozed${entry.snoozeCount && entry.snoozeCount > 1 ? ` ${entry.snoozeCount}x` : ''}`,
+            time: entry.wokeAt,
+            type: 'failed' as ActivityType,
+          };
+        }
+        return {
+          icon: 'check-circle',
+          iconColor: '#22C55E',
+          text: 'Woke up on time',
+          time: entry.wokeAt,
+          type: 'success' as ActivityType,
+        };
+      });
+
+      const totalDays = monthStats.wakeUps + monthStats.snoozes;
+      const wakeUpRate = totalDays > 0 ? Math.round((monthStats.wakeUps / totalDays) * 100) : 0;
+
+      setStats({
+        currentStreak,
+        bestStreak,
+        moneySaved: monthStats.savedMoney,
+        moneyLost: monthStats.lostMoney,
+        wakeUpRate,
+        wakeUpDays: monthStats.wakeUps,
+        totalDays: totalDays || 30,
+        weeklyData,
+        recentActivity,
+      });
+    } catch (error) {
+      if (__DEV__) console.log('[Stats] Error loading stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [loadStats])
+  );
+
+  const handleSeedMockData = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await seedMockData();
+    await loadStats();
+  }, [loadStats]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer, { paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color="#FB923C" />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerSpacer} />
         <ThemedText style={styles.headerTitle}>Stats</ThemedText>
@@ -151,24 +243,22 @@ export default function StatsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Streak Card */}
         <View style={styles.heroCard}>
           <View style={styles.heroIconCircle}>
             <Feather name="zap" size={32} color="#FB923C" />
           </View>
           <ThemedText style={styles.heroLabel}>Current Streak</ThemedText>
-          <ThemedText style={styles.heroValue}>{MOCK_STATS.currentStreak} days</ThemedText>
-          <ThemedText style={styles.heroBest}>Best: {MOCK_STATS.bestStreak} days</ThemedText>
+          <ThemedText style={styles.heroValue}>{stats.currentStreak} days</ThemedText>
+          <ThemedText style={styles.heroBest}>Best: {stats.bestStreak} days</ThemedText>
         </View>
 
-        {/* Two Column Stats */}
         <View style={styles.twoColumnRow}>
           <View style={styles.statCard}>
             <View style={[styles.statIconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
               <Feather name="dollar-sign" size={18} color="#22C55E" />
             </View>
             <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
-            <ThemedText style={styles.statValueGreen}>${MOCK_STATS.moneySaved}</ThemedText>
+            <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
             <ThemedText style={styles.statSubtext}>this month</ThemedText>
           </View>
           <View style={styles.statCard}>
@@ -176,12 +266,11 @@ export default function StatsScreen() {
               <Feather name="trending-down" size={18} color="#EF4444" />
             </View>
             <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
-            <ThemedText style={styles.statValueRed}>${MOCK_STATS.moneyLost}</ThemedText>
+            <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
             <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
           </View>
         </View>
 
-        {/* Wake Up Rate Card */}
         <View style={styles.wakeUpCard}>
           <View style={styles.wakeUpHeader}>
             <View style={styles.wakeUpTitleRow}>
@@ -190,31 +279,45 @@ export default function StatsScreen() {
               </View>
               <ThemedText style={styles.wakeUpTitle}>Wake Up Rate</ThemedText>
             </View>
-            <ThemedText style={styles.wakeUpPercent}>{MOCK_STATS.wakeUpRate}%</ThemedText>
+            <ThemedText style={styles.wakeUpPercent}>{stats.wakeUpRate}%</ThemedText>
           </View>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${MOCK_STATS.wakeUpRate}%` }]} />
+            <View style={[styles.progressFill, { width: `${stats.wakeUpRate}%` }]} />
           </View>
           <ThemedText style={styles.wakeUpSubtext}>
-            {MOCK_STATS.wakeUpDays} of {MOCK_STATS.totalDays} days this month
+            {stats.wakeUpDays} of {stats.totalDays} days this month
           </ThemedText>
         </View>
 
-        {/* This Week Section */}
         <ThemedText style={styles.sectionTitle}>This Week</ThemedText>
-        <View style={styles.weekGrid}>
-          {MOCK_STATS.weeklyData.map((item, index) => (
-            <DayCircle key={index} day={item.day} status={item.status} />
-          ))}
-        </View>
+        {stats.weeklyData.length > 0 ? (
+          <View style={styles.weekGrid}>
+            {stats.weeklyData.map((item, index) => (
+              <DayCircle key={index} day={item.day} status={item.status} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyWeek}>
+            <ThemedText style={styles.emptyText}>No data yet</ThemedText>
+          </View>
+        )}
 
-        {/* Recent Activity */}
         <ThemedText style={styles.activityTitle}>Recent Activity</ThemedText>
-        <View style={styles.activityList}>
-          {MOCK_STATS.recentActivity.map((item, index) => (
-            <ActivityRow key={index} item={item} />
-          ))}
-        </View>
+        {stats.recentActivity.length > 0 ? (
+          <View style={styles.activityList}>
+            {stats.recentActivity.map((item, index) => (
+              <ActivityRow key={index} item={item} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyActivity}>
+            <Feather name="inbox" size={32} color="#57534E" />
+            <ThemedText style={styles.emptyText}>No activity yet</ThemedText>
+            <Pressable style={styles.seedButton} onPress={handleSeedMockData}>
+              <ThemedText style={styles.seedButtonText}>Load sample data</ThemedText>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
 
       <BottomNav activeTab="stats" />
@@ -480,5 +583,42 @@ const styles = StyleSheet.create({
   activityTime: {
     fontSize: 14,
     color: Colors.textMuted,
+  },
+
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyWeek: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyActivity: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  seedButton: {
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 8,
+  },
+  seedButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FB923C',
   },
 });

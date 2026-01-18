@@ -107,7 +107,7 @@ function DayPills({ selectedDays }: { selectedDays: number[] }) {
 }
 
 // Header Component with debug mode long press
-function Header({ onDebugModeActivate }: { onDebugModeActivate: () => void }) {
+function Header({ onDebugModeActivate, onSettingsPress }: { onDebugModeActivate: () => void; onSettingsPress: () => void }) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePressIn = () => {
@@ -124,17 +124,24 @@ function Header({ onDebugModeActivate }: { onDebugModeActivate: () => void }) {
     }
   };
 
+  const handleSettingsPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onSettingsPress();
+  };
+
   return (
-    <Pressable
-      style={styles.header}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-    >
-      <View>
+    <View style={styles.header}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+      >
         <ThemedText style={styles.greeting}>{getGreeting()}</ThemedText>
-        <ThemedText style={styles.userName}>Alex</ThemedText>
-      </View>
-    </Pressable>
+        <ThemedText style={styles.userName}>Alex 👋</ThemedText>
+      </Pressable>
+      <Pressable style={styles.settingsButton} onPress={handleSettingsPress}>
+        <Feather name="settings" size={20} color="#A8A29E" />
+      </Pressable>
+    </View>
   );
 }
 
@@ -217,7 +224,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
 
       {/* Buddy Card */}
       <Pressable style={[styles.statCard, styles.statCardDashed]} onPress={onBuddyPress}>
-        <View style={[styles.statIconCircle, { backgroundColor: 'rgba(120, 113, 108, 0.15)' }]}>
+        <View style={[styles.statIconCircle, { backgroundColor: '#292524' }]}>
           <Feather name="users" size={18} color="#78716C" />
         </View>
         <ThemedText style={styles.statLabel}>Buddy</ThemedText>
@@ -339,6 +346,10 @@ export default function HomeScreen() {
     navigation.navigate('Buddy');
   }, [navigation]);
 
+  const handleSettingsPress = useCallback(() => {
+    navigation.navigate('Settings');
+  }, [navigation]);
+
   const handleToggleAlarm = useCallback(
     (id: string) => {
       return () => {
@@ -367,7 +378,7 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Header onDebugModeActivate={handleDebugModeActivate} />
+        <Header onDebugModeActivate={handleDebugModeActivate} onSettingsPress={handleSettingsPress} />
 
         {debugMode && (
           <Pressable
@@ -439,6 +450,16 @@ const styles = StyleSheet.create({
     color: '#FAFAF9',
     marginTop: 4,
   },
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1C1917',
+    borderWidth: 1,
+    borderColor: '#292524',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // Active Badge
   activeBadge: {
@@ -470,6 +491,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: 24,
     marginTop: 8,
+    shadowColor: '#FB923C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 4,
   },
   nextAlarmHeader: {
     flexDirection: 'row',
