@@ -13,7 +13,7 @@ const STORAGE_KEYS = {
 };
 
 // Get or create a unique device ID
-async function getDeviceId(): Promise<string> {
+export async function getDeviceId(): Promise<string> {
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEYS.DEVICE_ID);
     if (stored) {

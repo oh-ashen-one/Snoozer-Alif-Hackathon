@@ -365,8 +365,14 @@ export interface PunishmentConfig {
 
 export async function getPunishmentConfig(): Promise<PunishmentConfig> {
   try {
+    // First try to get from local storage
     const data = await AsyncStorage.getItem(KEYS.PUNISHMENT_CONFIG);
-    return data ? JSON.parse(data) : {};
+    const localConfig = data ? JSON.parse(data) : {};
+    
+    // Try to sync from server in background
+    syncPunishmentConfigFromServer().catch(() => {});
+    
+    return localConfig;
   } catch (error) {
     console.error('Error getting punishment config:', error);
     return {};
@@ -375,9 +381,89 @@ export async function getPunishmentConfig(): Promise<PunishmentConfig> {
 
 export async function savePunishmentConfig(config: PunishmentConfig): Promise<void> {
   try {
+    // Save locally first
     await AsyncStorage.setItem(KEYS.PUNISHMENT_CONFIG, JSON.stringify(config));
+    
+    // Sync to server in background
+    syncPunishmentConfigToServer(config).catch(err => {
+      if (__DEV__) console.log('[Storage] Failed to sync config to server:', err);
+    });
   } catch (error) {
     console.error('Error saving punishment config:', error);
+  }
+}
+
+// Sync punishment config to server
+async function syncPunishmentConfigToServer(config: PunishmentConfig): Promise<void> {
+  try {
+    const { getDeviceId } = await import('./fileSystem');
+    const { getApiUrl } = await import('../lib/query-client');
+    
+    const deviceId = await getDeviceId();
+    const baseUrl = getApiUrl();
+    
+    const response = await fetch(`${baseUrl}/api/punishment-contacts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deviceId,
+        bossEmail: config.email_boss?.bossEmail || null,
+        exPhoneNumber: config.text_ex?.exPhoneNumber || null,
+        wifesDadPhoneNumber: config.wife_dad?.phoneNumber || null,
+        momPhoneNumber: config.mom?.phoneNumber || null,
+        grandmaPhoneNumber: config.grandma?.phoneNumber || null,
+        buddyPhoneNumber: config.buddy_call?.phoneNumber || null,
+        groupChatId: config.group_chat?.groupName || null,
+        twitterHandle: config.twitter?.handle || null,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}`);
+    }
+    
+    if (__DEV__) console.log('[Storage] Punishment config synced to server');
+  } catch (error) {
+    if (__DEV__) console.log('[Storage] Failed to sync to server:', error);
+    throw error;
+  }
+}
+
+// Sync punishment config from server and update local storage
+async function syncPunishmentConfigFromServer(): Promise<void> {
+  try {
+    const { getDeviceId } = await import('./fileSystem');
+    const { getApiUrl } = await import('../lib/query-client');
+    
+    const deviceId = await getDeviceId();
+    const baseUrl = getApiUrl();
+    
+    const response = await fetch(`${baseUrl}/api/punishment-contacts/${deviceId}`);
+    
+    if (!response.ok) {
+      return;
+    }
+    
+    const { contacts } = await response.json();
+    
+    if (contacts) {
+      // Convert server format to local config format
+      const config: PunishmentConfig = {};
+      if (contacts.bossEmail) config.email_boss = { bossEmail: contacts.bossEmail };
+      if (contacts.exPhoneNumber) config.text_ex = { exPhoneNumber: contacts.exPhoneNumber };
+      if (contacts.wifesDadPhoneNumber) config.wife_dad = { phoneNumber: contacts.wifesDadPhoneNumber };
+      if (contacts.momPhoneNumber) config.mom = { phoneNumber: contacts.momPhoneNumber };
+      if (contacts.grandmaPhoneNumber) config.grandma = { phoneNumber: contacts.grandmaPhoneNumber };
+      if (contacts.buddyPhoneNumber) config.buddy_call = { phoneNumber: contacts.buddyPhoneNumber };
+      if (contacts.groupChatId) config.group_chat = { groupName: contacts.groupChatId };
+      if (contacts.twitterHandle) config.twitter = { handle: contacts.twitterHandle };
+      
+      // Update local storage with server data
+      await AsyncStorage.setItem(KEYS.PUNISHMENT_CONFIG, JSON.stringify(config));
+      if (__DEV__) console.log('[Storage] Punishment config synced from server');
+    }
+  } catch (error) {
+    if (__DEV__) console.log('[Storage] Failed to sync from server:', error);
   }
 }
 
