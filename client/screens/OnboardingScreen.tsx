@@ -97,9 +97,9 @@ const DIGITAL_PUNISHMENTS = [
     emoji: '🐦',
     title: 'Tweet something bad',
     desc: '"I overslept again lol"',
-    inputType: 'text' as const,
-    placeholder: '@yourusername',
-    configKey: 'handle',
+    inputType: null,
+    placeholder: '',
+    configKey: '',
   },
   {
     id: 'shame_video',
