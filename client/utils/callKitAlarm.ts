@@ -1,16 +1,23 @@
 import { Platform } from 'react-native';
-import RNCallKeep, { IOptions } from 'react-native-callkeep';
 
-// Map of CallKit UUIDs to alarm IDs
+let RNCallKeep: any = null;
+let callKitAvailable = false;
+
+try {
+  RNCallKeep = require('react-native-callkeep').default;
+  callKitAvailable = Platform.OS === 'ios' && RNCallKeep != null;
+} catch (error) {
+  if (__DEV__) console.log('[CallKit] react-native-callkeep not available (Expo Go mode)');
+  callKitAvailable = false;
+}
+
 const callToAlarmMap = new Map<string, string>();
 const alarmToCallMap = new Map<string, string>();
 
-// Check if CallKit is available (iOS only)
 export function isCallKitAvailable(): boolean {
-  return Platform.OS === 'ios';
+  return callKitAvailable;
 }
 
-// Generate a UUID for CallKit
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
@@ -19,19 +26,18 @@ function generateUUID(): string {
   });
 }
 
-// Setup CallKit - call this once on app start
 export async function setupCallKit(): Promise<boolean> {
-  if (!isCallKitAvailable()) {
+  if (!callKitAvailable || !RNCallKeep) {
     return false;
   }
 
-  const options: IOptions = {
+  const options = {
     ios: {
       appName: 'Snoozer',
       supportsVideo: false,
       maximumCallGroups: '1',
       maximumCallsPerCallGroup: '1',
-      includesCallsInRecents: false, // Don't pollute call history
+      includesCallsInRecents: false,
     },
     android: {
       alertTitle: 'Permissions Required',
@@ -48,32 +54,28 @@ export async function setupCallKit(): Promise<boolean> {
     return true;
   } catch (error) {
     if (__DEV__) console.error('[CallKit] Setup failed:', error);
+    callKitAvailable = false;
     return false;
   }
 }
 
-// Display the incoming alarm "call" - this shows full-screen UI on lock screen
 export function displayAlarmCall(alarmId: string, label: string): string | null {
-  if (!isCallKitAvailable()) {
+  if (!callKitAvailable || !RNCallKeep) {
     return null;
   }
 
   try {
-    // Generate unique call UUID
     const callUUID = generateUUID();
 
-    // Store mapping
     callToAlarmMap.set(callUUID, alarmId);
     alarmToCallMap.set(alarmId, callUUID);
 
-    // Display the incoming call
-    // This triggers iOS to show full-screen incoming call UI
     RNCallKeep.displayIncomingCall(
       callUUID,
-      'Snoozer',           // handle (caller ID)
-      label || 'Wake Up!', // localizedCallerName
-      'generic',           // handleType
-      false                // hasVideo
+      'Snoozer',
+      label || 'Wake Up!',
+      'generic',
+      false
     );
 
     if (__DEV__) console.log('[CallKit] Displaying alarm call:', callUUID, 'for alarm:', alarmId);
@@ -84,16 +86,14 @@ export function displayAlarmCall(alarmId: string, label: string): string | null 
   }
 }
 
-// End the alarm "call"
 export function endAlarmCall(callUUID: string): void {
-  if (!isCallKitAvailable()) {
+  if (!callKitAvailable || !RNCallKeep) {
     return;
   }
 
   try {
     RNCallKeep.endCall(callUUID);
 
-    // Clean up mappings
     const alarmId = callToAlarmMap.get(callUUID);
     if (alarmId) {
       alarmToCallMap.delete(alarmId);
@@ -106,7 +106,6 @@ export function endAlarmCall(callUUID: string): void {
   }
 }
 
-// End alarm call by alarm ID
 export function endAlarmCallByAlarmId(alarmId: string): void {
   const callUUID = alarmToCallMap.get(alarmId);
   if (callUUID) {
@@ -114,52 +113,43 @@ export function endAlarmCallByAlarmId(alarmId: string): void {
   }
 }
 
-// Get alarm ID from call UUID
 export function getAlarmIdFromCall(callUUID: string): string | undefined {
   return callToAlarmMap.get(callUUID);
 }
 
-// Callback types for CallKit events
 export interface CallKitCallbacks {
   onAnswer: (alarmId: string, callUUID: string) => void;
   onDecline: (alarmId: string, callUUID: string) => void;
 }
 
-// Add CallKit event listeners
 export function addCallKitListeners(callbacks: CallKitCallbacks): () => void {
-  if (!isCallKitAvailable()) {
+  if (!callKitAvailable || !RNCallKeep) {
     return () => {};
   }
 
-  // User answered the "call" (tapped Accept)
   const answerHandler = (data: { callUUID: string }) => {
     const alarmId = callToAlarmMap.get(data.callUUID);
     if (alarmId) {
       if (__DEV__) console.log('[CallKit] Call answered:', data.callUUID, 'alarm:', alarmId);
       callbacks.onAnswer(alarmId, data.callUUID);
     }
-    // End the call after answering
     endAlarmCall(data.callUUID);
   };
 
-  // User declined the "call" (tapped Decline)
   const endHandler = (data: { callUUID: string }) => {
     const alarmId = callToAlarmMap.get(data.callUUID);
     if (alarmId) {
       if (__DEV__) console.log('[CallKit] Call declined:', data.callUUID, 'alarm:', alarmId);
       callbacks.onDecline(alarmId, data.callUUID);
     }
-    // Clean up
     endAlarmCall(data.callUUID);
   };
 
-  // Register listeners
   RNCallKeep.addEventListener('answerCall', answerHandler);
   RNCallKeep.addEventListener('endCall', endHandler);
 
   if (__DEV__) console.log('[CallKit] Listeners registered');
 
-  // Return cleanup function
   return () => {
     RNCallKeep.removeEventListener('answerCall');
     RNCallKeep.removeEventListener('endCall');
@@ -167,8 +157,7 @@ export function addCallKitListeners(callbacks: CallKitCallbacks): () => void {
   };
 }
 
-// Report call started (required for proper CallKit integration)
 export function reportCallStarted(callUUID: string): void {
-  if (!isCallKitAvailable()) return;
+  if (!callKitAvailable || !RNCallKeep) return;
   RNCallKeep.reportConnectingOutgoingCallWithUUID(callUUID);
 }

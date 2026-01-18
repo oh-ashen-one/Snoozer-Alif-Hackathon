@@ -61,13 +61,6 @@
         {
           "contactsPermission": "Allow Snoozer to access your contacts to share accountability with friends."
         }
-      ],
-      [
-        "react-native-callkeep",
-        {
-          "alertTitle": "Wake Up Alarm",
-          "alertDescription": "Snoozer needs to display full-screen alarms"
-        }
       ]
     ],
     "experiments": {
