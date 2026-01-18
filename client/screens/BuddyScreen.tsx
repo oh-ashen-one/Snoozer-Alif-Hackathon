@@ -205,8 +205,8 @@ export default function BuddyScreen() {
 
   const handleEnterCode = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Enter Invite Code', 'This feature is coming soon!');
-  }, []);
+    navigation.navigate('JoinCode');
+  }, [navigation]);
 
   const selectedModeData = MODES.find(m => m.id === selectedMode);
 

@@ -41,6 +41,7 @@ export type RootStackParamList = {
   Invite: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName?: string };
   WaitingForBuddy: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; isHost: boolean; code: string; buddyName: string };
   BuddyJoined: { mode: '1v1' | 'group' | 'survivor' | 'accountability' | 'charity'; buddyName: string; stakes: string };
+  JoinCode: undefined;
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
   PaymentMethod: undefined;
@@ -187,6 +188,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="BuddyJoined"
         component={BuddyJoinedScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="JoinCode"
+        component={JoinCodeScreen}
         options={{
           headerShown: false,
         }}

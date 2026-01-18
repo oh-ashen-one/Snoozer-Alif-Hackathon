@@ -225,7 +225,8 @@ export default function BuddySetupScreen({ route }: Props) {
 
   const handleSkipToCode = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
+    navigation.navigate('JoinCode');
+  }, [navigation]);
 
   const handleWaitForBuddy = useCallback(async () => {
     if (!inviteCode) {

@@ -332,8 +332,12 @@ export default function SettingsScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            await setOnboardingComplete(false);
-            signOut().catch(() => {});
+            try {
+              await setOnboardingComplete(false);
+              await signOut();
+            } catch {
+              // Sign out failed, but continue with navigation
+            }
             navigation.dispatch(
               CommonActions.reset({
                 index: 0,

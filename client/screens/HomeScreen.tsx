@@ -166,7 +166,7 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
 
       {/* Time row */}
       <View style={styles.timeRow}>
-        <ThemedText style={styles.nextAlarmTime}>{time}</ThemedText>
+        <ThemedText style={styles.nextAlarmTime} numberOfLines={1} adjustsFontSizeToFit>{time}</ThemedText>
         <ThemedText style={styles.nextAlarmPeriod}>{period}</ThemedText>
       </View>
 
@@ -204,7 +204,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
           <Feather name="zap" size={18} color="#FB923C" />
         </View>
         <ThemedText style={styles.statLabel}>Streak</ThemedText>
-        <ThemedText style={styles.statValueGray}>0</ThemedText>
+        <ThemedText style={styles.statValueGray} numberOfLines={1} adjustsFontSizeToFit>0</ThemedText>
         <ThemedText style={styles.statSubLabel}>days</ThemedText>
       </View>
 
@@ -214,7 +214,7 @@ function StatsRow({ onBuddyPress }: { onBuddyPress: () => void }) {
           <Feather name="dollar-sign" size={18} color="#22C55E" />
         </View>
         <ThemedText style={styles.statLabel}>Saved</ThemedText>
-        <ThemedText style={styles.statValueGray}>$0</ThemedText>
+        <ThemedText style={styles.statValueGray} numberOfLines={1} adjustsFontSizeToFit>$0</ThemedText>
         <ThemedText style={styles.statSubLabel}>this month</ThemedText>
       </View>
 
@@ -281,7 +281,7 @@ function AlarmListItem({ alarm, onToggle }: { alarm: Alarm; onToggle: () => void
         <View style={styles.alarmTopRow}>
           <View style={styles.alarmLeft}>
             <View style={styles.alarmTimeRow}>
-              <ThemedText style={styles.alarmTime}>{time}</ThemedText>
+              <ThemedText style={styles.alarmTime} numberOfLines={1} adjustsFontSizeToFit>{time}</ThemedText>
               <ThemedText style={styles.alarmPeriod}>{period}</ThemedText>
             </View>
             <View style={styles.alarmSubtitleRow}>
@@ -542,6 +542,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '700',
     color: '#FAFAF9',
+    flexShrink: 1,
   },
   nextAlarmPeriod: {
     fontSize: 20,
@@ -627,6 +628,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#57534E',
     marginTop: 4,
+    minWidth: 50,
+    textAlign: 'center',
   },
   statSubLabel: {
     fontSize: 12,
@@ -691,6 +694,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '600',
     color: '#FAFAF9',
+    flexShrink: 1,
   },
   alarmPeriod: {
     fontSize: 14,

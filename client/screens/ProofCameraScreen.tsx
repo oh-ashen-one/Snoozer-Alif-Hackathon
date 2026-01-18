@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, Pressable, Image, Text, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Image, Text, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
@@ -16,6 +16,7 @@ import { getAlarmById } from '@/utils/storage';
 import { cancelAlarm } from '@/utils/notifications';
 import { saveProofPhoto } from '@/utils/fileSystem';
 import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
+import { validateProofPhoto } from '@/utils/imageComparison';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
@@ -42,6 +43,8 @@ export default function ProofCameraScreen() {
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
 
   const handleCapture = async () => {
@@ -81,9 +84,30 @@ export default function ProofCameraScreen() {
   const handleRetake = () => {
     buttonPress('secondary');
     setPhotoUri(null);
+    setVerificationError(null);
+    setVerifying(false);
   };
 
   const handleConfirm = async () => {
+    if (verifying) return;
+    setVerifying(true);
+    setVerificationError(null);
+
+    try {
+      if (photoUri && !photoUri.startsWith('mock://') && referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
+        const result = await validateProofPhoto(referencePhotoUri, photoUri);
+        if (!result.isMatch) {
+          setVerificationError(result.message);
+          setVerifying(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+        if (__DEV__) console.log('[ProofCamera] Image match:', result.similarity.toFixed(2));
+      }
+    } catch (error) {
+      if (__DEV__) console.log('[ProofCamera] Verification error:', error);
+    }
+
     successDismissPattern();
     if (__DEV__) console.log('ALARM: Alarm dismissed');
 
@@ -161,12 +185,28 @@ export default function ProofCameraScreen() {
         )}
 
         <View style={[styles.previewControls, { paddingBottom: insets.bottom + 24 }]}>
+          {verificationError ? (
+            <View style={styles.errorContainer}>
+              <Feather name="alert-circle" size={20} color={Colors.red} />
+              <ThemedText style={styles.errorText}>{verificationError}</ThemedText>
+            </View>
+          ) : null}
+
           <Pressable testID="button-retake-proof" style={styles.secondaryButton} onPress={handleRetake}>
             <ThemedText style={styles.secondaryButtonText}>Retake</ThemedText>
           </Pressable>
 
-          <Pressable testID="button-confirm-proof" style={styles.greenButton} onPress={handleConfirm}>
-            <ThemedText style={styles.greenButtonText}>Looks good!</ThemedText>
+          <Pressable
+            testID="button-confirm-proof"
+            style={[styles.greenButton, verifying && styles.greenButtonDisabled]}
+            onPress={handleConfirm}
+            disabled={verifying}
+          >
+            {verifying ? (
+              <ActivityIndicator size="small" color={Colors.text} />
+            ) : (
+              <ThemedText style={styles.greenButtonText}>Looks good!</ThemedText>
+            )}
           </Pressable>
         </View>
       </View>
@@ -465,5 +505,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
+  },
+  greenButtonDisabled: {
+    opacity: 0.7,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: 12,
+    marginBottom: Spacing.sm,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.red,
+    flex: 1,
   },
 });
