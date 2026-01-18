@@ -16,7 +16,6 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
 import {
   hapticForPunishment,
   getPunishmentLevel,
@@ -43,35 +42,35 @@ const PROOF_ACTIVITIES = [
     id: 'photo_activity',
     name: 'Photo of Activity',
     description: 'Take a pic doing your morning task',
-    icon: 'camera',
+    emoji: '📷',
     ctaText: (activity: string) => `${activity} Photo`,
   },
   {
     id: 'steps',
     name: 'Walk Steps',
     description: 'Get moving to dismiss',
-    icon: 'activity',
+    emoji: '🚶',
     ctaText: () => 'Walk 10 Steps',
   },
   {
     id: 'scan',
     name: 'Scan QR Code',
     description: 'Scan a code in another room',
-    icon: 'maximize',
+    emoji: '📐',
     ctaText: () => 'Scan QR',
   },
   {
     id: 'math',
     name: 'Math Problems',
     description: 'Solve problems to wake your brain',
-    icon: 'hash',
+    emoji: '🔢',
     ctaText: () => 'Solve Math',
   },
   {
     id: 'shake',
     name: 'Shake Phone',
     description: 'Shake vigorously to dismiss',
-    icon: 'smartphone',
+    emoji: '📱',
     ctaText: () => 'Shake 30x',
   },
 ];
@@ -117,7 +116,7 @@ function Toggle({ value, onToggle }: ToggleProps) {
 }
 
 interface PunishmentCardProps {
-  icon: string;
+  emoji: string;
   title: string;
   description: string;
   enabled: boolean;
@@ -125,12 +124,12 @@ interface PunishmentCardProps {
   children?: React.ReactNode;
 }
 
-function PunishmentCard({ icon, title, description, enabled, onToggle, children }: PunishmentCardProps) {
+function PunishmentCard({ emoji, title, description, enabled, onToggle, children }: PunishmentCardProps) {
   return (
     <View style={styles.punishmentCard}>
       <View style={styles.punishmentHeader}>
         <View style={styles.punishmentIconContainer}>
-          <Feather name={icon as any} size={20} color={enabled ? Colors.orange : Colors.textMuted} />
+          <Text style={{ fontSize: 20 }}>{emoji}</Text>
         </View>
         <View style={styles.punishmentInfo}>
           <Text style={styles.punishmentTitle}>{title}</Text>
@@ -347,13 +346,13 @@ export default function AddAlarmScreen() {
               onPress={() => setShowProofPicker(!showProofPicker)}
             >
               <View style={styles.proofIconContainer}>
-                <Feather name={selectedProofData?.icon as any} size={22} color={Colors.orange} />
+                <Text style={{ fontSize: 22 }}>{selectedProofData?.emoji}</Text>
               </View>
               <View style={styles.proofSelectorInfo}>
                 <Text style={styles.proofSelectorName}>{selectedProofData?.name}</Text>
                 <Text style={styles.proofSelectorDesc}>{selectedProofData?.description}</Text>
               </View>
-              <Feather name={showProofPicker ? 'chevron-up' : 'chevron-right'} size={20} color={Colors.textMuted} />
+              <Text style={{ fontSize: 20, color: Colors.textMuted }}>{showProofPicker ? '▲' : '›'}</Text>
             </Pressable>
 
             {showProofPicker ? (
@@ -368,12 +367,12 @@ export default function AddAlarmScreen() {
                       selectionChanged();
                     }}
                   >
-                    <Feather name={proof.icon as any} size={18} color={selectedProof === proof.id ? Colors.orange : Colors.textMuted} />
+                    <Text style={{ fontSize: 18 }}>{proof.emoji}</Text>
                     <Text style={[styles.proofOptionName, selectedProof === proof.id && styles.proofOptionNameActive]}>
                       {proof.name}
                     </Text>
                     {selectedProof === proof.id ? (
-                      <Feather name="check" size={18} color={Colors.orange} />
+                      <Text style={{ fontSize: 18, color: Colors.orange }}>✓</Text>
                     ) : null}
                   </Pressable>
                 ))}
@@ -423,7 +422,7 @@ export default function AddAlarmScreen() {
             <Text style={styles.sectionSub}>What happens when you snooze</Text>
 
             <PunishmentCard
-              icon="dollar-sign"
+              emoji="💵"
               title="Money Stakes"
               description="Pay your buddy via Apple Cash"
               enabled={moneyEnabled}
@@ -463,7 +462,7 @@ export default function AddAlarmScreen() {
             </PunishmentCard>
 
             <PunishmentCard
-              icon="video"
+              emoji="🎥"
               title="Shame Video"
               description="Plays embarrassing video at MAX volume"
               enabled={shameVideo}
@@ -473,14 +472,14 @@ export default function AddAlarmScreen() {
               }}
             >
               <Pressable style={styles.recordVideoBtn}>
-                <Feather name="film" size={18} color={Colors.text} />
+                <Text style={{ fontSize: 18 }}>🎬</Text>
                 <Text style={styles.recordVideoBtnText}>Record Shame Video</Text>
-                <Feather name="chevron-right" size={18} color={Colors.textMuted} />
+                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
               </Pressable>
             </PunishmentCard>
 
             <PunishmentCard
-              icon="message-circle"
+              emoji="💬"
               title="Buddy Notification"
               description="Text your buddy that you failed"
               enabled={buddyNotify}
@@ -500,7 +499,7 @@ export default function AddAlarmScreen() {
             </PunishmentCard>
 
             <PunishmentCard
-              icon="users"
+              emoji="👥"
               title="Social Shame"
               description="Post to group chat or social media"
               enabled={socialShame}
@@ -510,14 +509,14 @@ export default function AddAlarmScreen() {
               }}
             >
               <Pressable style={styles.selectGroupBtn}>
-                <Feather name="message-square" size={18} color={Colors.text} />
+                <Text style={{ fontSize: 18 }}>💬</Text>
                 <Text style={styles.selectGroupBtnText}>Select Group Chat</Text>
-                <Feather name="chevron-right" size={18} color={Colors.textMuted} />
+                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
               </Pressable>
             </PunishmentCard>
 
             <PunishmentCard
-              icon="heart"
+              emoji="😈"
               title="Anti-Charity"
               description="Donate to a cause you hate"
               enabled={antiCharity}
@@ -528,12 +527,12 @@ export default function AddAlarmScreen() {
             >
               <Pressable style={styles.selectCharityBtn}>
                 <Text style={styles.selectCharityBtnText}>Choose organization...</Text>
-                <Feather name="chevron-right" size={18} color={Colors.textMuted} />
+                <Text style={{ fontSize: 18, color: Colors.textMuted }}>›</Text>
               </Pressable>
             </PunishmentCard>
 
             <View style={styles.stakesHint}>
-              <Feather name="info" size={16} color={Colors.orange} />
+              <Text style={{ fontSize: 16 }}>💡</Text>
               <Text style={styles.stakesHintText}>
                 <Text style={styles.stakesHintBold}>More punishments = more motivation.</Text> Users with 3+ punishments enabled wake up 4x more consistently.
               </Text>
@@ -541,7 +540,7 @@ export default function AddAlarmScreen() {
 
             {punishmentCount === 0 ? (
               <View style={styles.noPunishmentWarning}>
-                <Feather name="alert-triangle" size={18} color={Colors.orange} />
+                <Text style={{ fontSize: 18 }}>⚠️</Text>
                 <Text style={styles.warningText}>
                   No punishments? You might as well use the default alarm app
                 </Text>

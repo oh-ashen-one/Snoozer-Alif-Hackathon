@@ -122,6 +122,48 @@ const MOTIVATIONAL_QUOTES = [
   "I'm not lazy. I'm building momentum.",
 ];
 
+// Helper functions for proof activity UI
+type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
+
+const getProofIcon = (proofType: string): FeatherIconName => {
+  switch (proofType) {
+    case 'steps': return 'navigation';
+    case 'photo_activity': return 'camera';
+    case 'scan': return 'maximize';
+    case 'math': return 'hash';
+    case 'shake': return 'smartphone';
+    default: return 'camera';
+  }
+};
+
+const getProofDescription = (proofType: string, activity: ProofActivity | null): string => {
+  switch (proofType) {
+    case 'steps':
+      return `Walk ${activity?.stepGoal || 50} steps`;
+    case 'photo_activity':
+      return activity?.activity || 'Take a photo at your wake-up spot';
+    case 'scan':
+      return 'Scan your QR code';
+    case 'math':
+      return 'Solve 3 math problems';
+    case 'shake':
+      return 'Shake your phone 30 times';
+    default:
+      return activity?.activity || 'Take a photo at your wake-up spot';
+  }
+};
+
+const getProofButtonText = (proofType: string): string => {
+  switch (proofType) {
+    case 'steps': return "I'M UP — START WALKING";
+    case 'photo_activity': return "I'M UP — TAKE PHOTO";
+    case 'scan': return "I'M UP — SCAN QR";
+    case 'math': return "I'M UP — DO MATH";
+    case 'shake': return "I'M UP — SHAKE PHONE";
+    default: return "I'M UP — TAKE PHOTO";
+  }
+};
+
 export default function AlarmRingingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
@@ -140,6 +182,7 @@ export default function AlarmRingingScreen() {
   const [streak, setStreak] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [proofActivity, setProofActivity] = useState<ProofActivity | null>(null);
+  const [proofActivityType, setProofActivityType] = useState<string>('photo_activity');
   const [alarmSoundSource, setAlarmSoundSource] = useState<any>(null);
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
@@ -264,6 +307,7 @@ export default function AlarmRingingScreen() {
           }
           // Load per-alarm proof activity settings
           if (targetAlarm.proofActivityType) {
+            setProofActivityType(targetAlarm.proofActivityType);
             const proofFromAlarm: ProofActivity = {
               activity: targetAlarm.activityName || targetAlarm.label || 'Wake up activity',
               activityIcon: 'camera',
@@ -275,6 +319,7 @@ export default function AlarmRingingScreen() {
             if (__DEV__) console.log('[AlarmRinging] Per-alarm proof activity:', targetAlarm.proofActivityType, targetAlarm.activityName);
           } else {
             // Fallback to global settings for older alarms
+            setProofActivityType('photo_activity');
             getProofActivity().then(activity => {
               if (activity) setProofActivity(activity);
             });
@@ -388,16 +433,55 @@ export default function AlarmRingingScreen() {
     buttonPress('primary');
     await stopAlarm();
 
-    // Check if activity is step-only (like "Walk around")
-    const isStepOnly = proofActivity?.isStepOnly === true;
-    const stepGoal = proofActivity?.stepGoal || (isStepOnly ? 50 : 10);
+    const stepGoal = proofActivity?.stepGoal || 50;
 
-    navigation.navigate('StepMission', {
-      alarmId: alarmData.alarmId,
-      referencePhotoUri: alarmData.referencePhotoUri,
-      onComplete: isStepOnly ? 'Home' : 'ProofCamera',
-      stepGoal,
-    });
+    // Route based on proof activity type
+    switch (proofActivityType) {
+      case 'steps':
+        // Steps only - no photo needed
+        navigation.navigate('StepMission', {
+          alarmId: alarmData.alarmId,
+          referencePhotoUri: alarmData.referencePhotoUri,
+          onComplete: 'Home',
+          stepGoal,
+        });
+        break;
+      case 'photo_activity':
+        // Photo proof - go through step mission to camera
+        navigation.navigate('StepMission', {
+          alarmId: alarmData.alarmId,
+          referencePhotoUri: alarmData.referencePhotoUri,
+          onComplete: 'ProofCamera',
+          stepGoal: 10, // Quick steps before photo
+        });
+        break;
+      case 'scan':
+      case 'math':
+      case 'shake':
+        // TODO: Implement these proof types
+        // For now, mark as complete and go home
+        if (__DEV__) console.log('[AlarmRinging] Proof type not yet implemented:', proofActivityType);
+        try {
+          await logWakeUp(alarmData.alarmId, new Date(), false, 0);
+        } catch (error) {
+          if (__DEV__) console.log('[AlarmRinging] Error logging wake-up:', error);
+        }
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          })
+        );
+        break;
+      default:
+        // Fallback to photo proof
+        navigation.navigate('StepMission', {
+          alarmId: alarmData.alarmId,
+          referencePhotoUri: alarmData.referencePhotoUri,
+          onComplete: 'ProofCamera',
+          stepGoal: 10,
+        });
+    }
   };
 
   const handleSnoozePress = () => {
@@ -547,13 +631,11 @@ export default function AlarmRingingScreen() {
         {/* ACTIVITY CARD */}
         <View style={styles.activityCard}>
           <View style={styles.activityIconWrapper}>
-            <Feather name={proofActivity?.isStepOnly ? 'navigation' : 'star'} size={22} color={Colors.orange} />
+            <Feather name={getProofIcon(proofActivityType)} size={22} color={Colors.orange} />
           </View>
           <View style={styles.activityTextContainer}>
             <ThemedText style={styles.activityText}>
-              {proofActivity?.isStepOnly
-                ? `Walk ${proofActivity?.stepGoal || 50} steps`
-                : (proofActivity ? proofActivity.activity : 'Take a photo at your wake-up spot')}
+              {getProofDescription(proofActivityType, proofActivity)}
             </ThemedText>
             <ThemedText style={styles.activityLabel}>to dismiss alarm</ThemedText>
           </View>
@@ -662,7 +744,7 @@ export default function AlarmRingingScreen() {
           testID="button-dismiss-alarm"
         >
           <ThemedText style={styles.wakeUpButtonText}>
-            {proofActivity?.isStepOnly ? "I'M UP — START WALKING" : "I'M UP — TAKE PHOTO"}
+            {getProofButtonText(proofActivityType)}
           </ThemedText>
         </Pressable>
 
