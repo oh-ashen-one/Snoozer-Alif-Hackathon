@@ -375,6 +375,7 @@ export default function SettingsScreen() {
   }, [navigation]);
 
   const handleClearStats = useCallback(() => {
+    console.log('[Settings] Clear stats pressed');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Clear Stats?',

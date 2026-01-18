@@ -722,9 +722,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   statCardDashed: {
     borderStyle: 'dashed',

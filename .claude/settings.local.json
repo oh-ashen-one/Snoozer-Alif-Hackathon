@@ -20,7 +20,8 @@
       "Bash(npm install:*)",
       "WebFetch(domain:nilcoalescing.com)",
       "Bash(npm run check:types:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npx expo start:*)"
     ]
   }
 }

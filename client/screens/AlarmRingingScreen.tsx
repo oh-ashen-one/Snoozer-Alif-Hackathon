@@ -152,7 +152,7 @@ const getProofEmoji = (proofType: string): string => {
 const getProofDescription = (proofType: string, activity: ProofActivity | null): string => {
   switch (proofType) {
     case 'steps':
-      return `Walk ${activity?.stepGoal || 50} steps`;
+      return `Walk ${activity?.stepGoal || 10} steps`;
     case 'photo_activity':
       // Show the specific activity the user configured
       if (activity?.activity && activity.activity !== 'Wake up activity') {
@@ -194,6 +194,7 @@ export default function AlarmRingingScreen() {
     shameVideoUri: params.shameVideoUri || '',
   });
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [alarmSetTime, setAlarmSetTime] = useState<string>(''); // The alarm's configured time (e.g., "7:30AM")
   const [snoozeStep, setSnoozeStep] = useState<SnoozeStep>(0);
   const [snoozeText, setSnoozeText] = useState('');
   const [streak, setStreak] = useState(0);
@@ -329,6 +330,10 @@ export default function AlarmRingingScreen() {
         }
         
         if (targetAlarm) {
+          // Store the alarm's set time for display
+          if (targetAlarm.time) {
+            setAlarmSetTime(targetAlarm.time);
+          }
           if (!alarmData.alarmId) {
             setAlarmData({
               alarmId: targetAlarm.id,
@@ -481,6 +486,17 @@ export default function AlarmRingingScreen() {
   const formatTime = (date: Date) => {
     const hours = date.getHours();
     const minutes = date.getMinutes();
+    const displayHours = hours % 12 || 12;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    return `${displayHours}:${minutes.toString().padStart(2, '0')}${period}`;
+  };
+
+  // Format alarm time string from "HH:MM" (24h) to "H:MMAM/PM" (12h)
+  const formatAlarmTimeString = (timeStr: string): string => {
+    if (!timeStr) return '';
+    const [hoursStr, minutesStr] = timeStr.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
     const displayHours = hours % 12 || 12;
     const period = hours >= 12 ? 'PM' : 'AM';
     return `${displayHours}:${minutes.toString().padStart(2, '0')}${period}`;
@@ -841,9 +857,9 @@ export default function AlarmRingingScreen() {
           </View>
         )}
 
-        {/* MASSIVE TIME */}
+        {/* MASSIVE TIME - Shows the alarm's set time, not current time */}
         <Animated.View style={[styles.timeContainer, timeAnimatedStyle, { opacity: loaded ? 1 : 0 }]}>
-          <ThemedText style={styles.time}>{formatTime(currentTime)}</ThemedText>
+          <ThemedText style={styles.time}>{alarmSetTime ? formatAlarmTimeString(alarmSetTime) : formatTime(currentTime)}</ThemedText>
           <ThemedText style={styles.day}>{formatDay(currentTime).toUpperCase()}</ThemedText>
         </Animated.View>
 
