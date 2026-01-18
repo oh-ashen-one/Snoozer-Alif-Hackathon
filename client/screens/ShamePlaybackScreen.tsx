@@ -20,7 +20,8 @@ import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { scheduleSnoozeAlarm } from '@/utils/notifications';
-import { getAlarmById } from '@/utils/storage';
+import { getAlarmById, getBuddyInfo } from '@/utils/storage';
+import { getCurrentStreak } from '@/utils/tracking';
 import { getShameVideo } from '@/utils/fileSystem';
 import { useIMessage } from '@/hooks/useIMessage';
 
@@ -153,16 +154,25 @@ export default function ShamePlaybackScreen() {
     };
   }, [alarmId, routeVideoUri, alarmLabel, referencePhotoUri, videoUri, navigation, textPulse, borderPulse]);
 
-  const navigateBackToAlarm = async () => {
-    if (__DEV__) console.log('ALARM: Shame video ended, returning to alarm');
+  const navigateToShameSent = async () => {
+    if (__DEV__) console.log('ALARM: Shame video ended, showing shame sent screen');
+
+    // Get buddy info and streak for shame screen
+    const [buddy, streak] = await Promise.all([
+      getBuddyInfo(),
+      getCurrentStreak(),
+    ]);
+
+    const buddyName = buddy?.name || 'Your buddy';
+    const penaltyAmount = 5; // Could be passed as param
 
     // Send shame message to buddy (auto-opens Messages app)
     if (buddyPhone) {
       try {
         await sendShameMessage(
-          { name: 'Buddy', phone: buddyPhone, type: 'buddy' },
+          { name: buddyName, phone: buddyPhone, type: 'buddy' },
           alarmLabel || 'Your buddy',
-          5 // penalty amount - could be passed as param
+          penaltyAmount
         );
         if (__DEV__) console.log('[ShamePlayback] Shame message sent');
       } catch (error) {
@@ -171,12 +181,19 @@ export default function ShamePlaybackScreen() {
       }
     }
 
-    navigation.navigate('AlarmRinging', {
-      alarmId,
-      alarmLabel,
-      referencePhotoUri,
-      shameVideoUri: videoUri,
-      showPaymentPrompt: showPaymentAfter,
+    // Format current time
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const currentTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+
+    navigation.navigate('ShameSent', {
+      buddyName,
+      amount: penaltyAmount,
+      currentTime,
+      previousStreak: streak,
     });
   };
 
@@ -185,7 +202,7 @@ export default function ShamePlaybackScreen() {
     if (mockTimerRef.current) {
       clearInterval(mockTimerRef.current);
     }
-    navigateBackToAlarm();
+    navigateToShameSent();
   };
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
@@ -193,7 +210,7 @@ export default function ShamePlaybackScreen() {
       if (status.error) {
         if (__DEV__) console.error('[ShamePlayback] Video error:', status.error);
         setVideoError(true);
-        setTimeout(navigateBackToAlarm, 2000);
+        setTimeout(navigateToShameSent, 2000);
       }
       return;
     }
@@ -208,7 +225,7 @@ export default function ShamePlaybackScreen() {
     }
 
     if (status.didJustFinish) {
-      navigateBackToAlarm();
+      navigateToShameSent();
     }
   };
 
