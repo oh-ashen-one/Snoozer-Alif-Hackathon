@@ -291,7 +291,7 @@ export default function AddAlarmScreen() {
           extraPunishments,
           days: selectedDays,
           proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
-          stepGoal: selectedProof === 'steps' ? 50 : undefined,
+          stepGoal: selectedProof === 'steps' ? 10 : undefined,
           activityName: activityName,
           // Explicit punishment toggles
           moneyEnabled: moneyEnabled,
@@ -317,7 +317,7 @@ export default function AddAlarmScreen() {
           extraPunishments,
           days: selectedDays,
           proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math' | 'type_phrase',
-          stepGoal: selectedProof === 'steps' ? 50 : undefined,
+          stepGoal: selectedProof === 'steps' ? 10 : undefined,
           activityName: activityName,
           // Explicit punishment toggles
           moneyEnabled: moneyEnabled,

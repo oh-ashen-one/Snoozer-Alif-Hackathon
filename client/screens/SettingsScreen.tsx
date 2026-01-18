@@ -29,6 +29,7 @@ import { AnimatedToggle } from '@/components/AnimatedToggle';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { setOnboardingComplete, getUserName, saveUserName } from '@/utils/storage';
+import { clearTrackingData } from '@/utils/tracking';
 import { setCurrentScreen } from '@/utils/soundKiller';
 import { useAlarms } from '@/hooks/useAlarms';
 import { useAuth } from '@/contexts/AuthContext';
@@ -373,6 +374,25 @@ export default function SettingsScreen() {
     navigation.navigate('Legal', { type: 'privacy' });
   }, [navigation]);
 
+  const handleClearStats = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'Clear Stats?',
+      'This will delete all your wake-up history, streaks, and stats. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await clearTrackingData();
+            Alert.alert('Stats Cleared', 'Your stats have been reset.');
+          },
+        },
+      ]
+    );
+  }, []);
+
   const handleCalendarToggle = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (calendarConnected) {
@@ -680,6 +700,15 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <ThemedText style={styles.sectionLabel}>ABOUT</ThemedText>
           <View style={styles.card}>
+            <SettingsRow
+              icon="📊"
+              iconColor="#EF4444"
+              iconBg={ICON_COLORS.red}
+              label="Clear stats"
+              onPress={handleClearStats}
+              isDestructive={true}
+            />
+            <View style={styles.rowDivider} />
             <SettingsRow
               icon="file-text"
               iconColor="#78716C"

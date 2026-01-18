@@ -430,17 +430,6 @@ export default function HomeScreen() {
     });
   }, []);
 
-  const handleTestAlarmNow = useCallback(() => {
-    if (__DEV__) console.log('[Home] Test Alarm Now pressed - navigating to AlarmRinging');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    navigation.navigate('AlarmRinging', {
-      alarmId: 'test',
-      alarmLabel: 'Test Alarm',
-      referencePhotoUri: '',
-      shameVideoUri: '',
-    });
-  }, [navigation]);
-
   // Sort alarms chronologically for display
   const sortedAlarms = useMemo(() => sortAlarmsByTime(alarms), [alarms]);
 
@@ -562,14 +551,6 @@ export default function HomeScreen() {
               </AnimatedCard>
             ))}
 
-            <Pressable
-              testID="button-test-alarm"
-              style={styles.testAlarmButton}
-              onPress={handleTestAlarmNow}
-            >
-              <ThemedText style={{ fontSize: 18 }}>⚡</ThemedText>
-              <ThemedText style={styles.testAlarmButtonText}>Test Alarm</ThemedText>
-            </Pressable>
           </>
         ) : (
           <>
@@ -1033,27 +1014,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FAFAF9',
-  },
-
-  // Test Alarm Button
-  testAlarmButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(251, 146, 60, 0.12)',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 100,
-    marginTop: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(251, 146, 60, 0.2)',
-  },
-  testAlarmButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FB923C',
   },
 
   // Debug Mode
