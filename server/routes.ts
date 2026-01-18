@@ -291,45 +291,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { imageBase64, activityDescription, referenceImageBase64 } = req.body;
 
+      console.log("[VerifyProof] Starting verification for activity:", activityDescription);
+      console.log("[VerifyProof] Has reference image:", !!referenceImageBase64);
+      console.log("[VerifyProof] Image data length:", imageBase64?.length || 0);
+
       if (!imageBase64 || !activityDescription) {
+        console.log("[VerifyProof] Missing required fields");
         res.status(400).json({ error: "Image and activity description are required" });
         return;
       }
 
-      // Build the messages for vision analysis
+      // Build the messages for vision analysis with a balanced prompt
       const userContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
         {
           type: "text",
-          text: `You are a STRICT verification system for a wake-up accountability app. Your job is to verify that someone has ACTUALLY completed their morning activity.
+          text: `You are a verification system for a wake-up accountability app. Analyze this photo to determine if the person completed their morning activity.
 
-The required activity is: "${activityDescription}"
+The activity to verify: "${activityDescription}"
 
-STRICT REQUIREMENTS - ALL must be met to pass:
-1. A PERSON must be clearly visible in the photo (face, hands, or body)
-2. The person must be ACTIVELY performing or clearly just finished the activity
-3. Relevant items or setting for the activity should be visible
+Guidelines:
+1. Look for evidence the activity was performed or just completed
+2. The person OR relevant items for the activity should be visible
+3. Accept reasonable proof - this is about building habits, not perfect photos
+4. A selfie showing the person awake and ready is often sufficient
+5. Items related to the activity (coffee cup, gym equipment, etc.) help verify
 
-AUTOMATIC FAIL conditions:
-- No person visible in the photo
-- Photo shows just a wall, room, or objects without a person
-- Photo is blurry or unclear
-- Activity cannot be reasonably confirmed from the image
-- Photo appears to be a screenshot or photo of another photo
+Only reject if:
+- Photo is clearly fake (screenshot of another photo)
+- Photo is completely unrelated to the activity
+- Photo is too blurry to see anything
 
-Be STRICT - this app is meant to hold people accountable. Only pass if you can clearly see the person doing the activity.
-
-Respond with ONLY a JSON object in this exact format:
+Respond with ONLY this JSON format:
 {
   "verified": true or false,
   "confidence": "high", "medium", or "low",
-  "reason": "Brief explanation of why the verification passed or failed"
+  "reason": "Brief explanation"
 }`,
         },
         {
           type: "image_url",
           image_url: {
-            url: imageBase64.startsWith("data:") 
-              ? imageBase64 
+            url: imageBase64.startsWith("data:")
+              ? imageBase64
               : `data:image/jpeg;base64,${imageBase64}`,
           },
         },
@@ -355,6 +358,8 @@ Respond with ONLY a JSON object in this exact format:
         });
       }
 
+      console.log("[VerifyProof] Calling OpenAI API...");
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -367,37 +372,75 @@ Respond with ONLY a JSON object in this exact format:
       });
 
       const content = response.choices[0]?.message?.content || "";
-      
+      console.log("[VerifyProof] Raw AI response:", content);
+
       // Parse the JSON response
       try {
         // Extract JSON from potential markdown code blocks
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const result = JSON.parse(jsonMatch[0]);
-          res.json({
+          const finalResult = {
             verified: result.verified === true,
             confidence: result.confidence || "medium",
             reason: result.reason || "Verification completed",
-          });
+          };
+          console.log("[VerifyProof] Parsed result:", finalResult);
+          res.json(finalResult);
         } else {
-          // Fallback if no valid JSON
-          res.json({
-            verified: content.toLowerCase().includes("verified") && !content.toLowerCase().includes("not verified"),
-            confidence: "low",
-            reason: content,
-          });
+          // Fallback: check for positive indicators in the response
+          const lowerContent = content.toLowerCase();
+          const isVerified = (lowerContent.includes("verified") || lowerContent.includes("pass") || lowerContent.includes("accept"))
+            && !lowerContent.includes("not verified")
+            && !lowerContent.includes("fail")
+            && !lowerContent.includes("reject");
+
+          const fallbackResult = {
+            verified: isVerified,
+            confidence: "low" as const,
+            reason: content.slice(0, 200),
+          };
+          console.log("[VerifyProof] Fallback result (no JSON found):", fallbackResult);
+          res.json(fallbackResult);
         }
       } catch (parseError) {
         console.error("[VerifyProof] Failed to parse AI response:", content);
+        console.error("[VerifyProof] Parse error:", parseError);
+        // On parse error, be lenient - assume verified if response seems positive
+        const lowerContent = content.toLowerCase();
+        const seemsPositive = lowerContent.includes("yes") || lowerContent.includes("verified") || lowerContent.includes("pass");
         res.json({
-          verified: false,
+          verified: seemsPositive,
           confidence: "low",
-          reason: "Unable to verify photo",
+          reason: "Verification completed (parse fallback)",
         });
       }
     } catch (error) {
-      console.error("[VerifyProof] Error:", error);
-      res.status(500).json({ error: "Failed to verify proof" });
+      console.error("[VerifyProof] API Error:", error);
+      // Return specific error so client knows to retry
+      res.status(500).json({
+        error: "Failed to verify proof",
+        details: String(error),
+        shouldRetry: true,
+      });
+    }
+  });
+
+  // GET /api/verify-proof/health - Check if AI verification is working
+  app.get("/api/verify-proof/health", async (_req: Request, res: Response) => {
+    try {
+      console.log("[VerifyProof] Health check - testing OpenAI connection...");
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: "Respond with just the word OK" }],
+        max_tokens: 10,
+      });
+      const content = response.choices[0]?.message?.content || "";
+      console.log("[VerifyProof] Health check response:", content);
+      res.json({ status: "ok", response: content });
+    } catch (error) {
+      console.error("[VerifyProof] Health check failed:", error);
+      res.status(500).json({ status: "error", message: String(error) });
     }
   });
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, StyleSheet, Pressable, Text as RNText, Platform, ActivityIndicator, Linking, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,7 +22,9 @@ type RouteProps = RouteProp<RootStackParamList, 'StretchProof'>;
 const isWeb = Platform.OS === 'web';
 const useMockCamera = isWeb;
 
-type Phase = 'camera' | 'verifying' | 'result';
+type Phase = 'camera' | 'countdown' | 'verifying' | 'result';
+
+const COUNTDOWN_SECONDS = 5;
 
 export default function StretchProofScreen() {
   const insets = useSafeAreaInsets();
@@ -36,13 +38,24 @@ export default function StretchProofScreen() {
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'passed' | 'failed'>('idle');
   const [verificationReason, setVerificationReason] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const cameraRef = useRef<CameraView>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       setCurrentScreen('StretchProof');
     }, [])
   );
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleOpenSettings = async () => {
     try {
@@ -141,9 +154,34 @@ export default function StretchProofScreen() {
     }
   }, [isCapturing, runVerification]);
 
+  const startCountdown = useCallback(() => {
+    setPhase('countdown');
+    setCountdown(COUNTDOWN_SECONDS);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    let current = COUNTDOWN_SECONDS;
+
+    countdownTimerRef.current = setInterval(() => {
+      current -= 1;
+      if (current > 0) {
+        setCountdown(current);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else {
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+        }
+        capturePhoto();
+      }
+    }, 1000);
+  }, [capturePhoto]);
+
   const handleRetry = useCallback(() => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+    }
     setPhase('camera');
     setPhotoUri(null);
+    setCountdown(COUNTDOWN_SECONDS);
     setVerificationStatus('idle');
     setVerificationReason(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -223,7 +261,7 @@ export default function StretchProofScreen() {
     );
   }
 
-  // Camera phase - main capture screen
+  // Camera phase - show camera with start timer button
   if (phase === 'camera') {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -233,7 +271,7 @@ export default function StretchProofScreen() {
         <View style={styles.header}>
           <RNText style={styles.headerEmoji}>🧘</RNText>
           <ThemedText style={styles.headerTitle}>Stretch Proof</ThemedText>
-          <ThemedText style={styles.headerSubtitle}>Take a photo of yourself stretching</ThemedText>
+          <ThemedText style={styles.headerSubtitle}>Get ready to strike a stretch pose</ThemedText>
         </View>
 
         {/* Camera view */}
@@ -254,18 +292,55 @@ export default function StretchProofScreen() {
           <View style={[styles.cameraCorner, styles.cameraCornerBR]} />
         </View>
 
-        {/* Capture button */}
+        {/* Start timer button */}
         <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
           <ThemedText style={styles.captureHint}>
-            Any stretch works - arms up, touching toes, side stretch
+            Prop up your phone, then tap to start the 5s timer
           </ThemedText>
-          <Pressable
-            style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
-            onPress={capturePhoto}
-            disabled={isCapturing}
-          >
-            <View style={styles.captureButtonInner} />
+          <Pressable style={styles.timerButton} onPress={startCountdown}>
+            <ThemedText style={styles.timerButtonText}>Start 5s Timer</ThemedText>
           </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // Countdown phase - show countdown overlay
+  if (phase === 'countdown') {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackgroundGlow color="orange" />
+
+        {/* Camera view with countdown overlay */}
+        <View style={styles.cameraContainer}>
+          {useMockCamera ? (
+            <View style={styles.mockCamera}>
+              <RNText style={styles.mockCameraEmoji}>📷</RNText>
+              <RNText style={styles.mockCameraText}>Camera preview</RNText>
+            </View>
+          ) : (
+            <CameraView ref={cameraRef} style={styles.camera} facing="front" />
+          )}
+
+          {/* Countdown overlay */}
+          <View style={styles.countdownOverlay}>
+            <View style={styles.countdownCircle}>
+              <ThemedText style={styles.countdownNumber}>{countdown}</ThemedText>
+            </View>
+            <ThemedText style={styles.countdownLabel}>Get into your stretch pose!</ThemedText>
+          </View>
+
+          {/* Corner guides */}
+          <View style={[styles.cameraCorner, styles.cameraCornerTL]} />
+          <View style={[styles.cameraCorner, styles.cameraCornerTR]} />
+          <View style={[styles.cameraCorner, styles.cameraCornerBL]} />
+          <View style={[styles.cameraCorner, styles.cameraCornerBR]} />
+        </View>
+
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
+          <ThemedText style={styles.countdownHint}>
+            Arms up, touching toes, or any stretch!
+          </ThemedText>
         </View>
       </View>
     );
@@ -477,6 +552,53 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.orange,
     borderWidth: 3,
     borderColor: Colors.text,
+  },
+  timerButton: {
+    backgroundColor: Colors.orange,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 18,
+    paddingHorizontal: Spacing['2xl'],
+    alignItems: 'center',
+    shadowColor: Colors.orange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  timerButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.bg,
+  },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  countdownCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  countdownNumber: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: Colors.bg,
+  },
+  countdownLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  countdownHint: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
   mockPreview: {
     flex: 1,

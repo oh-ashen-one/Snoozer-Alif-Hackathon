@@ -24,6 +24,7 @@ import { FadeInView } from '@/components/FadeInView';
 import {
   saveDefaultPunishments,
   savePunishmentConfig,
+  getPunishmentConfig,
   PunishmentConfig,
 } from '@/utils/storage';
 import { saveShameVideo } from '@/utils/fileSystem';
@@ -342,6 +343,17 @@ export default function OnboardingScreen() {
     }
   }, [route.params?.shameVideoUri]);
 
+  // Load existing punishment config from storage (entered elsewhere in the app)
+  useEffect(() => {
+    const loadExistingConfig = async () => {
+      const existingConfig = await getPunishmentConfig();
+      if (Object.keys(existingConfig).length > 0) {
+        setPunishmentConfig(existingConfig);
+      }
+    };
+    loadExistingConfig();
+  }, []);
+
   const handleTogglePunishment = useCallback((id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEnabledPunishments(prev =>
@@ -351,19 +363,33 @@ export default function OnboardingScreen() {
     );
   }, []);
 
+  // Map punishment IDs to storage config keys (to match PunishmentConfig interface)
+  const PUNISHMENT_ID_TO_CONFIG_KEY: Record<string, string> = {
+    'grandma_call': 'grandma',
+    'wife_dad': 'wife_dad',
+    'mom': 'mom',
+    'text_ex': 'text_ex',
+    'email_boss': 'email_boss',
+    'buddy_call': 'buddy_call',
+    'group_chat': 'group_chat',
+    'twitter': 'twitter',
+  };
+
   const handleConfigChange = useCallback((id: string, configKey: string, value: string) => {
+    const storageKey = PUNISHMENT_ID_TO_CONFIG_KEY[id] || id;
     setPunishmentConfig(prev => ({
       ...prev,
-      [id]: {
-        ...((prev as Record<string, Record<string, string>>)[id] || {}),
+      [storageKey]: {
+        ...((prev as Record<string, Record<string, string>>)[storageKey] || {}),
         [configKey]: value,
       },
     }));
   }, []);
 
   const getConfigValue = useCallback((id: string, configKey: string): string => {
+    const storageKey = PUNISHMENT_ID_TO_CONFIG_KEY[id] || id;
     const config = punishmentConfig as Record<string, Record<string, string>>;
-    return config[id]?.[configKey] || '';
+    return config[storageKey]?.[configKey] || '';
   }, [punishmentConfig]);
 
   const handleHabitSelect = useCallback((habitId: string) => {
