@@ -27,9 +27,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofSetup'>;
 type Step = 'activity' | 'camera' | 'confirm';
 
-const isDev = __DEV__;
+// Check if we're on web (no camera)
 const isWeb = Platform.OS === 'web';
-const useMockCamera = isDev || isWeb;
+const useMockCamera = isWeb;
 
 interface ActivityPreset {
   label: string;
@@ -49,11 +49,12 @@ const PRESETS: ActivityPreset[] = [
 const STEP_ONLY_ACTIVITIES = ['Walk around'];
 const STEP_GOAL_WALK = 50;
 
+// Mock camera placeholder component for web
 const MockCameraView = () => (
   <View style={styles.mockCamera}>
     <Text style={{ fontSize: 48 }}>{'\uD83D\uDCF7'}</Text>
     <Text style={styles.mockCameraText}>Camera preview</Text>
-    {isDev && <Text style={styles.mockCameraSubtext}>(Dev mode - mock camera)</Text>}
+    <Text style={styles.mockCameraSubtext}>(Web preview)</Text>
   </View>
 );
 

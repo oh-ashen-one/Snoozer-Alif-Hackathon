@@ -24,10 +24,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ReferencePhoto'>;
 type Phase = 'intro' | 'camera' | 'confirm';
 
-// Check if we're in dev mode or on web (no camera)
-const isDev = __DEV__;
+// Check if we're on web (no camera)
 const isWeb = Platform.OS === 'web';
-const useMockCamera = isDev || isWeb;
+const useMockCamera = isWeb;
 
 const TIPS = [
   { text: 'Stand where you brush your teeth', icon: '🪥' },
@@ -35,12 +34,12 @@ const TIPS = [
   { text: 'Good lighting helps matching', icon: '💡' },
 ];
 
-// Mock camera placeholder component
+// Mock camera placeholder component for web
 const MockCameraView = () => (
   <View style={styles.mockCamera}>
     <Text style={styles.mockCameraEmoji}>📷</Text>
     <Text style={styles.mockCameraText}>Camera preview</Text>
-    {isDev && <Text style={styles.mockCameraSubtext}>(Dev mode - mock camera)</Text>}
+    <Text style={styles.mockCameraSubtext}>(Web preview)</Text>
   </View>
 );
 

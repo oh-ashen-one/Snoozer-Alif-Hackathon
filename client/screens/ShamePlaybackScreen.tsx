@@ -26,10 +26,9 @@ import { getShameVideo } from '@/utils/fileSystem';
 import { useIMessage } from '@/hooks/useIMessage';
 import { setCurrentScreen } from '@/utils/soundKiller';
 
-// Check if we're in dev mode or on web (no video)
-const isDev = __DEV__;
+// Check if we're on web (no video)
 const isWeb = Platform.OS === 'web';
-const useMockVideo = isDev || isWeb;
+const useMockVideo = isWeb;
 
 // Mock video component for dev/web
 const MockVideoView = ({ remainingSeconds }: { remainingSeconds: number }) => (
@@ -284,13 +283,13 @@ export default function ShamePlaybackScreen() {
           {remainingSeconds}s remaining
         </ThemedText>
 
-        {__DEV__ && (
+{isWeb && (
           <Pressable
             testID="button-skip-video"
             style={styles.debugSkipButton}
             onPress={handleSkipVideo}
           >
-            <Text style={styles.debugSkipText}>Skip Video (DEV)</Text>
+            <Text style={styles.debugSkipText}>Skip Video (Web)</Text>
           </Pressable>
         )}
       </View>

@@ -27,10 +27,9 @@ type RouteProps = RouteProp<RootStackParamList, 'RecordShame'>;
 
 const MAX_DURATION = 15;
 
-// Check if we're in dev mode or on web (no camera)
-const isDev = __DEV__;
+// Check if we're on web (no camera)
 const isWeb = Platform.OS === 'web';
-const useMockCamera = isDev || isWeb;
+const useMockCamera = isWeb;
 
 const PROMPTS = [
   '"im such a fat chud"',
@@ -38,14 +37,14 @@ const PROMPTS = [
   '"This is what a lazy person looks like..."',
 ];
 
-// Mock camera placeholder component
+// Mock camera placeholder component for web
 const MockCameraView = ({ isRecording }: { isRecording: boolean }) => (
   <View style={styles.mockCamera}>
     <Text style={styles.mockCameraEmoji}>{isRecording ? '🔴' : '🎬'}</Text>
     <Text style={styles.mockCameraText}>
       {isRecording ? 'Recording...' : 'Camera preview'}
     </Text>
-    {isDev && <Text style={styles.mockCameraSubtext}>(Dev mode)</Text>}
+    <Text style={styles.mockCameraSubtext}>(Web preview)</Text>
   </View>
 );
 

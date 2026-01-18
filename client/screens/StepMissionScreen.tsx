@@ -201,9 +201,9 @@ export default function StepMissionScreen() {
           </ThemedText>
         )}
 
-        {(__DEV__ || isWeb) && (
+        {isWeb && (
           <Pressable style={styles.devButton} onPress={handleDevSkip}>
-            <ThemedText style={styles.devButtonText}>Skip (Dev)</ThemedText>
+            <ThemedText style={styles.devButtonText}>Skip (Web)</ThemedText>
           </Pressable>
         )}
       </View>

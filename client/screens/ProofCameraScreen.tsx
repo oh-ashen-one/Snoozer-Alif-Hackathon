@@ -24,10 +24,9 @@ import { notifyBuddyWoke } from '@/utils/buddyNotifications';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'ProofCamera'>;
 
-// Check if we're in dev mode or on web (no camera)
-const isDev = __DEV__;
+// Check if we're on web (no camera)
 const isWeb = Platform.OS === 'web';
-const useMockCamera = isDev || isWeb;
+const useMockCamera = isWeb;
 
 // Random gesture prompts for anti-cheat and fun
 const GESTURE_PROMPTS = [
@@ -45,12 +44,12 @@ const GESTURE_PROMPTS = [
   'with a surprised face',
 ];
 
-// Mock camera placeholder component
+// Mock camera placeholder component for web
 const MockCameraView = () => (
   <View style={styles.mockCamera}>
     <RNText style={styles.mockCameraEmoji}>📷</RNText>
     <RNText style={styles.mockCameraText}>Camera preview</RNText>
-    {isDev && <RNText style={styles.mockCameraSubtext}>(Dev mode - mock camera)</RNText>}
+    <RNText style={styles.mockCameraSubtext}>(Web preview)</RNText>
   </View>
 );
 
