@@ -61,7 +61,7 @@ const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444', configurable: true },
   { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899', configurable: true },
   { id: 'twitter', label: 'Tweet something bad', description: '"I overslept again lol"', icon: '🐦', color: '#1DA1F2' },
-  { id: 'text_ex', label: 'Text your ex "I miss u"', description: 'From your actual number', icon: '💔', color: '#EF4444', configurable: true },
+  { id: 'text_ex', label: 'Text friend something embarrassing', description: 'Random cringe message sent', icon: '😳', color: '#EF4444', configurable: true },
   { id: 'email_boss', label: 'Email your boss', description: '"Running late again, sorry"', icon: '📧', color: '#EA4335', configurable: true },
   { id: 'grandma_call', label: 'Auto-call your grandma', description: 'She WILL answer at 6am', icon: '👵', color: '#EC4899', configurable: true },
   { id: 'tinder_bio', label: 'Update Tinder bio', description: '"Can\'t even wake up on time"', icon: '🔥', color: '#FE3C72', comingSoon: true },
@@ -96,6 +96,32 @@ const EMBARRASSING_EMAILS = [
 ];
 
 const getRandomEmail = () => EMBARRASSING_EMAILS[Math.floor(Math.random() * EMBARRASSING_EMAILS.length)];
+
+// Embarrassing text messages for friend punishment
+const EMBARRASSING_TEXTS = [
+  "I just shit myself at work",
+  "I still sleep with a stuffed animal",
+  "I cried watching a dog food commercial",
+  "I just googled 'how to make friends'",
+  "I practiced my smile in the mirror for 20 mins today",
+  "I named my houseplant and talk to it daily",
+  "I have a crush on a cartoon character",
+  "I just ate cereal for dinner. The third night in a row.",
+  "I accidentally liked my ex's photo from 2019",
+  "I still don't know left from right without thinking",
+  "I waved back at someone who wasn't waving at me",
+  "I just fell UP the stairs in public",
+  "I've been wearing my shirt inside out all day",
+  "I just called my teacher 'mom' in a work meeting",
+  "I forgot how old I am and had to do math",
+  "I peed a little when I sneezed",
+  "I clog the toilet every time I visit my parents",
+  "I rehearse conversations in the shower",
+  "I got scared by my own fart",
+  "I still can't whistle and I'm devastated about it",
+];
+
+const getRandomEmbarrassingText = () => EMBARRASSING_TEXTS[Math.floor(Math.random() * EMBARRASSING_TEXTS.length)];
 
 // Toggle Component
 function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () => void }) {
@@ -186,7 +212,8 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const isAvailable = await SMS.isAvailableAsync();
     if (isAvailable) {
-      await SMS.sendSMSAsync([exPhoneNumber], 'I miss you');
+      const randomMessage = getRandomEmbarrassingText();
+      await SMS.sendSMSAsync([exPhoneNumber], randomMessage);
     }
   }, [exPhoneNumber]);
 
@@ -357,10 +384,10 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
         </View>
       )}
 
-      {/* Text Ex Configuration */}
+      {/* Text Friend Something Embarrassing Configuration */}
       {expanded && punishment.id === 'text_ex' && (
         <View style={styles.configSection}>
-          <ThemedText style={styles.configLabel}>Enter their number</ThemedText>
+          <ThemedText style={styles.configLabel}>Enter your friend's number</ThemedText>
           <TextInput
             style={styles.configInput}
             placeholder="+1 555 123 4567"
