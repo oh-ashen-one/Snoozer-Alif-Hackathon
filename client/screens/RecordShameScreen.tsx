@@ -18,8 +18,9 @@ import { ThemedText } from '@/components/ThemedText';
 import { ProgressDots } from '@/components/ProgressDots';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
-import { saveVideo, generateVideoFilename } from '@/utils/fileSystem';
+import { saveVideo, generateVideoFilename, saveShameVideo } from '@/utils/fileSystem';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
+import { useAlarms } from '@/hooks/useAlarms';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'RecordShame'>;
@@ -61,6 +62,7 @@ export default function RecordShameScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { alarmTime, alarmLabel, referencePhotoUri, isOnboarding, punishment, extraPunishments, days } = route.params;
+  const { alarms, updateAlarm } = useAlarms();
 
   const [isRecording, setIsRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
@@ -177,18 +179,28 @@ export default function RecordShameScreen() {
 
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      console.log('[RecordShame] Using video, navigating to OnboardingComplete');
 
       let savedUri = videoUri;
 
       // Only save if it's a real video
       if (!videoUri.startsWith('mock://')) {
-        const tempId = Date.now().toString();
-        const filename = generateVideoFilename(tempId);
-        const result = await saveVideo(videoUri, filename);
+        const result = await saveShameVideo(videoUri);
         if (result) savedUri = result;
       }
 
+      // If coming from settings, update the alarm and go back
+      if (isOnboarding === false) {
+        console.log('[RecordShame] Updating shame video from settings');
+        const firstAlarm = alarms[0];
+        if (firstAlarm) {
+          await updateAlarm(firstAlarm.id, { shameVideoUri: savedUri });
+        }
+        navigation.goBack();
+        return;
+      }
+
+      // Onboarding flow - navigate to complete screen
+      console.log('[RecordShame] Using video, navigating to OnboardingComplete');
       navigation.navigate('OnboardingComplete', {
         alarmTime,
         alarmLabel,
@@ -200,21 +212,33 @@ export default function RecordShameScreen() {
       });
     } catch (error) {
       console.error('[RecordShame] Error using video:', error);
-      // Continue without saved video - use original URI or empty string
-      navigation.navigate('OnboardingComplete', {
-        alarmTime,
-        alarmLabel,
-        referencePhotoUri,
-        shameVideoUri: videoUri.startsWith('mock://') ? '' : videoUri,
-        punishment,
-        extraPunishments,
-        days,
-      });
+      // On error, just go back if from settings, otherwise try to continue onboarding
+      if (isOnboarding === false) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('OnboardingComplete', {
+          alarmTime,
+          alarmLabel,
+          referencePhotoUri,
+          shameVideoUri: videoUri.startsWith('mock://') ? '' : videoUri,
+          punishment,
+          extraPunishments,
+          days,
+        });
+      }
     }
   };
 
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // If coming from settings, just go back
+    if (isOnboarding === false) {
+      console.log('[RecordShame] Skipped from settings, going back');
+      navigation.goBack();
+      return;
+    }
+
     console.log('[RecordShame] Skipped, navigating to OnboardingComplete');
     navigation.navigate('OnboardingComplete', {
       alarmTime,

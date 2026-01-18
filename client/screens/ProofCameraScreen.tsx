@@ -12,7 +12,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getAlarmById } from '@/utils/storage';
+import { getAlarmById, getProofActivity, ProofActivity } from '@/utils/storage';
 import { cancelAlarm } from '@/utils/notifications';
 import { saveProofPhoto } from '@/utils/fileSystem';
 import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
@@ -45,7 +45,12 @@ export default function ProofCameraScreen() {
   const [capturing, setCapturing] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [activity, setActivity] = useState<ProofActivity | null>(null);
   const cameraRef = useRef<CameraView>(null);
+
+  React.useEffect(() => {
+    getProofActivity().then(setActivity);
+  }, []);
 
   const handleCapture = async () => {
     if (capturing) return;
@@ -222,7 +227,7 @@ export default function ProofCameraScreen() {
         <Pressable style={styles.backButton} onPress={handleBack}>
           <Feather name="arrow-left" size={20} color={Colors.text} />
         </Pressable>
-        <ThemedText style={styles.topBarTitle}>Take your proof photo</ThemedText>
+        <ThemedText style={styles.topBarTitle}>{activity ? `Proof: ${activity.activity}` : 'Take your proof photo'}</ThemedText>
         <View style={styles.backButton} />
       </View>
 
@@ -238,7 +243,7 @@ export default function ProofCameraScreen() {
         <View style={styles.guideOverlay}>
           <View style={styles.guideBox}>
             <View style={styles.guidePill}>
-              <ThemedText style={styles.guidePillText}>Align with reference</ThemedText>
+              <ThemedText style={styles.guidePillText}>{activity ? `Show yourself: ${activity.activity}` : 'Align with reference'}</ThemedText>
             </View>
           </View>
         </View>

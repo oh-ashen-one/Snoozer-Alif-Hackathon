@@ -38,7 +38,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getAlarms } from '@/utils/storage';
+import { getAlarms, getProofActivity, ProofActivity } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 
 // Import local alarm sounds
@@ -91,6 +91,7 @@ export default function AlarmRingingScreen() {
   const [streak, setStreak] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [buddyQuote] = useState(BUDDY_QUOTES[Math.floor(Math.random() * BUDDY_QUOTES.length)]);
+  const [proofActivity, setProofActivity] = useState<ProofActivity | null>(null);
 
   const soundRef = useRef<Audio.Sound | null>(null);
   const isPlayingRef = useRef(false);
@@ -116,6 +117,7 @@ export default function AlarmRingingScreen() {
     );
 
     getCurrentStreak().then(s => setStreak(s));
+    getProofActivity().then(setProofActivity);
   }, []);
 
   useEffect(() => {
@@ -368,7 +370,10 @@ export default function AlarmRingingScreen() {
           </View>
           
           <ThemedText style={styles.proofDescription}>
-            Take a photo in your <Text style={styles.greenText}>bathroom</Text> to dismiss the alarm. No photo, no escape.
+            {proofActivity 
+              ? <>Show yourself <Text style={styles.greenText}>{proofActivity.activity.toLowerCase()}</Text> to dismiss the alarm. No proof, no escape.</>
+              : <>Take a photo at your <Text style={styles.greenText}>wake-up spot</Text> to dismiss the alarm. No photo, no escape.</>
+            }
           </ThemedText>
           
           <Pressable
