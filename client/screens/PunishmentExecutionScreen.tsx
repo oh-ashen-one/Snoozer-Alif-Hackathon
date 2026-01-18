@@ -260,6 +260,9 @@ export default function PunishmentExecutionScreen() {
       clearInterval(mockTimerRef.current);
     }
 
+    // Stop the alarm sound before navigating away
+    stopAlarm();
+
     const [buddy, streak] = await Promise.all([
       getBuddyInfo(),
       getCurrentStreak(),
@@ -282,7 +285,7 @@ export default function PunishmentExecutionScreen() {
       executedPunishments: punishmentTypes,
       moneyEnabled: moneyEnabled || false,
     });
-  }, [navigation, punishmentTypes, moneyEnabled, moneyAmount]);
+  }, [navigation, punishmentTypes, moneyEnabled, moneyAmount, stopAlarm]);
 
   const moveToNextPunishment = useCallback(() => {
     // Mark current as executed

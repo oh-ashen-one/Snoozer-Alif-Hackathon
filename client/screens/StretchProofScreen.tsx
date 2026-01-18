@@ -1,30 +1,37 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, Pressable, Platform } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { View, StyleSheet, Pressable, Text as RNText, Platform, ActivityIndicator, Linking, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp, CommonActions, useFocusEffect } from '@react-navigation/native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system/legacy';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  withRepeat,
   withSequence,
-  Easing,
+  withSpring,
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
+import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
 import { setCurrentScreen, killAllSounds } from '@/utils/soundKiller';
+import { apiRequest } from '@/lib/query-client';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'StretchProof'>;
 
-const STRETCH_DURATION = 30;
+// Check if we're on web (no camera)
+const isWeb = Platform.OS === 'web';
+const useMockCamera = isWeb;
+
+type Phase = 'setup' | 'countdown' | 'capturing' | 'verifying' | 'result';
+
+const COUNTDOWN_SECONDS = 3;
 
 export default function StretchProofScreen() {
   const insets = useSafeAreaInsets();
@@ -33,14 +40,16 @@ export default function StretchProofScreen() {
   const { alarmId } = route.params;
 
   const [permission, requestPermission] = useCameraPermissions();
-  const [timeLeft, setTimeLeft] = useState(STRETCH_DURATION);
-  const [isStretching, setIsStretching] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [photoTaken, setPhotoTaken] = useState(false);
+  const [phase, setPhase] = useState<Phase>('setup');
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'passed' | 'failed'>('idle');
+  const [verificationReason, setVerificationReason] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const pulseScale = useSharedValue(1);
-  const progressWidth = useSharedValue(0);
+  // Animation values
+  const countdownScale = useSharedValue(1);
 
   useFocusEffect(
     useCallback(() => {
@@ -48,198 +57,391 @@ export default function StretchProofScreen() {
     }, [])
   );
 
+  // Cleanup on unmount
   useEffect(() => {
-    pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-  }, [pulseScale]);
-
-  useEffect(() => {
-    if (!isStretching) return;
-
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleStretchComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isStretching]);
-
-  useEffect(() => {
-    const progress = ((STRETCH_DURATION - timeLeft) / STRETCH_DURATION) * 100;
-    progressWidth.value = withTiming(progress, { duration: 300 });
-  }, [timeLeft, progressWidth]);
-
-  const progressStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.value}%`,
-  }));
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
-  }));
-
-  const handleStartStretch = useCallback(() => {
-    setIsStretching(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (__DEV__) console.log('[StretchProof] Timer started');
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
+    };
   }, []);
 
-  const handleStretchComplete = useCallback(async () => {
-    if (__DEV__) console.log('[StretchProof] Timer complete - taking photo');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setIsCapturing(true);
+  const handleOpenSettings = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        await Linking.openSettings();
+      }
+    } catch (error) {
+      if (__DEV__) console.log('[StretchProof] Failed to open settings:', error);
+    }
+  };
 
-    if (Platform.OS === 'web') {
-      setPhotoTaken(true);
-      await finishStretch();
+  const runVerification = useCallback(async (uri: string) => {
+    setVerificationStatus('verifying');
+    if (__DEV__) console.log('[StretchProof] Starting AI verification...');
+
+    if (uri.startsWith('mock://')) {
+      // Mock mode - simulate API call for testing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setVerificationStatus('passed');
+      setVerificationReason('Mock verification passed');
+      setPhase('result');
       return;
     }
 
     try {
-      if (cameraRef.current) {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.7,
-          skipProcessing: true,
-        });
-        if (__DEV__) console.log('[StretchProof] Photo captured:', photo?.uri);
-        setPhotoTaken(true);
-        await finishStretch();
+      // Convert photo to base64
+      const imageBase64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64' as const,
+      });
+      if (__DEV__) console.log('[StretchProof] Image converted to base64, sending to API...');
+
+      // Call the AI verification API
+      const response = await apiRequest('POST', '/api/verify-proof', {
+        imageBase64: `data:image/jpeg;base64,${imageBase64}`,
+        activityDescription: 'stretching - person should be in a stretch pose with arms raised above head, bending/reaching, touching toes, or any stretching position that shows deliberate body stretching',
+      });
+
+      const result = await response.json();
+      if (__DEV__) console.log('[StretchProof] AI verification result:', result);
+
+      if (!result.verified) {
+        setVerificationStatus('failed');
+        setVerificationReason(result.reason || "Couldn't verify you're stretching. Try again!");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } else {
+        setVerificationStatus('passed');
+        setVerificationReason(result.reason || 'Stretch verified!');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+      setPhase('result');
     } catch (error) {
-      if (__DEV__) console.log('[StretchProof] Photo capture error:', error);
-      await finishStretch();
+      if (__DEV__) console.log('[StretchProof] Verification API error:', error);
+      // On API error, allow user to retry or show error
+      setVerificationStatus('failed');
+      setVerificationReason('Verification service error. Please try again.');
+      setPhase('result');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   }, []);
 
-  const finishStretch = useCallback(async () => {
-    killAllSounds();
-    await logWakeUp(alarmId, new Date(), false, 0);
-    const streak = await getCurrentStreak();
+  const capturePhoto = useCallback(async () => {
+    setPhase('capturing');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (__DEV__) console.log('[StretchProof] Capturing photo...');
 
-    setTimeout(() => {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{
-            name: 'WakeUpSuccess',
-            params: {
-              streak,
-              moneySaved: 0,
-              wakeUpRate: 100,
-              wakeTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-              targetTime: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-            },
-          }],
-        })
-      );
-    }, 500);
+    try {
+      if (useMockCamera) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const mockUri = 'mock://stretch-photo';
+        setPhotoUri(mockUri);
+        setPhase('verifying');
+        runVerification(mockUri);
+      } else if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.7,
+        });
+        if (photo?.uri) {
+          if (__DEV__) console.log('[StretchProof] Photo captured:', photo.uri);
+          setPhotoUri(photo.uri);
+          setPhase('verifying');
+          runVerification(photo.uri);
+        } else {
+          throw new Error('No photo URI returned');
+        }
+      }
+    } catch (error) {
+      if (__DEV__) console.log('[StretchProof] Capture error:', error);
+      // Use mock on error for testing
+      const mockUri = 'mock://stretch-photo';
+      setPhotoUri(mockUri);
+      setPhase('verifying');
+      runVerification(mockUri);
+    }
+  }, [runVerification]);
+
+  const startCountdown = useCallback(() => {
+    setPhase('countdown');
+    setCountdown(COUNTDOWN_SECONDS);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (__DEV__) console.log('[StretchProof] Starting countdown...');
+
+    let currentCount = COUNTDOWN_SECONDS;
+
+    countdownTimerRef.current = setInterval(() => {
+      currentCount -= 1;
+
+      if (currentCount > 0) {
+        setCountdown(currentCount);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        // Animate the number
+        countdownScale.value = withSequence(
+          withTiming(1.3, { duration: 100 }),
+          withSpring(1, { damping: 10 })
+        );
+      } else {
+        // Time's up - capture!
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+        }
+        capturePhoto();
+      }
+    }, 1000);
+  }, [capturePhoto, countdownScale]);
+
+  const handleRetry = useCallback(() => {
+    setPhase('setup');
+    setPhotoUri(null);
+    setCountdown(COUNTDOWN_SECONDS);
+    setVerificationStatus('idle');
+    setVerificationReason(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  const handleSuccess = useCallback(async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    killAllSounds();
+
+    await logWakeUp(alarmId, new Date(), false, 0);
+
+    const streak = await getCurrentStreak();
+    const monthStats = await getMonthStats();
+    const now = new Date();
+    const wakeHours = now.getHours();
+    const wakeMinutes = now.getMinutes();
+    const wakePeriod = wakeHours >= 12 ? 'PM' : 'AM';
+    const wakeDisplayHours = wakeHours % 12 || 12;
+    const wakeTime = `${wakeDisplayHours}:${wakeMinutes.toString().padStart(2, '0')} ${wakePeriod}`;
+    const totalDays = monthStats.wakeUps + monthStats.snoozes;
+    const wakeUpRate = totalDays > 0 ? Math.round((monthStats.wakeUps / totalDays) * 100) : 100;
+
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{
+          name: 'WakeUpSuccess',
+          params: {
+            streak,
+            moneySaved: monthStats.savedMoney,
+            wakeUpRate,
+            wakeTime,
+            targetTime: wakeTime,
+          },
+        }],
+      })
+    );
   }, [alarmId, navigation]);
 
-  const formatTime = (seconds: number) => {
-    return `${seconds}s`;
-  };
+  const countdownStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: countdownScale.value }],
+  }));
 
-  if (!permission) {
+  // Permission loading state
+  if (!isWeb && !permission) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top + Spacing.xl }]}>
+      <View style={[styles.container, styles.centerContent]}>
         <BackgroundGlow color="orange" />
-        <ThemedText style={styles.loadingText}>Loading camera...</ThemedText>
+        <ActivityIndicator size="large" color={Colors.orange} />
       </View>
     );
   }
 
-  if (!permission.granted) {
+  // Permission denied state
+  if (!isWeb && permission && !permission.granted) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top + Spacing.xl }]}>
+      <View style={[styles.container, styles.centerContent]}>
         <BackgroundGlow color="orange" />
-        <View style={styles.permissionContainer}>
-          <ThemedText style={styles.permissionTitle}>Camera Access Required</ThemedText>
+        <View style={styles.permissionContent}>
+          <RNText style={styles.permissionEmoji}>📷</RNText>
+          <ThemedText style={styles.permissionTitle}>Camera Access Needed</ThemedText>
           <ThemedText style={styles.permissionText}>
-            We need camera access to capture your stretch pose
+            We need camera access to verify your stretch pose.
           </ThemedText>
-          <Pressable style={styles.permissionButton} onPress={requestPermission}>
-            <ThemedText style={styles.permissionButtonText}>Enable Camera</ThemedText>
+          {permission.canAskAgain ? (
+            <Pressable style={styles.primaryButton} onPress={requestPermission}>
+              <ThemedText style={styles.primaryButtonText}>Enable Camera</ThemedText>
+            </Pressable>
+          ) : (
+            <>
+              <ThemedText style={styles.permissionDeniedText}>
+                Camera permission was denied. Please enable it in Settings.
+              </ThemedText>
+              <Pressable style={styles.primaryButton} onPress={handleOpenSettings}>
+                <ThemedText style={styles.primaryButtonText}>Open Settings</ThemedText>
+              </Pressable>
+            </>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // Setup phase - instructions
+  if (phase === 'setup') {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
+        <BackgroundGlow color="orange" />
+
+        <View style={styles.header}>
+          <ThemedText style={styles.title}>Stretch Proof</ThemedText>
+          <ThemedText style={styles.subtitle}>Strike a pose to dismiss your alarm</ThemedText>
+        </View>
+
+        <View style={styles.instructionsCard}>
+          <RNText style={styles.instructionEmoji}>🧘</RNText>
+          <ThemedText style={styles.instructionTitle}>How it works</ThemedText>
+
+          <View style={styles.instructionStep}>
+            <View style={styles.stepNumber}><ThemedText style={styles.stepNumberText}>1</ThemedText></View>
+            <ThemedText style={styles.stepText}>Prop your phone up so it can see you</ThemedText>
+          </View>
+
+          <View style={styles.instructionStep}>
+            <View style={styles.stepNumber}><ThemedText style={styles.stepNumberText}>2</ThemedText></View>
+            <ThemedText style={styles.stepText}>Tap "Start Timer" and get into position</ThemedText>
+          </View>
+
+          <View style={styles.instructionStep}>
+            <View style={styles.stepNumber}><ThemedText style={styles.stepNumberText}>3</ThemedText></View>
+            <ThemedText style={styles.stepText}>Hold a stretch pose when the timer hits 0</ThemedText>
+          </View>
+
+          <View style={styles.tipBox}>
+            <RNText style={styles.tipEmoji}>💡</RNText>
+            <ThemedText style={styles.tipText}>
+              Try arms up, touching toes, or any stretching pose! AI will verify you're actually stretching.
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
+          <Pressable style={styles.primaryButton} onPress={startCountdown}>
+            <ThemedText style={styles.primaryButtonText}>Start 3s Timer</ThemedText>
           </Pressable>
         </View>
       </View>
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <BackgroundGlow color="green" />
-      
-      <View style={[styles.cameraContainer, { marginTop: insets.top + Spacing.lg }]}>
-        {Platform.OS !== 'web' ? (
-          <CameraView
-            ref={cameraRef}
-            style={styles.camera}
-            facing="front"
-          />
+  // Countdown phase
+  if (phase === 'countdown') {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackgroundGlow color="orange" />
+
+        <View style={styles.cameraContainer}>
+          {useMockCamera ? (
+            <View style={styles.mockCamera}>
+              <RNText style={styles.mockCameraEmoji}>📷</RNText>
+              <RNText style={styles.mockCameraText}>Camera preview</RNText>
+            </View>
+          ) : (
+            <CameraView ref={cameraRef} style={styles.camera} facing="front" />
+          )}
+
+          {/* Countdown overlay */}
+          <View style={styles.countdownOverlay}>
+            <Animated.View style={[styles.countdownCircle, countdownStyle]}>
+              <ThemedText style={styles.countdownNumber}>{countdown}</ThemedText>
+            </Animated.View>
+            <ThemedText style={styles.countdownLabel}>Get into your stretch pose!</ThemedText>
+          </View>
+
+          {/* Corner guides */}
+          <View style={[styles.cameraCorner, styles.cameraCornerTL]} />
+          <View style={[styles.cameraCorner, styles.cameraCornerTR]} />
+          <View style={[styles.cameraCorner, styles.cameraCornerBL]} />
+          <View style={[styles.cameraCorner, styles.cameraCornerBR]} />
+        </View>
+
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
+          <ThemedText style={styles.countdownHint}>Strike your stretch pose!</ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  // Capturing / Verifying phase
+  if (phase === 'capturing' || phase === 'verifying') {
+    return (
+      <View style={styles.container}>
+        <BackgroundGlow color="orange" />
+
+        {photoUri && !photoUri.startsWith('mock://') ? (
+          <Image source={{ uri: photoUri }} style={styles.fullScreenImage} />
         ) : (
-          <View style={[styles.camera, styles.webCameraPlaceholder]}>
-            <ThemedText style={styles.webCameraText}>Camera Preview</ThemedText>
+          <View style={styles.mockPreview}>
+            <RNText style={styles.mockPreviewEmoji}>📸</RNText>
+            <RNText style={styles.mockPreviewText}>Photo captured</RNText>
           </View>
         )}
 
-        <View style={styles.cameraOverlay}>
-          <View style={styles.cornerTL} />
-          <View style={styles.cornerTR} />
-          <View style={styles.cornerBL} />
-          <View style={styles.cornerBR} />
-        </View>
-      </View>
-
-      <View style={[styles.content, { paddingBottom: insets.bottom + Spacing.xl }]}>
-        <View style={styles.timerSection}>
-          <ThemedText style={styles.instructionText}>
-            {!isStretching 
-              ? 'Hold a stretch pose for 30 seconds'
-              : photoTaken 
-                ? 'Great stretch!' 
-                : 'Keep holding your stretch!'}
-          </ThemedText>
-
-          <Animated.View style={[styles.timerContainer, isStretching && pulseStyle]}>
-            <ThemedText style={[styles.timerText, timeLeft === 0 && styles.timerComplete]}>
-              {timeLeft === 0 ? 'Done!' : formatTime(timeLeft)}
+        <View style={styles.verifyingOverlay}>
+          <View style={styles.verifyingCard}>
+            <ActivityIndicator size="large" color={Colors.orange} />
+            <ThemedText style={styles.verifyingTitle}>
+              {phase === 'capturing' ? 'Capturing...' : 'AI is verifying your pose...'}
             </ThemedText>
-          </Animated.View>
-
-          <View style={styles.progressContainer}>
-            <Animated.View style={[styles.progressBar, progressStyle]} />
+            <ThemedText style={styles.verifyingSubtext}>
+              Checking that you're actually stretching
+            </ThemedText>
           </View>
         </View>
+      </View>
+    );
+  }
 
-        {!isStretching ? (
-          <Pressable 
-            style={styles.startButton}
-            onPress={handleStartStretch}
-          >
-            <ThemedText style={styles.startButtonText}>Start Stretch</ThemedText>
-          </Pressable>
+  // Result phase
+  if (phase === 'result') {
+    const passed = verificationStatus === 'passed';
+
+    return (
+      <View style={styles.container}>
+        <BackgroundGlow color={passed ? 'green' : 'red'} />
+
+        {photoUri && !photoUri.startsWith('mock://') ? (
+          <Image source={{ uri: photoUri }} style={styles.fullScreenImage} />
         ) : (
-          <View style={styles.stretchingIndicator}>
-            <View style={styles.pulseDot} />
-            <ThemedText style={styles.stretchingText}>
-              {isCapturing ? 'Capturing...' : 'Stretching...'}
-            </ThemedText>
+          <View style={styles.mockPreview}>
+            <RNText style={styles.mockPreviewEmoji}>{passed ? '✅' : '❌'}</RNText>
+            <RNText style={styles.mockPreviewText}>
+              {passed ? 'Stretch verified!' : 'Not quite...'}
+            </RNText>
           </View>
         )}
+
+        <View style={[styles.resultControls, { paddingBottom: insets.bottom + 24 }]}>
+          {passed ? (
+            <>
+              <View style={styles.successContainer}>
+                <RNText style={{ fontSize: 24 }}>✅</RNText>
+                <ThemedText style={styles.successText}>
+                  {verificationReason || 'Great stretch! You\'re awake!'}
+                </ThemedText>
+              </View>
+              <Pressable style={styles.successButton} onPress={handleSuccess}>
+                <ThemedText style={styles.successButtonText}>Continue</ThemedText>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <View style={styles.errorContainer}>
+                <RNText style={{ fontSize: 24 }}>❌</RNText>
+                <ThemedText style={styles.errorText}>
+                  {verificationReason || "Couldn't verify a stretch pose. Try again!"}
+                </ThemedText>
+              </View>
+              <Pressable style={styles.retryButton} onPress={handleRetry}>
+                <ThemedText style={styles.retryButtonText}>Try Again</ThemedText>
+              </Pressable>
+            </>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
@@ -247,17 +449,323 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
-  loadingText: {
-    fontSize: 18,
+  centerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+  },
+  subtitle: {
+    fontSize: 16,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginTop: 100,
   },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  instructionsCard: {
+    marginHorizontal: Spacing.xl,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
     padding: Spacing.xl,
+    alignItems: 'center',
+  },
+  instructionEmoji: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
+  },
+  instructionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: Spacing.xl,
+  },
+  instructionStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+    width: '100%',
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.bg,
+  },
+  stepText: {
+    fontSize: 15,
+    color: Colors.text,
+    flex: 1,
+  },
+  tipBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.md,
+    width: '100%',
+  },
+  tipEmoji: {
+    fontSize: 16,
+  },
+  tipText: {
+    fontSize: 13,
+    color: Colors.orange,
+    flex: 1,
+  },
+  footer: {
+    marginTop: 'auto',
+    paddingHorizontal: Spacing.xl,
+  },
+  primaryButton: {
+    backgroundColor: Colors.orange,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: Colors.orange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  primaryButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.bg,
+  },
+  cameraContainer: {
+    flex: 1,
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.xl,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: Colors.bgElevated,
+  },
+  camera: {
+    flex: 1,
+  },
+  mockCamera: {
+    flex: 1,
+    backgroundColor: Colors.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mockCameraEmoji: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
+    color: Colors.textMuted,
+  },
+  mockCameraText: {
+    fontSize: 16,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  countdownCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  countdownNumber: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: Colors.bg,
+  },
+  countdownLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  countdownHint: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  cameraCorner: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderColor: 'rgba(251, 146, 60, 0.5)',
+  },
+  cameraCornerTL: {
+    top: 20,
+    left: 20,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderTopLeftRadius: 8,
+  },
+  cameraCornerTR: {
+    top: 20,
+    right: 20,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderTopRightRadius: 8,
+  },
+  cameraCornerBL: {
+    bottom: 20,
+    left: 20,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderBottomLeftRadius: 8,
+  },
+  cameraCornerBR: {
+    bottom: 20,
+    right: 20,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderBottomRightRadius: 8,
+  },
+  mockPreview: {
+    flex: 1,
+    backgroundColor: Colors.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mockPreviewEmoji: {
+    fontSize: 64,
+    marginBottom: Spacing.lg,
+  },
+  mockPreviewText: {
+    fontSize: 18,
+    color: Colors.text,
+    fontWeight: '600',
+  },
+  fullScreenImage: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
+  verifyingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 10, 9, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyingCard: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 20,
+    padding: Spacing['2xl'],
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    width: '80%',
+    maxWidth: 300,
+    gap: Spacing.md,
+  },
+  verifyingTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  verifyingSubtext: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  resultControls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.md,
+  },
+  successContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+  },
+  successText: {
+    fontSize: 16,
+    color: Colors.green,
+    fontWeight: '600',
+    flex: 1,
+  },
+  successButton: {
+    backgroundColor: Colors.green,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: Colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  successButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.bg,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+  },
+  errorText: {
+    fontSize: 15,
+    color: Colors.red,
+    flex: 1,
+  },
+  retryButton: {
+    backgroundColor: Colors.orange,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: Colors.orange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  retryButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.bg,
+  },
+  permissionContent: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing['2xl'],
+  },
+  permissionEmoji: {
+    fontSize: 64,
+    marginBottom: Spacing.xl,
   },
   permissionTitle: {
     fontSize: 24,
@@ -267,168 +775,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   permissionText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 15,
+    color: Colors.textMuted,
     textAlign: 'center',
     marginBottom: Spacing.xl,
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  permissionButton: {
-    backgroundColor: Colors.orange,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing['2xl'],
-    borderRadius: BorderRadius.lg,
-  },
-  permissionButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.bg,
-  },
-  cameraContainer: {
-    flex: 1,
-    marginHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  camera: {
-    flex: 1,
-  },
-  webCameraPlaceholder: {
-    backgroundColor: Colors.bgElevated,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  webCameraText: {
-    fontSize: 18,
-    color: Colors.textSecondary,
-  },
-  cameraOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cornerTL: {
-    position: 'absolute',
-    top: Spacing.lg,
-    left: Spacing.lg,
-    width: 40,
-    height: 40,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-    borderColor: Colors.green,
-    borderTopLeftRadius: BorderRadius.md,
-  },
-  cornerTR: {
-    position: 'absolute',
-    top: Spacing.lg,
-    right: Spacing.lg,
-    width: 40,
-    height: 40,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-    borderColor: Colors.green,
-    borderTopRightRadius: BorderRadius.md,
-  },
-  cornerBL: {
-    position: 'absolute',
-    bottom: Spacing.lg,
-    left: Spacing.lg,
-    width: 40,
-    height: 40,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    borderColor: Colors.green,
-    borderBottomLeftRadius: BorderRadius.md,
-  },
-  cornerBR: {
-    position: 'absolute',
-    bottom: Spacing.lg,
-    right: Spacing.lg,
-    width: 40,
-    height: 40,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-    borderColor: Colors.green,
-    borderBottomRightRadius: BorderRadius.md,
-  },
-  content: {
-    padding: Spacing.xl,
-    gap: Spacing.xl,
-  },
-  timerSection: {
-    alignItems: 'center',
-    gap: Spacing.lg,
-  },
-  instructionText: {
-    fontSize: 18,
-    color: Colors.textSecondary,
+  permissionDeniedText: {
+    fontSize: 14,
+    color: Colors.textMuted,
     textAlign: 'center',
-  },
-  timerContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.bgElevated,
-    borderWidth: 4,
-    borderColor: Colors.green,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  timerText: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: Colors.green,
-  },
-  timerComplete: {
-    fontSize: 36,
-    color: Colors.green,
-  },
-  progressContainer: {
-    width: '100%',
-    height: 8,
-    backgroundColor: Colors.border,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: Colors.green,
-    borderRadius: 4,
-  },
-  startButton: {
-    backgroundColor: Colors.green,
-    paddingVertical: 18,
-    paddingHorizontal: Spacing['2xl'],
-    borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    shadowColor: Colors.green,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  startButtonText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.bg,
-  },
-  stretchingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: 18,
-  },
-  pulseDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.green,
-  },
-  stretchingText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.green,
+    marginBottom: Spacing.lg,
   },
 });
