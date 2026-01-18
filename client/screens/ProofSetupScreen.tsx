@@ -20,6 +20,7 @@ import { ProgressDots } from '@/components/ProgressDots';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
 import { saveReferencePhoto } from '@/utils/fileSystem';
+import { KEYS } from '@/utils/storage';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -29,8 +30,6 @@ type Step = 'activity' | 'camera' | 'confirm';
 const isDev = __DEV__;
 const isWeb = Platform.OS === 'web';
 const useMockCamera = isDev || isWeb;
-
-const PROOF_ACTIVITY_KEY = '@snoozer/proof_activity';
 
 type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
 
@@ -141,7 +140,7 @@ export default function ProofSetupScreen() {
     }
 
     try {
-      await AsyncStorage.setItem(PROOF_ACTIVITY_KEY, JSON.stringify({
+      await AsyncStorage.setItem(KEYS.PROOF_ACTIVITY, JSON.stringify({
         activity: activity.trim(),
         activityIcon,
         createdAt: Date.now(),

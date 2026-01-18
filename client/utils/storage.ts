@@ -6,6 +6,7 @@ const KEYS = {
   ONBOARDED: '@snoozer/onboarded',
   REFERENCE_PHOTO: '@snoozer/reference_photo',
   SHAME_VIDEO: '@snoozer/shame_video',
+  PROOF_ACTIVITY: '@snoozer/proof_activity',
 };
 
 export interface Alarm {

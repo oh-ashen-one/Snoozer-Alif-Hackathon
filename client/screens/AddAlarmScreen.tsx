@@ -172,7 +172,7 @@ export default function AddAlarmScreen() {
     const timeString = `${hour24.toString().padStart(2, '0')}:${formatMinute(minute)}`;
     const dayIndices = selectedDays.map(day => DAYS.indexOf(day));
 
-    navigation.navigate('ReferencePhoto', {
+    navigation.navigate('ProofSetup', {
       alarmTime: timeString,
       alarmLabel: 'Wake up',
       isOnboarding,
