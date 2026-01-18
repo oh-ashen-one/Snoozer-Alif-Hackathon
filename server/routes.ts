@@ -3,6 +3,12 @@ import { createServer, type Server } from "node:http";
 import { db } from "./db";
 import { appUsers, invites, buddyPairs } from "../shared/schema";
 import { eq, and, gt } from "drizzle-orm";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
 
 // Generate 6-char invite code (avoiding confusing characters)
 function generateInviteCode(): string {
@@ -277,6 +283,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error cancelling invite:", error);
       res.status(500).json({ error: "Failed to cancel invite" });
+    }
+  });
+
+  // POST /api/verify-proof - Verify proof photo against activity using AI vision
+  app.post("/api/verify-proof", async (req: Request, res: Response) => {
+    try {
+      const { imageBase64, activityDescription, referenceImageBase64 } = req.body;
+
+      if (!imageBase64 || !activityDescription) {
+        res.status(400).json({ error: "Image and activity description are required" });
+        return;
+      }
+
+      // Build the messages for vision analysis
+      const userContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
+        {
+          type: "text",
+          text: `You are verifying whether a person has completed a morning wake-up activity. 
+
+The required activity is: "${activityDescription}"
+
+Analyze the image and determine if the person appears to be performing or has just completed this activity.
+
+Be reasonably lenient - if the person is clearly in the right location or has the right items visible (e.g., toothbrush, coffee cup, bathroom setting), consider it a pass.
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "verified": true or false,
+  "confidence": "high", "medium", or "low",
+  "reason": "Brief explanation of why the verification passed or failed"
+}`,
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: imageBase64.startsWith("data:") 
+              ? imageBase64 
+              : `data:image/jpeg;base64,${imageBase64}`,
+          },
+        },
+      ];
+
+      // If reference image provided, add it for comparison
+      if (referenceImageBase64) {
+        userContent.splice(1, 0, {
+          type: "text",
+          text: "Here is a reference photo showing where they should be:",
+        });
+        userContent.splice(2, 0, {
+          type: "image_url",
+          image_url: {
+            url: referenceImageBase64.startsWith("data:")
+              ? referenceImageBase64
+              : `data:image/jpeg;base64,${referenceImageBase64}`,
+          },
+        });
+        userContent.push({
+          type: "text",
+          text: "Compare the current photo to the reference. Are they in the same general location?",
+        });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: userContent as any,
+          },
+        ],
+        max_tokens: 200,
+      });
+
+      const content = response.choices[0]?.message?.content || "";
+      
+      // Parse the JSON response
+      try {
+        // Extract JSON from potential markdown code blocks
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          res.json({
+            verified: result.verified === true,
+            confidence: result.confidence || "medium",
+            reason: result.reason || "Verification completed",
+          });
+        } else {
+          // Fallback if no valid JSON
+          res.json({
+            verified: content.toLowerCase().includes("verified") && !content.toLowerCase().includes("not verified"),
+            confidence: "low",
+            reason: content,
+          });
+        }
+      } catch (parseError) {
+        console.error("[VerifyProof] Failed to parse AI response:", content);
+        res.json({
+          verified: false,
+          confidence: "low",
+          reason: "Unable to verify photo",
+        });
+      }
+    } catch (error) {
+      console.error("[VerifyProof] Error:", error);
+      res.status(500).json({ error: "Failed to verify proof" });
     }
   });
 
