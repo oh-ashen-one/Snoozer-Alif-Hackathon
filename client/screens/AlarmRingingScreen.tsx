@@ -96,6 +96,19 @@ const SNOOZE_CONFIRMATION = "im fuch a fat chud";
 const VIBRATION_PATTERN = [500, 500, 500, 500];
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const MOTIVATIONAL_QUOTES = [
+  "I'm done hitting snooze like a loser.",
+  "Today I become the person I said I'd be.",
+  "Winners get up. Losers stay in bed.",
+  "My future self will thank me.",
+  "No more excuses. Just action.",
+  "I didn't set this alarm to ignore it.",
+  "Discipline beats motivation every time.",
+  "Every champion was once tired and didn't quit.",
+  "The bed is a trap. I'm escaping.",
+  "I'm not lazy. I'm building momentum.",
+];
+
 export default function AlarmRingingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
@@ -122,9 +135,11 @@ export default function AlarmRingingScreen() {
   const [buddyInfo, setBuddyInfo] = useState<BuddyInfo | null>(null);
   const [alarmPunishment, setAlarmPunishment] = useState<number>(5);
   const [showPaymentPrompt, setShowPaymentPrompt] = useState(params.showPaymentPrompt || false);
+  const [motivationalQuote] = useState(() => 
+    MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]
+  );
 
   // Use actual buddy info or defaults
-  const reason = alarmData.alarmLabel || "Time to wake up!";
   const buddyName = buddyInfo?.name || 'Your buddy';
   const penaltyAmount = alarmPunishment;
 
