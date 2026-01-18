@@ -60,11 +60,7 @@ export default function Header({
       );
     case 'settings':
       return (
-        <NavHeader
-          title="Settings"
-          emoji={'\u2699\uFE0F'}
-          onBackPress={onBackPress}
-        />
+        <SettingsHeader />
       );
     case 'nav':
       return (
@@ -172,6 +168,19 @@ function BuddyHeader({
       >
         <Text style={styles.addBtnText}>+</Text>
       </Pressable>
+    </View>
+  );
+}
+
+function SettingsHeader() {
+  return (
+    <View style={styles.capsule}>
+      <View style={styles.left}>
+        <View style={styles.emojiCircle}>
+          <Text style={styles.emoji}>{'\u2699\uFE0F'}</Text>
+        </View>
+        <Text style={styles.title}>Settings</Text>
+      </View>
     </View>
   );
 }
