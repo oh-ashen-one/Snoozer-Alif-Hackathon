@@ -853,9 +853,8 @@ export default function AlarmRingingScreen() {
                 ]}
               >
                 {typePhraseText.trim().toLowerCase() === wakePhrase.toLowerCase() ? "I'M AWAKE!" : 'Type the phrase to dismiss'}
-                </ThemedText>
-              </Pressable>
-            </View>
+              </ThemedText>
+            </Pressable>
           </View>
         )}
       </ScrollView>
