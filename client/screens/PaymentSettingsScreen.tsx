@@ -246,14 +246,14 @@ export default function PaymentSettingsScreen() {
     }
   }, []);
 
-  // Test flow handlers
-  const handleTestPaymentFlow = useCallback(() => {
+  // Test Apple Cash handler
+  const handleTestPayment = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     if (!buddy?.phone) {
       Alert.alert(
         'Buddy Not Configured',
-        'You need to add a buddy before testing the payment flow.',
+        'You need to add a buddy before testing Apple Cash.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Add Buddy', onPress: handleEditBuddy },
@@ -271,50 +271,12 @@ export default function PaymentSettingsScreen() {
       return;
     }
 
-    setTestFlowStep(1);
-  }, [buddy, selectedAmount, customAmount, handleEditBuddy]);
-
-  const handleTestCancel = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTestFlowStep(0);
-    setTestSnoozeText('');
-  }, []);
-
-  const handleTestContinue = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setTestFlowStep(2);
-  }, []);
-
-  const handleTestBack = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTestFlowStep(1);
-    setTestSnoozeText('');
-  }, []);
-
-  const handleTestConfirmInsult = useCallback(() => {
-    if (testSnoozeText.trim().toLowerCase() === testInsult.toLowerCase()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setTestFlowStep(3);
+    try {
+      await sendAppleCash(buddy.phone, amount);
+    } catch (error) {
+      Alert.alert('Error', 'Could not open iMessage. Make sure Messages is available on this device.');
     }
-  }, [testSnoozeText, testInsult]);
-
-  const handleTestPaymentSent = useCallback(() => {
-    setTestFlowStep(0);
-    setTestSnoozeText('');
-    Alert.alert(
-      'Test Complete!',
-      'The payment flow is working correctly. When you snooze a real alarm, iMessage will open just like that.'
-    );
-  }, []);
-
-  const handleTestShameTriggered = useCallback(() => {
-    setTestFlowStep(0);
-    setTestSnoozeText('');
-    Alert.alert(
-      'Time Ran Out',
-      'In a real scenario, your shame video would play now. The 30-second countdown gives you time to send the payment.'
-    );
-  }, []);
+  }, [buddy, selectedAmount, customAmount, handleEditBuddy, sendAppleCash]);
 
   const displayAmount = selectedAmount || parseInt(customAmount, 10) || 5;
 
