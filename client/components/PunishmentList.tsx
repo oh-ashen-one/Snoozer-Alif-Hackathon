@@ -136,9 +136,10 @@ interface PunishmentRowProps {
   config: PunishmentConfig;
   onSaveConfig: (config: PunishmentConfig) => void;
   onExpand: () => void;
+  isConfigured?: boolean;
 }
 
-export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand }: PunishmentRowProps) {
+export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand, isConfigured }: PunishmentRowProps) {
   const [bossEmail, setBossEmail] = useState(config.email_boss?.bossEmail || '');
   const [exPhoneNumber, setExPhoneNumber] = useState(config.text_ex?.exPhoneNumber || '');
   const [wifesDadPhone, setWifesDadPhone] = useState(config.wife_dad?.phoneNumber || '');
@@ -275,7 +276,14 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
     <View style={styles.punishmentLeft}>
       <ThemedText style={[styles.punishmentIcon, punishment.comingSoon && styles.comingSoonIcon]}>{punishment.icon}</ThemedText>
       <View style={styles.punishmentInfo}>
-        <ThemedText style={[styles.punishmentLabel, punishment.comingSoon && styles.comingSoonLabel]}>{punishment.label}</ThemedText>
+        <View style={styles.labelRow}>
+          <ThemedText style={[styles.punishmentLabel, punishment.comingSoon && styles.comingSoonLabel]}>{punishment.label}</ThemedText>
+          {isConfigured ? (
+            <View style={styles.configuredBadge}>
+              <ThemedText style={styles.configuredBadgeText}>Set up</ThemedText>
+            </View>
+          ) : null}
+        </View>
         <ThemedText style={styles.punishmentDescription}>{punishment.description}</ThemedText>
       </View>
     </View>
@@ -562,6 +570,23 @@ interface PunishmentListProps {
   onExpandPunishment: (id: string | null) => void;
 }
 
+function hasConfigData(id: string, config: PunishmentConfig): boolean {
+  switch (id) {
+    case 'email_boss':
+      return !!config.email_boss?.bossEmail;
+    case 'text_ex':
+      return !!config.text_ex?.exPhoneNumber;
+    case 'wife_dad':
+      return !!config.wife_dad?.phoneNumber;
+    case 'mom':
+      return !!config.mom?.phoneNumber;
+    case 'grandma_call':
+      return !!config.grandma?.phoneNumber;
+    default:
+      return false;
+  }
+}
+
 export function PunishmentList({
   enabledPunishments,
   onTogglePunishment,
@@ -583,21 +608,43 @@ export function PunishmentList({
     }
   }, [enabledPunishments, onTogglePunishment, onExpandPunishment]);
 
+  const sortedPunishments = React.useMemo(() => {
+    const configured: PunishmentOption[] = [];
+    const regular: PunishmentOption[] = [];
+    const comingSoon: PunishmentOption[] = [];
+
+    PUNISHMENT_OPTIONS.forEach(punishment => {
+      if (punishment.comingSoon) {
+        comingSoon.push(punishment);
+      } else if (hasConfigData(punishment.id, punishmentConfig)) {
+        configured.push(punishment);
+      } else {
+        regular.push(punishment);
+      }
+    });
+
+    return [...configured, ...regular, ...comingSoon];
+  }, [punishmentConfig]);
+
   return (
     <View style={styles.card}>
-      {PUNISHMENT_OPTIONS.map((punishment, index) => (
-        <PunishmentRow
-          key={punishment.id}
-          punishment={punishment}
-          enabled={enabledPunishments.includes(punishment.id)}
-          onToggle={() => handleToggle(punishment.id)}
-          isLast={index === PUNISHMENT_OPTIONS.length - 1}
-          expanded={expandedPunishment === punishment.id}
-          config={punishmentConfig}
-          onSaveConfig={onSaveConfig}
-          onExpand={() => onExpandPunishment(punishment.id)}
-        />
-      ))}
+      {sortedPunishments.map((punishment, index) => {
+        const isConfigured = hasConfigData(punishment.id, punishmentConfig);
+        return (
+          <PunishmentRow
+            key={punishment.id}
+            punishment={punishment}
+            enabled={enabledPunishments.includes(punishment.id)}
+            onToggle={() => handleToggle(punishment.id)}
+            isLast={index === sortedPunishments.length - 1}
+            expanded={expandedPunishment === punishment.id}
+            config={punishmentConfig}
+            onSaveConfig={onSaveConfig}
+            onExpand={() => onExpandPunishment(punishment.id)}
+            isConfigured={isConfigured}
+          />
+        );
+      })}
     </View>
   );
 }
@@ -628,11 +675,27 @@ const styles = StyleSheet.create({
   punishmentInfo: {
     flex: 1,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: 2,
+  },
   punishmentLabel: {
     fontSize: 15,
     fontWeight: '500',
     color: Colors.text,
-    marginBottom: 2,
+  },
+  configuredBadge: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  configuredBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.green,
   },
   punishmentDescription: {
     fontSize: 13,
