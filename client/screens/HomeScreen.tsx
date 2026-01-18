@@ -172,6 +172,40 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
   const timeUntil = getTimeUntilAlarm(alarm.time);
   const proofLabel = getProofTypeLabel(alarm.proofActivityType);
 
+  // Build punishment text based on actual alarm settings
+  const getPunishmentDisplay = () => {
+    const parts: string[] = [];
+    const extras = alarm.extraPunishments ?? [];
+    
+    // Check money punishment
+    if (alarm.punishment && alarm.punishment > 0) {
+      parts.push(`-$${alarm.punishment}`);
+    }
+    
+    // Check other punishments
+    if (extras.includes('shame_video')) {
+      parts.push('Video');
+    }
+    if (extras.includes('buddy_call')) {
+      parts.push('Buddy alert');
+    }
+    if (extras.includes('group_chat')) {
+      parts.push('Social');
+    }
+    if (extras.includes('donate_enemy')) {
+      parts.push('Anti-charity');
+    }
+    
+    if (parts.length === 0) {
+      return 'No stakes';
+    }
+    
+    return parts.join(' + ');
+  };
+
+  // Check if buddy notifications are enabled
+  const hasBuddyEnabled = (alarm.extraPunishments ?? []).includes('buddy_call');
+
   return (
     <View style={styles.nextAlarmCard}>
       {/* Top row */}
@@ -199,12 +233,12 @@ function NextAlarmCard({ alarm }: { alarm: Alarm }) {
         <View style={styles.stakeBox}>
           <ThemedText style={{ fontSize: 16 }}>⚠️</ThemedText>
           <ThemedText style={styles.stakeLabel}>If you snooze</ThemedText>
-          <ThemedText style={styles.stakePenalty}>-$2</ThemedText>
+          <ThemedText style={styles.stakePenalty}>{getPunishmentDisplay()}</ThemedText>
         </View>
         <View style={styles.stakeBox}>
           <ThemedText style={{ fontSize: 16 }}>👁️</ThemedText>
           <ThemedText style={styles.stakeLabel}>Buddy</ThemedText>
-          <ThemedText style={styles.stakeValue}>Solo mode</ThemedText>
+          <ThemedText style={styles.stakeValue}>{hasBuddyEnabled ? 'Will be notified' : 'Solo mode'}</ThemedText>
         </View>
       </View>
     </View>
