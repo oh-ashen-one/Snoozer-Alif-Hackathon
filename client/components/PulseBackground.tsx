@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 
+import type { DimensionValue } from 'react-native';
+
 interface PulseOrbProps {
-  top: string;
-  left: string;
+  top: DimensionValue;
+  left: DimensionValue;
   size: number;
   color: string;
   blur: number;
@@ -13,8 +15,8 @@ interface PulseOrbProps {
 }
 
 interface PulseRingProps {
-  top: string;
-  left: string;
+  top: DimensionValue;
+  left: DimensionValue;
   color: string;
   duration: number;
   delay: number;
