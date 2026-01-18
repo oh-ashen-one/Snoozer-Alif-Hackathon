@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "node:http";
 import { db } from "./db";
-import { appUsers, invites, buddyPairs } from "../shared/schema";
+import { appUsers, invites, buddyPairs, shameVideos } from "../shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 import OpenAI from "openai";
 
@@ -439,6 +439,107 @@ Respond with ONLY a JSON object in this exact format:
     } catch (error) {
       console.error("Error fetching buddy:", error);
       res.status(500).json({ error: "Failed to fetch buddy" });
+    }
+  });
+
+  // =====================
+  // SHAME VIDEO ENDPOINTS
+  // =====================
+
+  // POST /api/shame-video - Upload or update shame video (device-based, no auth required)
+  app.post("/api/shame-video", async (req: Request, res: Response) => {
+    try {
+      const { deviceId, videoData, mimeType } = req.body;
+
+      if (!deviceId || !videoData) {
+        res.status(400).json({ error: "deviceId and videoData are required" });
+        return;
+      }
+
+      // Upsert - insert or update existing video for this device
+      await db
+        .insert(shameVideos)
+        .values({
+          deviceId,
+          videoData,
+          mimeType: mimeType || 'video/mp4',
+        })
+        .onConflictDoUpdate({
+          target: shameVideos.deviceId,
+          set: {
+            videoData,
+            mimeType: mimeType || 'video/mp4',
+            updatedAt: new Date(),
+          },
+        });
+
+      console.log(`[ShameVideo] Saved video for device: ${deviceId.substring(0, 8)}...`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ShameVideo] Error saving video:", error);
+      res.status(500).json({ error: "Failed to save video" });
+    }
+  });
+
+  // GET /api/shame-video/:deviceId - Get shame video for device
+  app.get("/api/shame-video/:deviceId", async (req: Request, res: Response) => {
+    try {
+      const { deviceId } = req.params;
+
+      const [video] = await db
+        .select()
+        .from(shameVideos)
+        .where(eq(shameVideos.deviceId, deviceId))
+        .limit(1);
+
+      if (!video) {
+        res.status(404).json({ error: "No video found" });
+        return;
+      }
+
+      res.json({
+        videoData: video.videoData,
+        mimeType: video.mimeType,
+        updatedAt: video.updatedAt,
+      });
+    } catch (error) {
+      console.error("[ShameVideo] Error fetching video:", error);
+      res.status(500).json({ error: "Failed to fetch video" });
+    }
+  });
+
+  // DELETE /api/shame-video/:deviceId - Delete shame video for device
+  app.delete("/api/shame-video/:deviceId", async (req: Request, res: Response) => {
+    try {
+      const { deviceId } = req.params;
+
+      await db
+        .delete(shameVideos)
+        .where(eq(shameVideos.deviceId, deviceId));
+
+      console.log(`[ShameVideo] Deleted video for device: ${deviceId.substring(0, 8)}...`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[ShameVideo] Error deleting video:", error);
+      res.status(500).json({ error: "Failed to delete video" });
+    }
+  });
+
+  // GET /api/shame-video/exists/:deviceId - Quick check if video exists
+  app.get("/api/shame-video/exists/:deviceId", async (req: Request, res: Response) => {
+    try {
+      const { deviceId } = req.params;
+
+      const [video] = await db
+        .select({ id: shameVideos.id, updatedAt: shameVideos.updatedAt })
+        .from(shameVideos)
+        .where(eq(shameVideos.deviceId, deviceId))
+        .limit(1);
+
+      res.json({ exists: !!video, updatedAt: video?.updatedAt });
+    } catch (error) {
+      console.error("[ShameVideo] Error checking video:", error);
+      res.status(500).json({ error: "Failed to check video" });
     }
   });
 
