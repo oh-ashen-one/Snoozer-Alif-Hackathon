@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { useAuth } from '@/contexts/AuthContext';
-import { getOnboardingComplete } from '@/utils/storage';
+import { getOnboardingComplete, getAlarms, setOnboardingComplete } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -82,9 +82,15 @@ export default function IntroScreen() {
   // Navigate after successful sign-in
   useEffect(() => {
     if (isAuthenticated) {
-      // Check if user already completed onboarding
-      getOnboardingComplete().then(hasOnboarded => {
-        if (hasOnboarded) {
+      // Check if user already completed onboarding OR has existing alarms
+      Promise.all([getOnboardingComplete(), getAlarms()]).then(([hasOnboarded, alarms]) => {
+        const hasAlarms = alarms.length > 0;
+
+        if (hasOnboarded || hasAlarms) {
+          // Fix the flag if it was missing
+          if (!hasOnboarded && hasAlarms) {
+            setOnboardingComplete(true);
+          }
           // Returning user - go directly to Home
           navigation.reset({
             index: 0,
