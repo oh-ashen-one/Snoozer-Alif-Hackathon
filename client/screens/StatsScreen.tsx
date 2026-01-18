@@ -15,6 +15,8 @@ import {
   getCurrentStreak,
   getBestStreak,
   getMonthStats,
+  getWeekStats,
+  getYearStats,
   getWeekData,
   getWakeUpHistory,
   type MonthStats,
@@ -146,8 +148,11 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   );
 }
 
+type FilterType = 'week' | 'month' | 'year';
+
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
+  const [filter, setFilter] = useState<FilterType>('week');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats>({
     currentStreak: 0,
@@ -164,12 +169,28 @@ export default function StatsScreen() {
 
   const loadStats = useCallback(async () => {
     try {
-      const [currentStreak, bestStreak, monthStats, weekData, history] = await Promise.all([
+      // Get stats based on filter
+      const getTimeframeStats = async () => {
+        switch (filter) {
+          case 'week':
+            return getWeekStats();
+          case 'year':
+            return getYearStats();
+          case 'month':
+          default:
+            return getMonthStats();
+        }
+      };
+
+      // Get history days based on filter
+      const historyDays = filter === 'year' ? 365 : filter === 'month' ? 30 : 7;
+
+      const [currentStreak, bestStreak, timeframeStats, weekData, history] = await Promise.all([
         getCurrentStreak(),
         getBestStreak(),
-        getMonthStats(),
+        getTimeframeStats(),
         getWeekData(),
-        getWakeUpHistory(7),
+        getWakeUpHistory(historyDays),
       ]);
 
       const today = new Date();
@@ -204,17 +225,20 @@ export default function StatsScreen() {
         };
       });
 
-      const totalDays = monthStats.wakeUps + monthStats.snoozes;
-      const wakeUpRate = totalDays > 0 ? Math.round((monthStats.wakeUps / totalDays) * 100) : 0;
+      const totalDays = timeframeStats.wakeUps + timeframeStats.snoozes;
+      const wakeUpRate = totalDays > 0 ? Math.round((timeframeStats.wakeUps / totalDays) * 100) : 0;
+
+      // Get default total days based on filter
+      const defaultTotalDays = filter === 'year' ? 365 : filter === 'month' ? 30 : 7;
 
       setStats({
         currentStreak,
         bestStreak,
-        moneySaved: monthStats.savedMoney,
-        moneyLost: monthStats.lostMoney,
+        moneySaved: timeframeStats.savedMoney,
+        moneyLost: timeframeStats.lostMoney,
         wakeUpRate,
-        wakeUpDays: monthStats.wakeUps,
-        totalDays: totalDays || 30,
+        wakeUpDays: timeframeStats.wakeUps,
+        totalDays: totalDays || defaultTotalDays,
         weeklyData,
         recentActivity,
         hasData: totalDays > 0,
@@ -224,13 +248,36 @@ export default function StatsScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filter]);
 
+  // Reload stats when filter changes or screen focuses
   useFocusEffect(
     useCallback(() => {
       loadStats();
     }, [loadStats])
   );
+
+  // Also reload when filter changes
+  useEffect(() => {
+    loadStats();
+  }, [filter]);
+
+  const handleFilterChange = (newFilter: FilterType) => {
+    setFilter(newFilter);
+  };
+
+  // Get timeframe label for UI
+  const getTimeframeLabel = () => {
+    switch (filter) {
+      case 'week':
+        return 'this week';
+      case 'year':
+        return 'this year';
+      case 'month':
+      default:
+        return 'this month';
+    }
+  };
 
   if (loading) {
     return (
@@ -244,7 +291,7 @@ export default function StatsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
       <View style={styles.headerContainer}>
-        <Header type="stats" />
+        <Header type="stats" filter={filter} onFilterChange={handleFilterChange} />
       </View>
 
       <ScrollView
@@ -273,7 +320,7 @@ export default function StatsScreen() {
                   </View>
                   <ThemedText style={styles.statLabel}>Money Saved</ThemedText>
                   <ThemedText style={styles.statValueGreen}>${stats.moneySaved}</ThemedText>
-                  <ThemedText style={styles.statSubtext}>this month</ThemedText>
+                  <ThemedText style={styles.statSubtext}>{getTimeframeLabel()}</ThemedText>
                 </View>
                 <View style={styles.statCard}>
                   <View style={[styles.statIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
@@ -281,7 +328,7 @@ export default function StatsScreen() {
                   </View>
                   <ThemedText style={styles.statLabel}>Money Lost</ThemedText>
                   <ThemedText style={styles.statValueRed}>${stats.moneyLost}</ThemedText>
-                  <ThemedText style={styles.statSubtext}>to snoozing</ThemedText>
+                  <ThemedText style={styles.statSubtext}>{getTimeframeLabel()}</ThemedText>
                 </View>
               </View>
             </FadeInView>
@@ -301,7 +348,7 @@ export default function StatsScreen() {
                   <View style={[styles.progressFill, { width: `${stats.wakeUpRate}%` }]} />
                 </View>
                 <ThemedText style={styles.wakeUpSubtext}>
-                  {stats.wakeUpDays} of {stats.totalDays} days this month
+                  {stats.wakeUpDays} of {stats.totalDays} days {getTimeframeLabel()}
                 </ThemedText>
               </View>
             </FadeInView>

@@ -204,3 +204,63 @@ export async function clearTrackingData(): Promise<void> {
     console.error('[Tracking] Error clearing tracking data:', error);
   }
 }
+
+export async function getWeekStats(): Promise<MonthStats> {
+  const log = await getWakeLog();
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const cutoffStr = formatDate(sevenDaysAgo);
+  
+  const weekLog = log.filter(entry => entry.date >= cutoffStr);
+  
+  let wakeUps = 0;
+  let snoozes = 0;
+  let totalSnoozeCount = 0;
+  
+  for (const entry of weekLog) {
+    if (entry.snoozed) {
+      snoozes++;
+      totalSnoozeCount += entry.snoozeCount || 1;
+    } else {
+      wakeUps++;
+    }
+  }
+  
+  return {
+    wakeUps,
+    snoozes,
+    savedMoney: wakeUps * PUNISHMENT_AMOUNT,
+    lostMoney: totalSnoozeCount * PUNISHMENT_AMOUNT,
+  };
+}
+
+export async function getYearStats(): Promise<MonthStats> {
+  const log = await getWakeLog();
+  const today = new Date();
+  const yearAgo = new Date(today);
+  yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+  const cutoffStr = formatDate(yearAgo);
+  
+  const yearLog = log.filter(entry => entry.date >= cutoffStr);
+  
+  let wakeUps = 0;
+  let snoozes = 0;
+  let totalSnoozeCount = 0;
+  
+  for (const entry of yearLog) {
+    if (entry.snoozed) {
+      snoozes++;
+      totalSnoozeCount += entry.snoozeCount || 1;
+    } else {
+      wakeUps++;
+    }
+  }
+  
+  return {
+    wakeUps,
+    snoozes,
+    savedMoney: wakeUps * PUNISHMENT_AMOUNT,
+    lostMoney: totalSnoozeCount * PUNISHMENT_AMOUNT,
+  };
+}
