@@ -447,20 +447,10 @@ export default function HomeScreen() {
   );
 
   const handleDeleteAlarm = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (__DEV__) console.log('[Home] Deleting alarm:', id);
-      Alert.alert(
-        'Delete Alarm',
-        'Are you sure you want to delete this alarm?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: () => deleteAlarm(id),
-          },
-        ]
-      );
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await deleteAlarm(id);
     },
     [deleteAlarm]
   );
@@ -798,6 +788,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   deleteAction: {
+    flex: 1,
     backgroundColor: Colors.red,
     justifyContent: 'center',
     alignItems: 'center',

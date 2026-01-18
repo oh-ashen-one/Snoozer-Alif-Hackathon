@@ -231,6 +231,12 @@ export default function AlarmRingingScreen() {
   const buddyName = buddyInfo?.name || 'Your buddy';
   const penaltyAmount = alarmPunishment;
 
+  // iMessage for Apple Cash payments
+  const { sendAppleCash } = useIMessage();
+
+  // Detect if ONLY money punishment is enabled (pay-only mode)
+  const isPayOnlyMode = moneyEnabled && penaltyAmount > 0 && !shameVideoEnabled && !buddyNotifyEnabled;
+
   const { startAlarm: startEscalatingAlarm, stopAlarm: stopEscalatingAlarm, volumePercent } = useEscalatingVolume(alarmSoundSource);
 
   const {
@@ -636,6 +642,38 @@ export default function AlarmRingingScreen() {
       showPaymentAfter: false,
       buddyPhone: buddyInfo?.phone,
     });
+  };
+
+  // Pay-Only mode: Open iMessage to send Apple Cash
+  const handlePayOnlyPayment = async () => {
+    if (__DEV__) console.log('ALARM: Pay-only mode - opening iMessage for Apple Cash');
+    buttonPress('primary');
+
+    const phoneNumber = buddyInfo?.phone || '';
+    if (!phoneNumber) {
+      if (__DEV__) console.log('[AlarmRinging] No buddy phone number');
+      return;
+    }
+
+    const result = await sendAppleCash(phoneNumber, penaltyAmount);
+    if (result.success) {
+      // Log the wake-up as a snooze (paid)
+      try {
+        await logWakeUp(alarmData.alarmId, new Date(), true, 1);
+        if (__DEV__) console.log('[AlarmRinging] Logged paid snooze');
+      } catch (error) {
+        if (__DEV__) console.log('[AlarmRinging] Error logging snooze:', error);
+      }
+
+      // Stop alarm and navigate home
+      await stopAlarm();
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        })
+      );
+    }
   };
 
   const timeAnimatedStyle = useAnimatedStyle(() => ({

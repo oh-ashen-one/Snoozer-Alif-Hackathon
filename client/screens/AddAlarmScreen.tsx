@@ -45,6 +45,7 @@ const PROOF_ACTIVITIES = [
     description: 'Take a pic doing your morning task',
     emoji: '📷',
     ctaText: (activity: string) => `${activity} Photo`,
+    defaultActivity: 'Brush teeth',
   },
   {
     id: 'steps',
@@ -52,6 +53,7 @@ const PROOF_ACTIVITIES = [
     description: 'Get moving to dismiss',
     emoji: '🚶',
     ctaText: () => 'Walk 10 Steps',
+    defaultActivity: 'Walk outside',
   },
   {
     id: 'math',
@@ -59,6 +61,7 @@ const PROOF_ACTIVITIES = [
     description: 'Solve problems to wake your brain',
     emoji: '🧮',
     ctaText: () => 'Solve Math',
+    defaultActivity: 'Solve 3 problems',
   },
   {
     id: 'type_phrase',
@@ -66,6 +69,7 @@ const PROOF_ACTIVITIES = [
     description: 'Type a motivational phrase to dismiss',
     emoji: '⌨️',
     ctaText: () => 'Type Phrase',
+    defaultActivity: 'Type to wake up',
   },
 ];
 
@@ -445,6 +449,10 @@ export default function AddAlarmScreen() {
                     style={[styles.proofOption, selectedProof === proof.id && styles.proofOptionActive]}
                     onPress={() => {
                       setSelectedProof(proof.id);
+                      // Update activity name to match the proof type's default
+                      if (proof.defaultActivity) {
+                        setActivityName(proof.defaultActivity);
+                      }
                       setShowProofPicker(false);
                       selectionChanged();
                     }}
