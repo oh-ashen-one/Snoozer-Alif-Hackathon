@@ -4,7 +4,6 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,

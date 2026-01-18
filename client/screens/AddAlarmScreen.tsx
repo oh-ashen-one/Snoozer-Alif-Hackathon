@@ -218,7 +218,7 @@ export default function AddAlarmScreen() {
 
   const formatMinute = (m: number) => m.toString().padStart(2, '0');
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const hasShameVideo = shameVideo;
     const level = getPunishmentLevel(amount, hasShameVideo);
     alarmCreatedPattern(level);
@@ -232,25 +232,27 @@ export default function AddAlarmScreen() {
     if (socialShame) extraPunishments.push('group_chat');
     if (antiCharity) extraPunishments.push('donate_enemy');
 
-    // Navigate to ProofSetup with all alarm settings
-    navigation.navigate('ProofSetup', {
-      alarmTime: timeString,
-      alarmLabel: activityName || 'Wake up',
-      isOnboarding,
-      punishment: moneyEnabled ? amount : 0,
-      extraPunishments,
-      days: selectedDays,
-      // New per-alarm settings
-      proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake',
-      activityName: activityName,
-      moneyEnabled,
-      shameVideoEnabled: shameVideo,
-      buddyNotifyEnabled: buddyNotify,
-      socialShameEnabled: socialShame,
-      antiCharityEnabled: antiCharity,
-      escalatingVolume,
-      wakeRecheck,
-    });
+    try {
+      await addAlarm({
+        time: timeString,
+        label: activityName || 'Wake up',
+        enabled: true,
+        referencePhotoUri: null,
+        shameVideoUri: null,
+        punishment: moneyEnabled ? amount : 0,
+        extraPunishments,
+        days: selectedDays,
+      });
+
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        })
+      );
+    } catch (error) {
+      // Error already handled by useAlarms hook with Alert
+    }
   };
 
   const punishmentCount = [moneyEnabled, shameVideo, buddyNotify, socialShame, antiCharity].filter(Boolean).length;
@@ -557,7 +559,7 @@ export default function AddAlarmScreen() {
             <Text style={styles.sectionSub}>Extra pressure to wake up</Text>
 
             <View style={styles.toggleRow}>
-              <Feather name="volume-2" size={20} color={escalatingVolume ? Colors.orange : Colors.textMuted} />
+              <Text style={{ fontSize: 20 }}>🔊</Text>
               <View style={styles.toggleInfo}>
                 <Text style={styles.toggleTitle}>Escalating Volume</Text>
                 <Text style={styles.toggleSubtitle}>Starts soft, gets louder over time</Text>
@@ -566,7 +568,7 @@ export default function AddAlarmScreen() {
             </View>
 
             <View style={styles.toggleRow}>
-              <Feather name="clock" size={20} color={wakeRecheck ? Colors.orange : Colors.textMuted} />
+              <Text style={{ fontSize: 20 }}>⏰</Text>
               <View style={styles.toggleInfo}>
                 <Text style={styles.toggleTitle}>5-Min Recheck</Text>
                 <Text style={styles.toggleSubtitle}>Verify you're still awake after 5 min</Text>
