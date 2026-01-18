@@ -12,7 +12,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { useAuth } from '@/contexts/AuthContext';
 import { getOnboardingComplete } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -20,7 +19,6 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function SplashLoadingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
-  const { isAuthenticated, isLoading } = useAuth();
   const [progress, setProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
@@ -33,32 +31,27 @@ export default function SplashLoadingScreen() {
   const shakeRotation = useRef(new Animated.Value(0)).current;
   const shakeTranslateX = useRef(new Animated.Value(0)).current;
 
-  // Navigate based on onboarding/auth state when loading complete
+  // Navigate based on onboarding state when loading complete
   const navigateAway = useCallback(async () => {
-    if (hasNavigated || isLoading) return;
+    if (hasNavigated) return;
     setHasNavigated(true);
 
-    let targetRoute: keyof RootStackParamList = 'Intro';
+    let targetRoute: keyof RootStackParamList = 'Onboarding';
 
     try {
       const hasOnboarded = await getOnboardingComplete();
       if (hasOnboarded) {
-        // User completed onboarding - go to Home
         targetRoute = 'Home';
-      } else if (isAuthenticated) {
-        // Authenticated but not onboarded - go to Onboarding
-        targetRoute = 'Onboarding';
       }
-      // Otherwise, default to 'Intro'
     } catch {
-      // On error, go to Intro
+      // On error, start fresh with Onboarding
     }
 
     navigation.reset({
       index: 0,
       routes: [{ name: targetRoute }],
     });
-  }, [hasNavigated, isLoading, isAuthenticated, navigation]);
+  }, [hasNavigated, navigation]);
 
   // Start animations on mount
   useEffect(() => {
@@ -161,13 +154,13 @@ export default function SplashLoadingScreen() {
     };
   }, [contentOpacity, contentScale, shakeRotation, shakeTranslateX]);
 
-  // Navigate when progress reaches 100 and auth is ready
+  // Navigate when progress reaches 100
   useEffect(() => {
-    if (progress >= 100 && !isLoading) {
+    if (progress >= 100) {
       // Small delay before navigating for smoother transition
       setTimeout(navigateAway, 200);
     }
-  }, [progress, isLoading, navigateAway]);
+  }, [progress, navigateAway]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

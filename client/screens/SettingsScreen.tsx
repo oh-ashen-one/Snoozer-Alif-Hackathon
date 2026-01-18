@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation, CommonActions, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -162,24 +162,26 @@ export default function SettingsScreen() {
     return ALARM_SOUNDS[randomIndex].id;
   });
 
-  // Load settings on mount
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const vibration = await AsyncStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
-        if (vibration !== null) {
-          setVibrationEnabled(vibration === 'true');
+  // Load settings on mount and when returning to screen
+  useFocusEffect(
+    useCallback(() => {
+      const loadSettings = async () => {
+        try {
+          const vibration = await AsyncStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
+          if (vibration !== null) {
+            setVibrationEnabled(vibration === 'true');
+          }
+          const sound = await AsyncStorage.getItem(STORAGE_KEYS.ALARM_SOUND);
+          if (sound !== null) {
+            setAlarmSound(sound as AlarmSoundId);
+          }
+        } catch (error) {
+          // Default values if error
         }
-        const sound = await AsyncStorage.getItem(STORAGE_KEYS.ALARM_SOUND);
-        if (sound !== null) {
-          setAlarmSound(sound as AlarmSoundId);
-        }
-      } catch (error) {
-        // Default values if error
-      }
-    };
-    loadSettings();
-  }, []);
+      };
+      loadSettings();
+    }, [])
+  );
 
   // Navigation handlers
   const handleBack = useCallback(() => {
@@ -268,51 +270,10 @@ export default function SettingsScreen() {
     navigation.navigate('PaymentMethod');
   }, [navigation]);
 
-  // Alarm sound handler
+  // Alarm sound handler - navigate to dedicated screen
   const handleChangeAlarmSound = useCallback(() => {
-    const options: string[] = ALARM_SOUNDS.map(s => s.name);
-    options.push('Cancel');
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex: options.length - 1,
-          title: 'Select Alarm Sound',
-        },
-        async (buttonIndex) => {
-          if (buttonIndex < ALARM_SOUNDS.length) {
-            const selected = ALARM_SOUNDS[buttonIndex];
-            setAlarmSound(selected.id);
-            try {
-              await AsyncStorage.setItem(STORAGE_KEYS.ALARM_SOUND, selected.id);
-            } catch (error) {
-              // Silently fail
-            }
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        'Select Alarm Sound',
-        'Choose your preferred alarm tone',
-        [
-          ...ALARM_SOUNDS.map((sound) => ({
-            text: sound.name,
-            onPress: async () => {
-              setAlarmSound(sound.id);
-              try {
-                await AsyncStorage.setItem(STORAGE_KEYS.ALARM_SOUND, sound.id);
-              } catch (error) {
-                // Silently fail
-              }
-            },
-          })),
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
-    }
-  }, []);
+    navigation.navigate('AlarmSound');
+  }, [navigation]);
 
   // Notification handlers
   const handleToggleVibration = useCallback(async () => {

@@ -23,6 +23,7 @@ import LegalScreen from '@/screens/LegalScreen';
 import WakeUpSuccessScreen from '@/screens/WakeUpSuccessScreen';
 import PaymentMethodScreen from '@/screens/PaymentMethodScreen';
 import SplashLoadingScreen from '@/screens/SplashLoadingScreen';
+import AlarmSoundScreen from '@/screens/AlarmSoundScreen';
 import { HeaderTitle } from '@/components/HeaderTitle';
 import { useScreenOptions } from '@/hooks/useScreenOptions';
 import { Colors } from '@/constants/theme';
@@ -42,6 +43,7 @@ export type RootStackParamList = {
   Help: undefined;
   Legal: { type: 'terms' | 'privacy' };
   PaymentMethod: undefined;
+  AlarmSound: undefined;
   WakeUpSuccess: {
     streak: number;
     moneySaved: number;
@@ -265,6 +267,13 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="PaymentMethod"
         component={PaymentMethodScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="AlarmSound"
+        component={AlarmSoundScreen}
         options={{
           headerShown: false,
         }}
