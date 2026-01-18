@@ -80,12 +80,8 @@ export default function InviteBuddyScreen() {
         hasApp: false,
       });
 
-      // Navigate to waiting screen or back
-      if (returnTo) {
-        navigation.navigate(returnTo as keyof RootStackParamList);
-      } else {
-        navigation.navigate('Home');
-      }
+      // Navigate back to home
+      navigation.navigate('Home');
     } catch (error) {
       Alert.alert('Error', 'Could not send invite. Please try again.');
     } finally {
@@ -95,11 +91,7 @@ export default function InviteBuddyScreen() {
 
   const handleSkip = () => {
     hapticFeedback('light');
-    if (returnTo) {
-      navigation.navigate(returnTo as keyof RootStackParamList);
-    } else {
-      navigation.navigate('Home');
-    }
+    navigation.navigate('Home');
   };
 
   const handleBack = () => {

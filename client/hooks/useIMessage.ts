@@ -12,7 +12,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import * as SMS from 'expo-sms';
 import * as Linking from 'expo-linking';
-import * as Sharing from 'expo-sharing';
+import { Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const APP_LINK = 'https://snoozer.app/invite';
@@ -168,18 +168,16 @@ export function useIMessage() {
   // ═══════════════════════════════════════════════════════════════
 
   const sendShameVideo = useCallback(async (videoUri: string): Promise<string> => {
-    const isShareAvailable = await Sharing.isAvailableAsync();
-
-    if (isShareAvailable) {
-      await Sharing.shareAsync(videoUri, {
-        mimeType: 'video/mp4',
-        dialogTitle: 'Send your shame video',
-        UTI: 'public.movie',
+    try {
+      await Share.share({
+        url: videoUri,
+        title: 'Shame video',
+        message: 'Watch this shame video 😬',
       });
       return 'shared';
+    } catch (error) {
+      throw new Error('Sharing not available');
     }
-
-    throw new Error('Sharing not available');
   }, []);
 
   // ═══════════════════════════════════════════════════════════════

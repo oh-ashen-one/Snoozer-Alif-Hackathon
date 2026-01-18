@@ -612,6 +612,15 @@ export default function AlarmRingingScreen() {
         cheatType={detectedCheat}
         onDismiss={() => setCheatModalVisible(false)}
       />
+
+      <AppleCashPrompt
+        visible={showPaymentPrompt}
+        amount={penaltyAmount}
+        recipientName={buddyName}
+        recipientPhone={buddyInfo?.phone || ''}
+        onPaymentSent={() => setShowPaymentPrompt(false)}
+        onDismiss={() => setShowPaymentPrompt(false)}
+      />
     </View>
   );
 }
