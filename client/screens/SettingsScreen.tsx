@@ -32,6 +32,13 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { setOnboardingComplete } from '@/utils/storage';
 import { useAlarms } from '@/hooks/useAlarms';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  isAlarmKitAvailable,
+  getAlarmKitPermissionStatus,
+  requestAlarmKitPermission,
+  AlarmKitPermissionStatus,
+} from '@/utils/alarmKit';
+import * as Notifications from 'expo-notifications';
 
 const STORAGE_KEYS = {
   VIBRATION_ENABLED: '@snoozer/vibration_enabled',
@@ -161,6 +168,9 @@ export default function SettingsScreen() {
     const randomIndex = Math.floor(Math.random() * ALARM_SOUNDS.length);
     return ALARM_SOUNDS[randomIndex].id;
   });
+  // Permission states
+  const [alarmPermission, setAlarmPermission] = useState<AlarmKitPermissionStatus>('undetermined');
+  const [notifPermission, setNotifPermission] = useState(false);
 
   // Load settings on mount and when returning to screen
   useFocusEffect(
@@ -175,11 +185,24 @@ export default function SettingsScreen() {
           if (sound !== null) {
             setAlarmSound(sound as AlarmSoundId);
           }
-        } catch (error) {
+        } catch {
           // Default values if error
         }
       };
+
+      const checkPermissions = async () => {
+        // Check AlarmKit permission (iOS 26+)
+        if (Platform.OS === 'ios' && isAlarmKitAvailable()) {
+          const status = await getAlarmKitPermissionStatus();
+          setAlarmPermission(status);
+        }
+        // Check notification permission
+        const { status } = await Notifications.getPermissionsAsync();
+        setNotifPermission(status === 'granted');
+      };
+
       loadSettings();
+      checkPermissions();
     }, [])
   );
 
@@ -274,6 +297,34 @@ export default function SettingsScreen() {
   const handleChangeAlarmSound = useCallback(() => {
     navigation.navigate('AlarmSound');
   }, [navigation]);
+
+  // Alarm permission handler
+  const handleAlarmPermissions = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS === 'ios' && isAlarmKitAvailable()) {
+      if (alarmPermission !== 'granted') {
+        const granted = await requestAlarmKitPermission();
+        setAlarmPermission(granted ? 'granted' : 'denied');
+        if (!granted) {
+          // Permission was denied - direct to settings
+          Alert.alert(
+            'Permission Required',
+            'To enable alarms that ring during Focus mode, please enable alarm permissions in Settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+        }
+      } else {
+        // Already granted - open settings to manage
+        Linking.openSettings();
+      }
+    } else {
+      // Not iOS 26+ - open general settings
+      Linking.openSettings();
+    }
+  }, [alarmPermission]);
 
   // Notification handlers
   const handleToggleVibration = useCallback(async () => {
@@ -471,9 +522,113 @@ export default function SettingsScreen() {
                   <Toggle value={vibrationEnabled} onValueChange={handleToggleVibration} />
                 }
               />
+              {Platform.OS === 'ios' && (
+                <>
+                  <View style={styles.rowDivider} />
+                  <View style={styles.guideInlineSection}>
+                    <View style={styles.guideInlineHeader}>
+                      <Feather name="info" size={16} color="#FB923C" />
+                      <ThemedText style={styles.guideInlineTitle}>
+                        Setup Guide
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={styles.guideInlineSubtitle}>
+                      For reliable alarms, ensure these are enabled:
+                    </ThemedText>
+
+                    <View style={styles.guideInlineSteps}>
+                      <ThemedText style={styles.guideInlineStep}>
+                        1. Settings → Snoozer → Alarms & Timers
+                      </ThemedText>
+                      <ThemedText style={styles.guideInlineStep}>
+                        2. Settings → Snoozer → Notifications → Time Sensitive
+                      </ThemedText>
+                      <ThemedText style={styles.guideInlineStep}>
+                        3. Settings → Focus → [Mode] → Apps → Add Snoozer
+                      </ThemedText>
+                      <ThemedText style={styles.guideInlineStep}>
+                        4. Settings → Notifications → Scheduled Summary → Off
+                      </ThemedText>
+                    </View>
+
+                    <Pressable
+                      style={styles.guideInlineButton}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        Linking.openSettings();
+                      }}
+                    >
+                      <Feather name="external-link" size={14} color="#FB923C" />
+                      <ThemedText style={styles.guideInlineButtonText}>
+                        Open Settings
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </FadeInView>
+
+        {/* Alarm Permissions Section - iOS only */}
+        {Platform.OS === 'ios' && (
+          <FadeInView delay={300} direction="up">
+            <View style={styles.section}>
+              <ThemedText style={styles.sectionLabel}>ALARM PERMISSIONS</ThemedText>
+              <View style={styles.card}>
+                <SettingsRow
+                  icon="clock"
+                  iconColor={alarmPermission === 'granted' ? '#22C55E' : '#FB923C'}
+                  iconBg={alarmPermission === 'granted' ? ICON_COLORS.green : ICON_COLORS.orange}
+                  label="Schedule alarms"
+                  onPress={handleAlarmPermissions}
+                  rightElement={
+                    <View style={styles.permissionBadge}>
+                      <View
+                        style={[
+                          styles.permissionDot,
+                          {
+                            backgroundColor:
+                              alarmPermission === 'granted' ? Colors.green : Colors.orange,
+                          },
+                        ]}
+                      />
+                      <ThemedText style={styles.permissionText}>
+                        {alarmPermission === 'granted' ? 'On' : 'Off'}
+                      </ThemedText>
+                    </View>
+                  }
+                />
+                <View style={styles.rowDivider} />
+                <SettingsRow
+                  icon="bell"
+                  iconColor={notifPermission ? '#22C55E' : '#FB923C'}
+                  iconBg={notifPermission ? ICON_COLORS.green : ICON_COLORS.orange}
+                  label="Notifications"
+                  onPress={() => Linking.openSettings()}
+                  rightElement={
+                    <View style={styles.permissionBadge}>
+                      <View
+                        style={[
+                          styles.permissionDot,
+                          { backgroundColor: notifPermission ? Colors.green : Colors.orange },
+                        ]}
+                      />
+                      <ThemedText style={styles.permissionText}>
+                        {notifPermission ? 'On' : 'Off'}
+                      </ThemedText>
+                    </View>
+                  }
+                />
+              </View>
+              <ThemedText style={styles.permissionHint}>
+                {alarmPermission === 'granted'
+                  ? 'Alarms will ring even during Focus mode and Sleep'
+                  : 'Enable to ensure alarms ring during Focus mode'}
+              </ThemedText>
+            </View>
+          </FadeInView>
+        )}
 
         {/* Support Section */}
         <View style={styles.section}>
@@ -673,5 +828,72 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 12,
     color: '#57534E',
+  },
+
+  // Permission badge
+  permissionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  permissionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  permissionText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  permissionHint: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+  },
+
+  // Guide inline (inside Notifications card)
+  guideInlineSection: {
+    padding: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  guideInlineHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  guideInlineTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  guideInlineSubtitle: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginBottom: Spacing.md,
+  },
+  guideInlineSteps: {
+    gap: 6,
+    marginBottom: Spacing.md,
+  },
+  guideInlineStep: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+  guideInlineButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(251,146,60,0.1)',
+    borderRadius: BorderRadius.sm,
+  },
+  guideInlineButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#FB923C',
   },
 });

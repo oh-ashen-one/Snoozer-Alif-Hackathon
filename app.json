@@ -10,7 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.snoozer.app"
+      "bundleIdentifier": "com.snoozer.app",
+      "infoPlist": {
+        "NSAlarmKitUsageDescription": "Snoozer needs to schedule alarms that will ring even when your phone is on silent or Focus mode, so you never oversleep.",
+        "UIBackgroundModes": ["audio", "fetch", "processing"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -50,7 +54,8 @@
         {
           "microphonePermission": "Allow Snoozer to access your microphone to record audio for shame videos."
         }
-      ]
+      ],
+      "expo-live-activity"
     ],
     "experiments": {
       "reactCompiler": true

@@ -1,6 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Alarm } from './storage';
+import { isAlarmKitAvailable, scheduleAlarmKitAlarm, cancelAlarmKitAlarm } from './alarmKit';
+import { startAlarmCountdown, stopAlarmCountdown } from './liveActivity';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -26,27 +28,53 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 
 export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
   try {
+    const [hours, minutes] = alarm.time.split(':').map(Number);
+
+    // Calculate the alarm trigger time for Live Activity
+    const now = new Date();
+    const alarmTime = new Date();
+    alarmTime.setHours(hours, minutes, 0, 0);
+    if (alarmTime <= now) {
+      alarmTime.setDate(alarmTime.getDate() + 1);
+    }
+
+    // Use AlarmKit on iOS 26+ for native-level alarm reliability
+    if (isAlarmKitAvailable()) {
+      const success = await scheduleAlarmKitAlarm({
+        id: alarm.id,
+        hour: hours,
+        minute: minutes,
+        days: alarm.days,
+        label: alarm.label || 'Wake Up!',
+      });
+
+      if (success) {
+        // Start Live Activity for Dynamic Island countdown
+        await startAlarmCountdown({
+          alarmId: alarm.id,
+          alarmTime,
+          label: alarm.label || 'Wake Up!',
+        });
+
+        if (__DEV__) console.log('[Notifications] Alarm scheduled via AlarmKit:', alarm.id);
+        return alarm.id;
+      }
+      // Fall through to notification-based alarm if AlarmKit fails
+      if (__DEV__) console.warn('[Notifications] AlarmKit failed, falling back to notifications');
+    }
+
+    // Fallback: Use expo-notifications for older iOS / Android
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) {
       if (__DEV__) console.warn('[Notifications] Permission not granted');
       return null;
     }
 
-    const [hours, minutes] = alarm.time.split(':').map(Number);
-    
-    const now = new Date();
-    const trigger = new Date();
-    trigger.setHours(hours, minutes, 0, 0);
-    
-    if (trigger <= now) {
-      trigger.setDate(trigger.getDate() + 1);
-    }
-
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Wake Up!',
         body: alarm.label || 'Time to get up!',
-        data: { 
+        data: {
           alarmId: alarm.id,
           alarmLabel: alarm.label,
           referencePhotoUri: alarm.referencePhotoUri,
@@ -58,11 +86,20 @@ export async function scheduleAlarm(alarm: Alarm): Promise<string | null> {
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: trigger,
+        date: alarmTime,
       },
     });
 
-    if (__DEV__) console.log('[Notifications] Alarm scheduled:', alarm.id, 'at', trigger.toLocaleTimeString());
+    // Start Live Activity for non-AlarmKit alarms too (if on iOS)
+    if (Platform.OS === 'ios') {
+      await startAlarmCountdown({
+        alarmId: alarm.id,
+        alarmTime,
+        label: alarm.label || 'Wake Up!',
+      });
+    }
+
+    if (__DEV__) console.log('[Notifications] Alarm scheduled:', alarm.id, 'at', alarmTime.toLocaleTimeString());
     return identifier;
   } catch (error) {
     if (__DEV__) console.error('[Notifications] Error scheduling alarm:', error);
@@ -111,9 +148,14 @@ export async function scheduleSnoozeAlarm(alarm: Alarm, snoozeMinutes: number = 
 
 export async function cancelAlarm(notificationId: string): Promise<void> {
   try {
+    // Try AlarmKit first if available
+    if (isAlarmKitAvailable()) {
+      await cancelAlarmKitAlarm(notificationId);
+    }
+    // Always try to cancel notification too (belt and suspenders)
     await Notifications.cancelScheduledNotificationAsync(notificationId);
   } catch (error) {
-    console.error('Error canceling alarm:', error);
+    if (__DEV__) console.error('Error canceling alarm:', error);
   }
 }
 

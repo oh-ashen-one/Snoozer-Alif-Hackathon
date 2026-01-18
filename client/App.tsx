@@ -15,6 +15,8 @@ import RootStackNavigator, { RootStackParamList } from "@/navigation/RootStackNa
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { addNotificationResponseListener } from "@/utils/notifications";
 import { sendKeepOpenReminder, cancelKeepOpenReminder } from "@/utils/reminderNotification";
+import { isAlarmKitAvailable, addAlarmKitListener } from "@/utils/alarmKit";
+import { getAlarmById } from "@/utils/storage";
 import { ensureDirectories } from "@/utils/fileSystem";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -101,6 +103,50 @@ export default function App() {
 
     return () => {
       subscription.remove();
+    };
+  }, []);
+
+  // AlarmKit event listener for iOS 26+ native alarms
+  useEffect(() => {
+    if (!isAlarmKitAvailable()) return;
+
+    let unsubscribe: (() => void) | null = null;
+
+    const setupListener = async () => {
+      unsubscribe = await addAlarmKitListener(async (event) => {
+        if (!navigationRef.current) return;
+
+        // Get alarm data from storage
+        const alarm = await getAlarmById(event.alarmId);
+        if (!alarm) {
+          if (__DEV__) console.warn('[AlarmKit] Alarm not found:', event.alarmId);
+          return;
+        }
+
+        if (event.action === 'stop') {
+          // User tapped Stop - navigate to proof camera
+          navigationRef.current.navigate('ProofCamera', {
+            alarmId: event.alarmId,
+            referencePhotoUri: alarm.referencePhotoUri || '',
+          });
+        } else if (event.action === 'snooze') {
+          // User tapped Snooze - navigate to shame playback
+          navigationRef.current.navigate('ShamePlayback', {
+            alarmId: event.alarmId,
+            shameVideoUri: alarm.shameVideoUri || '',
+            alarmLabel: alarm.label || 'Alarm',
+            referencePhotoUri: alarm.referencePhotoUri || '',
+          });
+        }
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, []);
 

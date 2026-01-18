@@ -14,7 +14,7 @@ export async function sendKeepOpenReminder(): Promise<void> {
   try {
     // Check if user has any enabled alarms
     const alarms = await getAlarms();
-    const hasEnabledAlarms = alarms.some((alarm) => alarm.isEnabled);
+    const hasEnabledAlarms = alarms.some((alarm) => alarm.enabled);
 
     if (!hasEnabledAlarms) {
       return;

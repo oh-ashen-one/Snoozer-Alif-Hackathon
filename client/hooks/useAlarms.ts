@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Alert, Platform, Linking } from 'react-native';
-import { 
-  Alarm, 
-  getAlarms, 
-  saveAlarms, 
-  addAlarm as addAlarmToStorage, 
-  updateAlarm as updateAlarmInStorage, 
+import {
+  Alarm,
+  getAlarms,
+  saveAlarms,
+  addAlarm as addAlarmToStorage,
+  updateAlarm as updateAlarmInStorage,
   deleteAlarm as deleteAlarmFromStorage,
   getAlarmById as getAlarmByIdFromStorage,
 } from '@/utils/storage';
 import { scheduleAlarm, cancelAlarm } from '@/utils/notifications';
+import { isAlarmKitAvailable, requestAlarmKitPermission } from '@/utils/alarmKit';
 
 export function useAlarms() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
@@ -44,6 +45,29 @@ export function useAlarms() {
     };
 
     try {
+      // Request AlarmKit permission on iOS 26+ before scheduling first alarm
+      if (isAlarmKitAvailable() && newAlarm.enabled) {
+        const alarmKitGranted = await requestAlarmKitPermission();
+        if (!alarmKitGranted) {
+          Alert.alert(
+            'Alarm Permission Required',
+            'Snoozer needs permission to schedule alarms that ring even when your phone is on silent or Focus mode. Without this, your alarm may not wake you up reliably.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Open Settings',
+                onPress: () => {
+                  try {
+                    Linking.openSettings();
+                  } catch {}
+                },
+              },
+            ]
+          );
+          // Continue anyway - will fall back to notifications
+        }
+      }
+
       let notificationId: string | null = null;
       if (newAlarm.enabled) {
         notificationId = await scheduleAlarm(newAlarm);
@@ -53,17 +77,22 @@ export function useAlarms() {
             'Please enable notifications to receive alarm alerts.',
             [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Open Settings', onPress: () => {
-                if (Platform.OS !== 'web') {
-                  try { Linking.openSettings(); } catch {}
-                }
-              }},
+              {
+                text: 'Open Settings',
+                onPress: () => {
+                  if (Platform.OS !== 'web') {
+                    try {
+                      Linking.openSettings();
+                    } catch {}
+                  }
+                },
+              },
             ]
           );
         }
         newAlarm.notificationId = notificationId;
       }
-      
+
       await addAlarmToStorage(newAlarm);
       setAlarms(prev => [...prev, newAlarm]);
       if (__DEV__) console.log('[useAlarms] Alarm added:', newAlarm.id);
@@ -93,7 +122,7 @@ export function useAlarms() {
     if (!alarm) return;
 
     const newEnabled = !alarm.enabled;
-    
+
     try {
       if (alarm.notificationId) {
         await cancelAlarm(alarm.notificationId);
@@ -101,6 +130,10 @@ export function useAlarms() {
 
       let notificationId: string | null = null;
       if (newEnabled) {
+        // Request AlarmKit permission when enabling alarm on iOS 26+
+        if (isAlarmKitAvailable()) {
+          await requestAlarmKitPermission();
+        }
         notificationId = await scheduleAlarm({ ...alarm, enabled: newEnabled });
       }
 

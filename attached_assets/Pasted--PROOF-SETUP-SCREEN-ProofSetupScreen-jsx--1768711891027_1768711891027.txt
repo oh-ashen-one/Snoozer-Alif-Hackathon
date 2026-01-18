@@ -1,0 +1,377 @@
+/**
+ * PROOF SETUP SCREEN
+ * ProofSetupScreen.jsx
+ * 
+ * ════════════════════════════════════════════════════════════════
+ * FLOW DIAGRAM
+ * ════════════════════════════════════════════════════════════════
+ * 
+ * ┌─────────────────────────────────────┐
+ * │  What's the FIRST thing you do     │
+ * │  when you wake up?                  │
+ * │                                     │
+ * │  ┌─────────────────────────────┐   │
+ * │  │ Brush my teeth              │   │
+ * │  └─────────────────────────────┘   │
+ * │                                     │
+ * │  or pick one:                       │
+ * │                                     │
+ * │  [☕ Coffee] [🪥 Brush] [🚿 Shower] │
+ * │  [💧 Water] [🧘 Stretch] [🚶 Walk] │
+ * │                                     │
+ * │  [Continue]                         │
+ * └─────────────────────────────────────┘
+ *                  ↓
+ * ┌─────────────────────────────────────┐
+ * │  Now take a photo of yourself       │
+ * │  🪥 Brushing your teeth             │
+ * │                                     │
+ * │  This is your proof photo.          │
+ * │  You'll retake it every morning.    │
+ * │                                     │
+ * │  ┌─────────────────────────────┐   │
+ * │  │                             │   │
+ * │  │      📷 Camera Preview      │   │
+ * │  │                             │   │
+ * │  └─────────────────────────────┘   │
+ * │                                     │
+ * │  [📸 Take Reference Photo]         │
+ * └─────────────────────────────────────┘
+ *                  ↓
+ * ┌─────────────────────────────────────┐
+ * │  ┌─────────────────────────────┐   │
+ * │  │                             │   │
+ * │  │      📷 Photo Preview       │   │
+ * │  │                             │   │
+ * │  └─────────────────────────────┘   │
+ * │                                     │
+ * │  [Retake]        [Looks Good ✓]    │
+ * └─────────────────────────────────────┘
+ *                  ↓
+ *            Save to AsyncStorage
+ *            Navigate to RecordShame
+ * 
+ * ════════════════════════════════════════════════════════════════
+ * DATA STRUCTURE
+ * ════════════════════════════════════════════════════════════════
+ * 
+ * {
+ *   activity: "Brush my teeth",
+ *   activityIcon: "🪥",
+ *   referencePhotoUri: "file://...",
+ *   createdAt: 1704067200000
+ * }
+ * 
+ * ════════════════════════════════════════════════════════════════
+ */
+
+import { useState, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PRESETS = [
+  { label: 'Coffee', icon: '☕' },
+  { label: 'Brush teeth', icon: '🪥' },
+  { label: 'Shower', icon: '🚿' },
+  { label: 'Drink water', icon: '💧' },
+  { label: 'Stretch', icon: '🧘' },
+  { label: 'Walk around', icon: '🚶' },
+];
+
+const STORAGE_KEY = '@snoozer_proof_setup';
+
+export default function ProofSetupScreen({ navigation }) {
+  const [step, setStep] = useState(1); // 1 = pick activity, 2 = take photo
+  const [activity, setActivity] = useState('');
+  const [activityIcon, setActivityIcon] = useState('📸');
+  const [photoUri, setPhotoUri] = useState(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef(null);
+
+  // Handle preset selection
+  const handlePresetSelect = (preset) => {
+    setActivity(preset.label);
+    setActivityIcon(preset.icon);
+  };
+
+  // Move to camera step
+  const handleContinue = () => {
+    if (!activity.trim()) return;
+    setStep(2);
+  };
+
+  // Take reference photo
+  const handleTakePhoto = async () => {
+    if (!cameraRef.current) return;
+    
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+      setPhotoUri(photo.uri);
+    } catch (error) {
+      console.error('Failed to take photo:', error);
+    }
+  };
+
+  // Save and continue
+  const handleSave = async () => {
+    try {
+      const proofSetup = {
+        activity: activity.trim(),
+        activityIcon,
+        referencePhotoUri: photoUri,
+        createdAt: Date.now(),
+      };
+      
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(proofSetup));
+      navigation.navigate('RecordShame'); // or next screen
+    } catch (error) {
+      console.error('Failed to save proof setup:', error);
+    }
+  };
+
+  // Retake photo
+  const handleRetake = () => {
+    setPhotoUri(null);
+  };
+
+  // Permission check
+  if (!permission) return null;
+  
+  if (!permission.granted && step === 2) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Camera Access Needed</Text>
+          <Text style={styles.subtitle}>We need camera access for your proof photos</Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
+            <Text style={styles.primaryButtonText}>Grant Access</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // STEP 1: Pick activity
+  if (step === 1) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>What's the FIRST thing{'\n'}you do when you wake up?</Text>
+          <Text style={styles.subtitle}>You'll prove you're awake by taking a photo of yourself doing this.</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Type your morning activity..."
+            placeholderTextColor="#78716C"
+            value={activity}
+            onChangeText={(text) => {
+              setActivity(text);
+              setActivityIcon('📸');
+            }}
+          />
+
+          <Text style={styles.orText}>or pick one:</Text>
+
+          <View style={styles.presetsGrid}>
+            {PRESETS.map((preset) => (
+              <TouchableOpacity
+                key={preset.label}
+                style={[
+                  styles.presetChip,
+                  activity === preset.label && styles.presetChipActive,
+                ]}
+                onPress={() => handlePresetSelect(preset)}
+              >
+                <Text style={styles.presetIcon}>{preset.icon}</Text>
+                <Text style={[
+                  styles.presetLabel,
+                  activity === preset.label && styles.presetLabelActive,
+                ]}>{preset.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.primaryButton, !activity.trim() && styles.buttonDisabled]}
+              onPress={handleContinue}
+              disabled={!activity.trim()}
+            >
+              <Text style={styles.primaryButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // STEP 2: Take photo
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Now take a photo of{'\n'}yourself: {activityIcon} {activity}</Text>
+        <Text style={styles.subtitle}>This is your reference. You'll retake it every morning to prove you're awake.</Text>
+
+        <View style={styles.cameraContainer}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.preview} />
+          ) : (
+            <CameraView ref={cameraRef} style={styles.camera} facing="front" />
+          )}
+        </View>
+
+        <View style={styles.footer}>
+          {photoUri ? (
+            <View style={styles.buttonRow}>
+              <TouchableOpacity style={styles.secondaryButton} onPress={handleRetake}>
+                <Text style={styles.secondaryButtonText}>Retake</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleSave}>
+                <Text style={styles.primaryButtonText}>Looks Good</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.captureButton} onPress={handleTakePhoto}>
+              <View style={styles.captureButtonInner} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0C0A09',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FAFAF9',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#78716C',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  input: {
+    backgroundColor: '#1C1917',
+    borderRadius: 14,
+    padding: 16,
+    fontSize: 16,
+    color: '#FAFAF9',
+    borderWidth: 1,
+    borderColor: '#292524',
+    marginBottom: 24,
+  },
+  orText: {
+    fontSize: 13,
+    color: '#78716C',
+    marginBottom: 16,
+  },
+  presetsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  presetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1C1917',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: '#292524',
+    gap: 8,
+  },
+  presetChipActive: {
+    backgroundColor: '#FB923C',
+    borderColor: '#FB923C',
+  },
+  presetIcon: {
+    fontSize: 18,
+  },
+  presetLabel: {
+    fontSize: 14,
+    color: '#FAFAF9',
+    fontWeight: '500',
+  },
+  presetLabelActive: {
+    color: '#0C0A09',
+  },
+  cameraContainer: {
+    flex: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 24,
+  },
+  camera: {
+    flex: 1,
+  },
+  preview: {
+    flex: 1,
+  },
+  footer: {
+    paddingBottom: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#FB923C',
+    paddingVertical: 18,
+    borderRadius: 14,
+    alignItems: 'center',
+    flex: 1,
+  },
+  primaryButtonText: {
+    color: '#0C0A09',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.4,
+  },
+  secondaryButton: {
+    backgroundColor: '#1C1917',
+    paddingVertical: 18,
+    borderRadius: 14,
+    alignItems: 'center',
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#292524',
+  },
+  secondaryButtonText: {
+    color: '#FAFAF9',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  captureButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#292524',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  captureButtonInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FAFAF9',
+  },
+});
