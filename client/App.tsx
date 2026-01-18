@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from "react";
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform, AppState, AppStateStatus } from "react-native";
 import { NavigationContainer, NavigationContainerRef, DefaultTheme } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -14,6 +14,7 @@ import { queryClient } from "@/lib/query-client";
 import RootStackNavigator, { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { addNotificationResponseListener } from "@/utils/notifications";
+import { sendKeepOpenReminder, cancelKeepOpenReminder } from "@/utils/reminderNotification";
 import { ensureDirectories } from "@/utils/fileSystem";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -79,6 +80,27 @@ export default function App() {
       if (notificationResponseListener.current) {
         notificationResponseListener.current.remove();
       }
+    };
+  }, []);
+
+  // AppState listener for background/foreground reminder notification
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // App going to background - show reminder
+        sendKeepOpenReminder();
+      } else if (nextAppState === 'active') {
+        // App returning to foreground - cancel reminder
+        cancelKeepOpenReminder();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
     };
   }, []);
 

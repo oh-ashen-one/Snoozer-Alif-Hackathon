@@ -691,6 +691,7 @@ const styles = StyleSheet.create({
   confirmButtons: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 16,
   },
   nevermindButton: {
     flex: 1,
@@ -720,6 +721,7 @@ const styles = StyleSheet.create({
   },
 
   inputCard: {
+    width: '100%',
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.25)',
