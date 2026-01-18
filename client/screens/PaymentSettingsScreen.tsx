@@ -16,7 +16,6 @@ import {
   TextInput,
   Linking,
   Alert,
-  Modal,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,7 +27,7 @@ import Svg, { Path, Polyline, Circle, Line } from 'react-native-svg';
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
-import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
+import { useIMessage } from '@/hooks/useIMessage';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import {
