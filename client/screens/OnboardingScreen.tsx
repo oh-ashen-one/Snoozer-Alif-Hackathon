@@ -206,65 +206,29 @@ export default function OnboardingScreen() {
 
   const handleContinue = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    if (step < 2) {
+
+    if (step < 1) {
       setStep(prev => prev + 1);
     } else {
       // Save user data
       try {
-        await AsyncStorage.setItem('@snoozer/user_name', name);
         await AsyncStorage.setItem('@snoozer/user_goals', JSON.stringify(selectedGoals));
       } catch (error) {
         console.log('Error saving user data:', error);
       }
-      
+
       // Navigate to alarm setup
       navigation.navigate('AddAlarm', { isOnboarding: true });
     }
-  }, [step, name, selectedGoals, navigation]);
+  }, [step, selectedGoals, navigation]);
 
-  const isButtonEnabled = 
-    (step === 0 && name.trim().length >= 2) ||
-    (step === 1 && selectedGoals.length > 0) ||
-    (step === 2 && selectedHabit !== null);
+  const isButtonEnabled =
+    (step === 0 && selectedGoals.length > 0) ||
+    (step === 1 && selectedHabit !== null);
 
   const renderStep = () => {
     switch (step) {
       case 0:
-        return (
-          <KeyboardAvoidingView 
-            style={styles.stepContainer} 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            <FadeInView delay={50} direction="up">
-              <View style={styles.header}>
-                <View style={styles.pillBadge}>
-                  <Text style={{ fontSize: 14 }}>👤</Text>
-                  <Text style={styles.pillText}>Let's get to know you</Text>
-                </View>
-                <Text style={styles.title}>What's your name?</Text>
-                <Text style={styles.subtitle}>We'll use this to personalize your experience</Text>
-              </View>
-            </FadeInView>
-
-            <FadeInView delay={100} direction="up">
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter your name"
-                  placeholderTextColor={Colors.textMuted}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  autoFocus
-                />
-              </View>
-            </FadeInView>
-          </KeyboardAvoidingView>
-        );
-
-      case 1:
         return (
           <View style={styles.stepContainer}>
             <FadeInView delay={50} direction="up">
@@ -298,7 +262,7 @@ export default function OnboardingScreen() {
           </View>
         );
 
-      case 2:
+      case 1:
         return (
           <View style={styles.stepContainer}>
             <FadeInView delay={50} direction="up">
@@ -351,7 +315,7 @@ export default function OnboardingScreen() {
         ) : (
           <View style={styles.backButton} />
         )}
-        <ProgressDots total={3} active={step} />
+        <ProgressDots total={2} active={step} />
         <View style={styles.backButton} />
       </View>
 
@@ -373,7 +337,7 @@ export default function OnboardingScreen() {
               !isButtonEnabled && styles.continueButtonTextDisabled,
             ]}
           >
-            {step === 2 ? 'Set Up Alarm' : 'Continue'}
+            {step === 1 ? 'Set Up Alarm' : 'Continue'}
           </Text>
           <Text style={{ fontSize: 20, color: isButtonEnabled ? Colors.bg : Colors.textMuted }}>→</Text>
         </Pressable>
@@ -450,21 +414,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.xl,
-  },
-  textInput: {
-    backgroundColor: Colors.bgElevated,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
-    fontSize: 18,
-    color: Colors.text,
     textAlign: 'center',
   },
   scrollView: {
