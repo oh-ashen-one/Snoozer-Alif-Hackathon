@@ -356,7 +356,7 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: A
       parts.push("Wife's dad");
     }
     if (alarmAny.textExEnabled) {
-      parts.push('Text friend');
+      parts.push('Text ex');
     }
     if (alarmAny.momEnabled) {
       parts.push('Call mom');

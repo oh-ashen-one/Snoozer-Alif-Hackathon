@@ -24,6 +24,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { Colors, Spacing } from '@/constants/theme';
@@ -32,8 +33,37 @@ import { getBuddyInfo } from '@/utils/storage';
 import { getCurrentStreak } from '@/utils/tracking';
 import { getShameVideo } from '@/utils/fileSystem';
 import { setCurrentScreen } from '@/utils/soundKiller';
+import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 
 const isWeb = Platform.OS === 'web';
+
+// Alarm sound files (same as AlarmRingingScreen)
+const ALARM_SOUND_FILES: Record<string, any> = {
+  nuclear: require('@/assets/sounds/nuclear-alarm.wav'),
+  mosquito: require('@/assets/sounds/mosquito-swarm.wav'),
+  emp: require('@/assets/sounds/emp-blast.wav'),
+  siren: require('@/assets/sounds/siren-from-hell.wav'),
+  chaos: require('@/assets/sounds/chaos-engine.wav'),
+  escalator: require('@/assets/sounds/the-escalator.wav'),
+  'ear-shatter': require('@/assets/sounds/ear-shatter.wav'),
+  'high-pitch': require('@/assets/sounds/high-pitch.wav'),
+  'angry-goose': require('@/assets/sounds/angry-goose.wav'),
+  'air-horn': require('@/assets/sounds/air-horn.wav'),
+  'screaming-goat': require('@/assets/sounds/screaming-goat.wav'),
+  'smoke-detector': require('@/assets/sounds/smoke-detector.wav'),
+  'car-alarm': require('@/assets/sounds/car-alarm.wav'),
+  'baby-crying': require('@/assets/sounds/baby-crying.wav'),
+  'dog-barking': require('@/assets/sounds/dog-barking.wav'),
+  'drill-sergeant': require('@/assets/sounds/drill-sergeant.wav'),
+  'submarine-alarm': require('@/assets/sounds/submarine-alarm.wav'),
+  chainsaw: require('@/assets/sounds/chainsaw.wav'),
+  motorcycle: require('@/assets/sounds/motorcycle.wav'),
+  rooster: require('@/assets/sounds/rooster.wav'),
+  'police-siren': require('@/assets/sounds/police-siren.wav'),
+  'broken-glass': require('@/assets/sounds/broken-glass.wav'),
+};
+const ALARM_SOUND_IDS = Object.keys(ALARM_SOUND_FILES);
+const ALARM_SOUND_KEY = '@snoozer/alarm_sound';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'PunishmentExecution'>;
@@ -107,6 +137,10 @@ export default function PunishmentExecutionScreen() {
   const hasStartedRef = useRef(false);
   const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Alarm sound state
+  const [alarmSoundSource, setAlarmSoundSource] = useState<any>(null);
+  const { startAlarm, stopAlarm } = useEscalatingVolume(alarmSoundSource);
+
   // Get current punishment (if any)
   const currentPunishment = punishmentTypes.length > 0 ? punishmentTypes[currentIndex] : null;
   const punishmentInfo = currentPunishment
@@ -169,6 +203,33 @@ export default function PunishmentExecutionScreen() {
       return () => clearTimeout(startTimer);
     }
   }, []);
+
+  // Load alarm sound on mount
+  useEffect(() => {
+    const loadAlarmSound = async () => {
+      let soundId = ALARM_SOUND_IDS[Math.floor(Math.random() * ALARM_SOUND_IDS.length)];
+      try {
+        const savedSound = await AsyncStorage.getItem(ALARM_SOUND_KEY);
+        if (savedSound && ALARM_SOUND_FILES[savedSound]) {
+          soundId = savedSound;
+        }
+      } catch {
+        // Use random default if error
+      }
+      setAlarmSoundSource(ALARM_SOUND_FILES[soundId]);
+    };
+    loadAlarmSound();
+  }, []);
+
+  // Start alarm when sound source is loaded
+  useEffect(() => {
+    if (!alarmSoundSource) return;
+    startAlarm();
+
+    return () => {
+      stopAlarm();
+    };
+  }, [alarmSoundSource, startAlarm, stopAlarm]);
 
   // Execute next punishment when currentIndex changes
   useEffect(() => {

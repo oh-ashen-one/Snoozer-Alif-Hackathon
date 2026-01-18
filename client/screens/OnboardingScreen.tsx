@@ -26,6 +26,7 @@ import {
   savePunishmentConfig,
   PunishmentConfig,
 } from '@/utils/storage';
+import { saveShameVideo } from '@/utils/fileSystem';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'Onboarding'>;
@@ -342,6 +343,10 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (route.params?.shameVideoUri) {
       setShameVideoUri(route.params.shameVideoUri);
+      // Auto-enable shame_video toggle when video is recorded
+      if (!enabledPunishments.includes('shame_video')) {
+        setEnabledPunishments(prev => [...prev, 'shame_video']);
+      }
     }
   }, [route.params?.shameVideoUri]);
 
@@ -422,6 +427,10 @@ export default function OnboardingScreen() {
       try {
         await saveDefaultPunishments(enabledPunishments);
         await savePunishmentConfig(punishmentConfig);
+        // Save shame video to persistent storage if recorded
+        if (shameVideoUri && !shameVideoUri.startsWith('mock://')) {
+          await saveShameVideo(shameVideoUri);
+        }
       } catch (error) {
         console.log('Error saving punishment config:', error);
       }
@@ -430,7 +439,7 @@ export default function OnboardingScreen() {
       // Navigate to alarm setup
       navigation.navigate('AddAlarm', { isOnboarding: true });
     }
-  }, [step, enabledPunishments, punishmentConfig, navigation]);
+  }, [step, enabledPunishments, punishmentConfig, shameVideoUri, navigation]);
 
   const enabledCount = enabledPunishments.length;
   const MIN_CONFIGURED = 2;

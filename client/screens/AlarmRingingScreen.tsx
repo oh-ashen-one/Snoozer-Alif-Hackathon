@@ -146,6 +146,7 @@ const getProofEmoji = (proofType: string): string => {
     case 'photo_activity': return '\u{1F4F7}'; // camera emoji
     case 'math': return '\u{0023}\u{FE0F}\u{20E3}'; // hash emoji
     case 'type_phrase': return '\u{2328}\u{FE0F}'; // keyboard emoji
+    case 'stretch': return '\u{1F9D8}'; // yoga/stretch emoji
     default: return '\u{1F4F7}'; // camera emoji
   }
 };
@@ -164,6 +165,8 @@ const getProofDescription = (proofType: string, activity: ProofActivity | null):
       return 'Solve 3 math problems';
     case 'type_phrase':
       return 'Type a motivational phrase';
+    case 'stretch':
+      return 'Strike a stretch pose';
     default:
       if (activity?.activity && activity.activity !== 'Wake up activity') {
         return `Photo: ${activity.activity}`;
@@ -178,6 +181,7 @@ const getProofButtonText = (proofType: string): string => {
     case 'photo_activity': return "I'M UP — TAKE PHOTO";
     case 'math': return "I'M UP — DO MATH";
     case 'type_phrase': return "I'M UP — TYPE PHRASE";
+    case 'stretch': return "I'M UP — STRETCH";
     default: return "I'M UP — TAKE PHOTO";
   }
 };
@@ -599,6 +603,13 @@ export default function AlarmRingingScreen() {
       case 'type_phrase':
         // Type phrase proof - show inline text input (don't stop alarm yet)
         setShowTypePhraseProof(true);
+        break;
+      case 'stretch':
+        // Stretch proof - go to stretch screen with timer
+        await stopAlarm();
+        navigation.navigate('StretchProof', {
+          alarmId: alarmData.alarmId,
+        });
         break;
       default:
         // Fallback to photo proof (no forced steps)

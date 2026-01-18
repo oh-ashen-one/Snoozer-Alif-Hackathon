@@ -137,9 +137,10 @@ interface PunishmentRowProps {
   onSaveConfig: (config: PunishmentConfig) => void;
   onExpand: () => void;
   isConfigured?: boolean;
+  shameVideoUri?: string | null;
 }
 
-export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand, isConfigured }: PunishmentRowProps) {
+export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand, isConfigured, shameVideoUri }: PunishmentRowProps) {
   const [bossEmail, setBossEmail] = useState(config.email_boss?.bossEmail || '');
   const [exPhoneNumber, setExPhoneNumber] = useState(config.text_ex?.exPhoneNumber || '');
   const [wifesDadPhone, setWifesDadPhone] = useState(config.wife_dad?.phoneNumber || '');
@@ -302,6 +303,14 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
           {content}
           <Toggle value={enabled} onValueChange={handleToggle} />
         </Pressable>
+      )}
+
+      {enabled && punishment.id === 'shame_video' && shameVideoUri && (
+        <View style={styles.savedConfigRow}>
+          <ThemedText style={styles.savedConfigText}>
+            <Text style={{ marginRight: 4 }}>✅</Text> Video recorded
+          </ThemedText>
+        </View>
       )}
 
       {enabled && punishment.id === 'email_boss' && config.email_boss?.bossEmail && !expanded && (
@@ -567,6 +576,7 @@ interface PunishmentListProps {
   onSaveConfig: (config: PunishmentConfig) => void;
   expandedPunishment: string | null;
   onExpandPunishment: (id: string | null) => void;
+  shameVideoUri?: string | null;
 }
 
 function hasConfigData(id: string, config: PunishmentConfig): boolean {
@@ -593,6 +603,7 @@ export function PunishmentList({
   onSaveConfig,
   expandedPunishment,
   onExpandPunishment,
+  shameVideoUri,
 }: PunishmentListProps) {
   const handleToggle = useCallback((id: string) => {
     const punishment = PUNISHMENT_OPTIONS.find(p => p.id === id);
@@ -641,6 +652,7 @@ export function PunishmentList({
             onSaveConfig={onSaveConfig}
             onExpand={() => onExpandPunishment(punishment.id)}
             isConfigured={isConfigured}
+            shameVideoUri={punishment.id === 'shame_video' ? shameVideoUri : undefined}
           />
         );
       })}

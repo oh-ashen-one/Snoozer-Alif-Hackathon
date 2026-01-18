@@ -12,6 +12,7 @@ import AlarmRingingScreen from '@/screens/AlarmRingingScreen';
 import ProofCameraScreen from '@/screens/ProofCameraScreen';
 import StepMissionScreen from '@/screens/StepMissionScreen';
 import MathProofScreen from '@/screens/MathProofScreen';
+import StretchProofScreen from '@/screens/StretchProofScreen';
 import ShamePlaybackScreen from '@/screens/ShamePlaybackScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
@@ -91,7 +92,7 @@ export type RootStackParamList = {
     extraPunishments?: string[];
     days?: number[];
     // New per-alarm settings
-    proofActivityType?: 'photo_activity' | 'steps' | 'math' | 'type_phrase';
+    proofActivityType?: 'photo_activity' | 'steps' | 'math' | 'type_phrase' | 'stretch';
     activityName?: string;
     moneyEnabled?: boolean;
     shameVideoEnabled?: boolean;
@@ -111,7 +112,7 @@ export type RootStackParamList = {
     extraPunishments?: string[];
     days?: number[];
     // New per-alarm settings
-    proofActivityType?: 'photo_activity' | 'steps' | 'math' | 'type_phrase';
+    proofActivityType?: 'photo_activity' | 'steps' | 'math' | 'type_phrase' | 'stretch';
     activityName?: string;
     moneyEnabled?: boolean;
     shameVideoEnabled?: boolean;
@@ -130,7 +131,7 @@ export type RootStackParamList = {
     extraPunishments?: string[];
     days?: number[];
     // New per-alarm settings
-    proofActivityType?: 'photo_activity' | 'steps' | 'math' | 'type_phrase';
+    proofActivityType?: 'photo_activity' | 'steps' | 'math' | 'type_phrase' | 'stretch';
     activityName?: string;
     moneyEnabled?: boolean;
     shameVideoEnabled?: boolean;
@@ -159,6 +160,9 @@ export type RootStackParamList = {
     stepGoal?: number;
   };
   MathProof: {
+    alarmId: string;
+  };
+  StretchProof: {
     alarmId: string;
   };
   ShamePlayback: {
@@ -400,6 +404,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="MathProof"
         component={MathProofScreen}
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="StretchProof"
+        component={StretchProofScreen}
         options={{
           headerShown: false,
           gestureEnabled: false,

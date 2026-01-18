@@ -32,6 +32,7 @@ import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import Header from '@/components/Header';
 import { PunishmentList, PUNISHMENT_OPTIONS } from '@/components/PunishmentList';
+import { getShameVideo } from '@/utils/fileSystem';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'AddAlarm'>;
@@ -72,6 +73,14 @@ const PROOF_ACTIVITIES = [
     emoji: '⌨️',
     ctaText: () => 'Type Phrase',
     defaultActivity: 'Type to wake up',
+  },
+  {
+    id: 'stretch',
+    name: 'Stretch',
+    description: 'Strike a stretch pose on timer',
+    emoji: '🧘',
+    ctaText: () => 'Stretch Photo',
+    defaultActivity: 'Stretch',
   },
 ];
 
@@ -148,19 +157,22 @@ export default function AddAlarmScreen() {
   const [punishmentConfig, setPunishmentConfig] = useState<PunishmentConfig>({});
   const [expandedPunishment, setExpandedPunishment] = useState<string | null>(null);
   const [showMaxLimitCard, setShowMaxLimitCard] = useState(false);
+  const [globalShameVideoUri, setGlobalShameVideoUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (editAlarmId) return;
 
     const loadGlobalDefaults = async () => {
       try {
-        const [defaultPunishments, config] = await Promise.all([
+        const [defaultPunishments, config, shameVideo] = await Promise.all([
           getDefaultPunishments(),
           getPunishmentConfig(),
+          getShameVideo(),
         ]);
 
         setEnabledPunishments(defaultPunishments);
         setPunishmentConfig(config);
+        setGlobalShameVideoUri(shameVideo);
 
         if (__DEV__) console.log('[AddAlarm] Loaded global punishment defaults:', defaultPunishments);
       } catch (error) {
@@ -612,6 +624,7 @@ export default function AddAlarmScreen() {
                 onSaveConfig={handleSaveConfig}
                 expandedPunishment={expandedPunishment}
                 onExpandPunishment={setExpandedPunishment}
+                shameVideoUri={globalShameVideoUri}
               />
             </View>
 
