@@ -44,6 +44,7 @@ import { getAlarms, getProofActivity, ProofActivity } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
+import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 
 // Import local alarm sounds
 const ALARM_SOUND_FILES: Record<string, any> = {
@@ -99,6 +100,7 @@ export default function AlarmRingingScreen() {
   const [alarmSoundSource, setAlarmSoundSource] = useState<any>(null);
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
   const { startAlarm: startEscalatingAlarm, stopAlarm: stopEscalatingAlarm, volumePercent, isPlaying } = useEscalatingVolume(alarmSoundSource);
   
@@ -142,6 +144,10 @@ export default function AlarmRingingScreen() {
 
     getCurrentStreak().then(s => setStreak(s));
     getProofActivity().then(setProofActivity);
+    getCalendarEvents().then(events => {
+      setCalendarEvents(events);
+      if (__DEV__) console.log('[AlarmRinging] Calendar events:', events.length);
+    });
   }, []);
 
   useEffect(() => {
@@ -249,6 +255,19 @@ export default function AlarmRingingScreen() {
 
   const getPeriod = (date: Date) => {
     return date.getHours() >= 12 ? 'PM' : 'AM';
+  };
+
+  const formatEventTime = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      const displayHours = hours % 12 || 12;
+      const period = hours >= 12 ? 'PM' : 'AM';
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch {
+      return '';
+    }
   };
 
   const handleDismiss = async () => {
@@ -364,6 +383,21 @@ export default function AlarmRingingScreen() {
         </View>
         
         <ThemedText style={styles.wakeUpLabel}>Time to get up</ThemedText>
+
+        {calendarEvents.length > 0 && (
+          <View style={styles.calendarSection}>
+            <View style={styles.calendarHeader}>
+              <Feather name="calendar" size={14} color="#3B82F6" />
+              <ThemedText style={styles.calendarTitle}>Today's Schedule</ThemedText>
+            </View>
+            {calendarEvents.slice(0, 2).map((event) => (
+              <View key={event.id} style={styles.calendarEvent}>
+                <ThemedText style={styles.eventTime}>{formatEventTime(event.start)}</ThemedText>
+                <ThemedText style={styles.eventName} numberOfLines={1}>{event.summary}</ThemedText>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
       <View style={[styles.buddySection, { opacity: loaded ? 1 : 0 }]}>
@@ -560,6 +594,45 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 15,
     color: '#A8A29E',
+  },
+
+  calendarSection: {
+    marginTop: 20,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.15)',
+    borderRadius: 12,
+    padding: 12,
+    width: '100%',
+    maxWidth: 280,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  calendarTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  calendarEvent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  eventTime: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#78716C',
+    minWidth: 70,
+  },
+  eventName: {
+    flex: 1,
+    fontSize: 13,
+    color: '#FAFAF9',
   },
 
   buddySection: {

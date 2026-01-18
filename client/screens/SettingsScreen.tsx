@@ -32,6 +32,7 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { setOnboardingComplete } from '@/utils/storage';
 import { useAlarms } from '@/hooks/useAlarms';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import {
   isAlarmKitAvailable,
   getAlarmKitPermissionStatus,
@@ -157,6 +158,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { alarms } = useAlarms();
   const { signOut } = useAuth();
+  const { isConnected: calendarConnected, isLoading: calendarLoading, connect: connectCalendar, disconnect: disconnectCalendar, error: calendarError } = useGoogleCalendar();
 
   // State
   const [userName, setUserName] = useState('Alex');
@@ -371,6 +373,22 @@ export default function SettingsScreen() {
     navigation.navigate('Legal', { type: 'privacy' });
   }, [navigation]);
 
+  const handleCalendarToggle = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (calendarConnected) {
+      Alert.alert(
+        'Disconnect Calendar?',
+        'You will no longer see your upcoming events on the alarm screen.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Disconnect', style: 'destructive', onPress: disconnectCalendar },
+        ]
+      );
+    } else {
+      await connectCalendar();
+    }
+  }, [calendarConnected, connectCalendar, disconnectCalendar]);
+
   // Sign out handler
   const handleSignOut = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -469,6 +487,40 @@ export default function SettingsScreen() {
                 onPress={handleRerecordShameVideo}
               />
             </View>
+          </View>
+        </FadeInView>
+
+        {/* Calendar Section */}
+        <FadeInView delay={175} direction="up">
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionLabel}>CALENDAR</ThemedText>
+            <View style={styles.card}>
+              <SettingsRow
+                icon="calendar"
+                iconColor={calendarConnected ? '#22C55E' : '#3B82F6'}
+                iconBg={calendarConnected ? ICON_COLORS.green : ICON_COLORS.blue}
+                label="Google Calendar"
+                onPress={handleCalendarToggle}
+                rightElement={
+                  <View style={styles.permissionBadge}>
+                    <View
+                      style={[
+                        styles.permissionDot,
+                        { backgroundColor: calendarConnected ? Colors.green : Colors.textMuted },
+                      ]}
+                    />
+                    <ThemedText style={styles.permissionText}>
+                      {calendarLoading ? '...' : calendarConnected ? 'Connected' : 'Not linked'}
+                    </ThemedText>
+                  </View>
+                }
+              />
+            </View>
+            <ThemedText style={styles.permissionHint}>
+              {calendarConnected 
+                ? "Your today's events will show on the alarm screen"
+                : 'Link to see your schedule when waking up'}
+            </ThemedText>
           </View>
         </FadeInView>
 
