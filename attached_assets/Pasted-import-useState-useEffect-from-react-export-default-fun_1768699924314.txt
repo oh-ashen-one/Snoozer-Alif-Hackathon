@@ -1,0 +1,620 @@
+import { useState, useEffect } from 'react';
+
+export default function AlarmRingingScreen() {
+  const [snoozeStep, setSnoozeStep] = useState(0); // 0: hidden, 1: are you sure, 2: type to confirm
+  const [snoozeText, setSnoozeText] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [pulseIntensity, setPulseIntensity] = useState(0);
+  
+  useEffect(() => {
+    setTimeout(() => setLoaded(true), 100);
+    
+    const pulseInterval = setInterval(() => {
+      setPulseIntensity(p => (p + 1) % 100);
+    }, 50);
+    
+    return () => clearInterval(pulseInterval);
+  }, []);
+
+  const currentTime = "6:00";
+  const period = "AM";
+  const buddyName = "Jake";
+  const streakDays = 12;
+  const penaltyAmount = 1;
+  const requiredText = "I FAIL";
+
+  const handleSnoozePress = () => {
+    setSnoozeStep(1);
+  };
+
+  const handleAreYouSure = () => {
+    setSnoozeStep(2);
+  };
+
+  const handleNevermind = () => {
+    setSnoozeStep(0);
+  };
+
+  const handleSnoozeConfirm = () => {
+    if (snoozeText.toUpperCase() === requiredText) {
+      alert("Punishment triggered. Shame video playing...");
+    }
+  };
+
+  const breathe = Math.sin(pulseIntensity * 0.1) * 0.5 + 0.5;
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#1C1917',
+      fontFamily: "'DM Sans', sans-serif",
+      color: '#FAFAF9',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '60px 24px 48px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      
+      {/* Animated breathing gradient */}
+      <div style={{
+        position: 'absolute',
+        top: '-20%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '140%',
+        height: '70%',
+        background: `radial-gradient(ellipse at center, rgba(251, 146, 60, ${0.06 + breathe * 0.08}) 0%, transparent 70%)`,
+        pointerEvents: 'none',
+        transition: 'all 0.1s ease',
+      }} />
+
+      {/* Subtle ring pulse behind time */}
+      <div style={{
+        position: 'absolute',
+        top: '15%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: `${200 + breathe * 40}px`,
+        height: `${200 + breathe * 40}px`,
+        borderRadius: '50%',
+        border: `1px solid rgba(251, 146, 60, ${0.1 + breathe * 0.1})`,
+        pointerEvents: 'none',
+        transition: 'all 0.3s ease',
+      }} />
+
+      {/* Top section */}
+      <div style={{
+        textAlign: 'center',
+        zIndex: 1,
+        opacity: loaded ? 1 : 0,
+        transform: loaded ? 'translateY(0)' : 'translateY(-20px)',
+        transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}>
+        {/* Streak pill */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '6px 14px',
+          backgroundColor: 'rgba(251, 146, 60, 0.12)',
+          borderRadius: '100px',
+          marginBottom: '32px',
+          animation: 'float 3s ease-in-out infinite',
+        }}>
+          <span style={{ 
+            fontSize: '14px',
+            display: 'inline-block',
+            animation: 'flame 0.5s ease-in-out infinite alternate',
+          }}>🔥</span>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: '500',
+            color: '#FB923C',
+          }}>
+            {streakDays} days strong
+          </span>
+        </div>
+
+        {/* Time display */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'center',
+          gap: '8px',
+        }}>
+          <span style={{
+            fontSize: '96px',
+            fontWeight: '600',
+            letterSpacing: '-6px',
+            lineHeight: 1,
+            color: '#FAFAF9',
+            transform: `scale(${1 + breathe * 0.02})`,
+            transition: 'transform 0.3s ease',
+          }}>
+            {currentTime}
+          </span>
+          <span style={{
+            fontSize: '24px',
+            fontWeight: '400',
+            color: '#78716C',
+            marginLeft: '4px',
+            opacity: 0.5 + breathe * 0.5,
+            transition: 'opacity 0.3s ease',
+          }}>
+            {period}
+          </span>
+        </div>
+        
+        <div style={{
+          marginTop: '12px',
+          fontSize: '15px',
+          color: '#A8A29E',
+          fontWeight: '400',
+        }}>
+          Time to get up
+        </div>
+      </div>
+
+      {/* Middle section - Buddy */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        zIndex: 1,
+        opacity: loaded ? 1 : 0,
+        transform: loaded ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.9)',
+        transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s',
+      }}>
+        {/* Buddy photo container with ring */}
+        <div style={{
+          position: 'relative',
+        }}>
+          {/* Pulsing ring behind avatar */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: `${120 + breathe * 20}px`,
+            height: `${120 + breathe * 20}px`,
+            borderRadius: '50%',
+            border: `1px solid rgba(250, 250, 249, ${0.05 + breathe * 0.1})`,
+            transition: 'all 0.3s ease',
+          }} />
+          
+          <div style={{
+            width: '100px',
+            height: '100px',
+            borderRadius: '50%',
+            backgroundColor: '#292524',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '40px',
+            border: '2px solid #3F3A36',
+            position: 'relative',
+            animation: 'judgeStare 4s ease-in-out infinite',
+          }}>
+            😐
+          </div>
+          {/* Online indicator with pulse */}
+          <div style={{
+            position: 'absolute',
+            bottom: '4px',
+            right: '4px',
+            width: '14px',
+            height: '14px',
+            backgroundColor: '#22C55E',
+            borderRadius: '50%',
+            border: '3px solid #1C1917',
+            animation: 'pulse 2s ease-in-out infinite',
+          }} />
+        </div>
+        
+        <div style={{
+          marginTop: '16px',
+          fontSize: '17px',
+          fontWeight: '500',
+          color: '#FAFAF9',
+        }}>
+          {buddyName} is watching
+        </div>
+        
+        <div style={{
+          marginTop: '6px',
+          fontSize: '14px',
+          color: '#78716C',
+          animation: 'fadeInOut 4s ease-in-out infinite',
+        }}>
+          "Don't make me come over there."
+        </div>
+      </div>
+
+      {/* Bottom section - Actions */}
+      <div style={{
+        width: '100%',
+        maxWidth: '340px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        zIndex: 1,
+        opacity: loaded ? 1 : 0,
+        transform: loaded ? 'translateY(0)' : 'translateY(30px)',
+        transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s',
+      }}>
+        {/* PROOF SECTION - More prominent */}
+        <div style={{
+          backgroundColor: 'rgba(34, 197, 94, 0.08)',
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '4px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            marginBottom: '12px',
+          }}>
+            <span style={{ fontSize: '24px' }}>📸</span>
+            <span style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#FAFAF9',
+            }}>
+              Prove you're up
+            </span>
+          </div>
+          
+          <div style={{
+            fontSize: '14px',
+            color: '#A8A29E',
+            textAlign: 'center',
+            marginBottom: '16px',
+            lineHeight: 1.5,
+          }}>
+            Take a photo in your <span style={{ color: '#22C55E', fontWeight: '500' }}>bathroom</span> to dismiss the alarm. No photo, no escape.
+          </div>
+          
+          {/* Main wake up button */}
+          <button 
+            className="wake-button"
+            style={{
+              width: '100%',
+              padding: '18px 32px',
+              fontSize: '17px',
+              fontWeight: '600',
+              fontFamily: "'DM Sans', sans-serif",
+              backgroundColor: '#22C55E',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            <span style={{ fontSize: '20px' }}>📷</span>
+            <span style={{ position: 'relative', zIndex: 1 }}>Take Photo & Dismiss</span>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          margin: '8px 0',
+        }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#292524' }} />
+          <span style={{ fontSize: '11px', color: '#57534E' }}>or face the consequences</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#292524' }} />
+        </div>
+
+        {/* Snooze section - SMALLER */}
+        {snoozeStep === 0 && (
+          <button 
+            onClick={handleSnoozePress}
+            className="snooze-button"
+            style={{
+              width: 'auto',
+              alignSelf: 'center',
+              padding: '10px 20px',
+              fontSize: '12px',
+              fontWeight: '500',
+              fontFamily: "'DM Sans', sans-serif",
+              backgroundColor: 'transparent',
+              color: '#78716C',
+              border: '1px solid #292524',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden',
+              transition: 'all 0.3s ease',
+            }}
+          >
+            <span style={{ position: 'relative', zIndex: 1 }}>
+              Snooze (−${penaltyAmount})
+            </span>
+          </button>
+        )}
+
+        {/* Step 1: Are you sure? */}
+        {snoozeStep === 1 && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.06)',
+            border: '1px solid rgba(239, 68, 68, 0.15)',
+            borderRadius: '14px',
+            padding: '20px',
+            animation: 'expandIn 0.3s ease-out',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontSize: '15px',
+              fontWeight: '500',
+              color: '#FAFAF9',
+              marginBottom: '8px',
+            }}>
+              Are you sure?
+            </div>
+            <div style={{
+              fontSize: '13px',
+              color: '#A8A29E',
+              marginBottom: '16px',
+              lineHeight: 1.5,
+            }}>
+              You'll lose <span style={{ color: '#EF4444', fontWeight: '600' }}>${penaltyAmount}</span>, your shame video will play, and {buddyName} gets notified.
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+            }}>
+              <button
+                onClick={handleNevermind}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  fontFamily: "'DM Sans', sans-serif",
+                  backgroundColor: '#292524',
+                  color: '#FAFAF9',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Nevermind, I'm up
+              </button>
+              <button
+                onClick={handleAreYouSure}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  fontFamily: "'DM Sans', sans-serif",
+                  backgroundColor: 'transparent',
+                  color: '#EF4444',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                I'm sure
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Type to confirm */}
+        {snoozeStep === 2 && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            borderRadius: '14px',
+            padding: '20px',
+            animation: 'shake 0.5s ease-in-out, expandIn 0.3s ease-out',
+          }}>
+            <div style={{
+              fontSize: '14px',
+              color: '#FAFAF9',
+              marginBottom: '16px',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}>
+              Type <span style={{ 
+                color: '#EF4444', 
+                fontWeight: '600',
+                animation: 'pulseText 1s ease-in-out infinite',
+              }}>"{requiredText}"</span> to confirm
+            </div>
+            <input
+              type="text"
+              value={snoozeText}
+              onChange={(e) => setSnoozeText(e.target.value)}
+              placeholder="Type here..."
+              autoFocus
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                fontSize: '16px',
+                fontFamily: "'DM Sans', sans-serif",
+                backgroundColor: '#292524',
+                color: '#FAFAF9',
+                border: '1px solid #3F3A36',
+                borderRadius: '10px',
+                textAlign: 'center',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'all 0.2s ease',
+              }}
+            />
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginTop: '12px',
+            }}>
+              <button
+                onClick={handleNevermind}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  fontFamily: "'DM Sans', sans-serif",
+                  backgroundColor: '#292524',
+                  color: '#FAFAF9',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Go back
+              </button>
+              <button
+                onClick={handleSnoozeConfirm}
+                disabled={snoozeText.toUpperCase() !== requiredText}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  fontFamily: "'DM Sans', sans-serif",
+                  backgroundColor: snoozeText.toUpperCase() === requiredText ? '#EF4444' : '#292524',
+                  color: snoozeText.toUpperCase() === requiredText ? '#ffffff' : '#57534E',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: snoozeText.toUpperCase() === requiredText ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.3s ease',
+                  transform: snoozeText.toUpperCase() === requiredText ? 'scale(1)' : 'scale(0.98)',
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        
+        @keyframes flame {
+          0% { transform: scale(1) rotate(-5deg); }
+          100% { transform: scale(1.1) rotate(5deg); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+          }
+          50% { 
+            transform: scale(1.1);
+            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+          }
+        }
+        
+        @keyframes judgeStare {
+          0%, 100% { transform: scale(1); }
+          10% { transform: scale(1.02); }
+          20% { transform: scale(1); }
+        }
+        
+        @keyframes fadeInOut {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+          20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        
+        @keyframes expandIn {
+          0% { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          100% { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes pulseText {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+        
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        
+        .wake-button {
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: buttonPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes buttonPulse {
+          0%, 100% { 
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.2);
+          }
+          50% { 
+            box-shadow: 0 4px 30px rgba(34, 197, 94, 0.4);
+          }
+        }
+        
+        .wake-button:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 8px 30px rgba(34, 197, 94, 0.4);
+        }
+        
+        .wake-button:active {
+          transform: translateY(0) scale(0.98);
+        }
+        
+        .wake-button::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          animation: shimmer 3s infinite;
+        }
+        
+        .snooze-button:hover {
+          color: #EF4444;
+          border-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        input:focus {
+          border-color: #EF4444 !important;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+      `}</style>
+    </div>
+  );
+}

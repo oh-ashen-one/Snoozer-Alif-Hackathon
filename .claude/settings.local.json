@@ -6,7 +6,10 @@
       "Bash(timeout 30s npx expo start:*)",
       "Bash(pkill:*)",
       "Bash(npx tsc:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)"
     ]
   }
 }
