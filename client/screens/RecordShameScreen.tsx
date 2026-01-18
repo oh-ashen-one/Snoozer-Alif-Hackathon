@@ -205,14 +205,14 @@ export default function RecordShameScreen() {
         if (result) savedUri = result;
       }
 
-      // If coming from settings, update the alarm and go back to settings
+      // If coming from settings/punishments, update the alarm and go back
       if (isOnboarding === false) {
-        console.log('[RecordShame] Updating shame video from settings');
+        console.log('[RecordShame] Updating shame video from settings/punishments');
         const firstAlarm = alarms[0];
         if (firstAlarm) {
           await updateAlarm(firstAlarm.id, { shameVideoUri: savedUri });
         }
-        navigation.navigate('Settings');
+        navigation.goBack();
         return;
       }
 
@@ -245,9 +245,9 @@ export default function RecordShameScreen() {
       });
     } catch (error) {
       console.error('[RecordShame] Error using video:', error);
-      // On error, go to settings if from settings, otherwise try to continue onboarding
+      // On error, go back if from settings, otherwise try to continue onboarding
       if (isOnboarding === false) {
-        navigation.navigate('Settings');
+        navigation.goBack();
       } else {
         navigation.navigate('OnboardingComplete', {
           alarmTime,
@@ -274,10 +274,10 @@ export default function RecordShameScreen() {
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // If coming from settings, go back to settings
+    // If coming from settings/punishments, go back
     if (isOnboarding === false) {
-      console.log('[RecordShame] Skipped from settings, returning to settings');
-      navigation.navigate('Settings');
+      console.log('[RecordShame] Skipped from settings/punishments, going back');
+      navigation.goBack();
       return;
     }
 

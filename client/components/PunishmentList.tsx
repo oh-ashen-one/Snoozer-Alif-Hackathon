@@ -138,9 +138,11 @@ interface PunishmentRowProps {
   onExpand: () => void;
   isConfigured?: boolean;
   shameVideoUri?: string | null;
+  onRecordShameVideo?: () => void;
+  onViewShameVideo?: () => void;
 }
 
-export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand, isConfigured, shameVideoUri }: PunishmentRowProps) {
+export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config, onSaveConfig, onExpand, isConfigured, shameVideoUri, onRecordShameVideo, onViewShameVideo }: PunishmentRowProps) {
   const [bossEmail, setBossEmail] = useState(config.email_boss?.bossEmail || '');
   const [exPhoneNumber, setExPhoneNumber] = useState(config.text_ex?.exPhoneNumber || '');
   const [wifesDadPhone, setWifesDadPhone] = useState(config.wife_dad?.phoneNumber || '');
@@ -305,11 +307,49 @@ export function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded,
         </Pressable>
       )}
 
-      {enabled && punishment.id === 'shame_video' && shameVideoUri && (
-        <View style={styles.savedConfigRow}>
-          <ThemedText style={styles.savedConfigText}>
-            <Text style={{ marginRight: 4 }}>✅</Text> Video recorded
-          </ThemedText>
+      {enabled && punishment.id === 'shame_video' && (
+        <View style={styles.shameVideoSection}>
+          {shameVideoUri ? (
+            <>
+              <View style={styles.shameVideoStatus}>
+                <Text style={{ fontSize: 16 }}>✅</Text>
+                <ThemedText style={styles.shameVideoStatusText}>Video recorded</ThemedText>
+              </View>
+              <View style={styles.shameVideoButtons}>
+                <Pressable 
+                  style={styles.shameVideoButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onViewShameVideo?.();
+                  }}
+                >
+                  <Text style={{ fontSize: 14 }}>▶️</Text>
+                  <ThemedText style={styles.shameVideoButtonText}>View</ThemedText>
+                </Pressable>
+                <Pressable 
+                  style={styles.shameVideoButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onRecordShameVideo?.();
+                  }}
+                >
+                  <Text style={{ fontSize: 14 }}>🔄</Text>
+                  <ThemedText style={styles.shameVideoButtonText}>Re-record</ThemedText>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <Pressable 
+              style={styles.recordVideoButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onRecordShameVideo?.();
+              }}
+            >
+              <Text style={{ fontSize: 16 }}>🎥</Text>
+              <ThemedText style={styles.recordVideoButtonText}>Record Shame Video</ThemedText>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -577,6 +617,8 @@ interface PunishmentListProps {
   expandedPunishment: string | null;
   onExpandPunishment: (id: string | null) => void;
   shameVideoUri?: string | null;
+  onRecordShameVideo?: () => void;
+  onViewShameVideo?: () => void;
 }
 
 function hasConfigData(id: string, config: PunishmentConfig): boolean {
@@ -604,6 +646,8 @@ export function PunishmentList({
   expandedPunishment,
   onExpandPunishment,
   shameVideoUri,
+  onRecordShameVideo,
+  onViewShameVideo,
 }: PunishmentListProps) {
   const handleToggle = useCallback((id: string) => {
     const punishment = PUNISHMENT_OPTIONS.find(p => p.id === id);
@@ -653,6 +697,8 @@ export function PunishmentList({
             onExpand={() => onExpandPunishment(punishment.id)}
             isConfigured={isConfigured}
             shameVideoUri={punishment.id === 'shame_video' ? shameVideoUri : undefined}
+            onRecordShameVideo={punishment.id === 'shame_video' ? onRecordShameVideo : undefined}
+            onViewShameVideo={punishment.id === 'shame_video' ? onViewShameVideo : undefined}
           />
         );
       })}
@@ -837,5 +883,55 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.orange,
     fontWeight: '500',
+  },
+  shameVideoSection: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+  },
+  shameVideoStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  shameVideoStatusText: {
+    fontSize: 14,
+    color: Colors.green,
+    fontWeight: '500',
+  },
+  shameVideoButtons: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  shameVideoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.bgCard,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  shameVideoButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  recordVideoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.red,
+    borderRadius: BorderRadius.md,
+  },
+  recordVideoButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
   },
 });

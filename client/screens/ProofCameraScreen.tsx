@@ -109,11 +109,8 @@ export default function ProofCameraScreen() {
       return;
     }
 
-    if (!activityName) {
-      // No activity specified - skip AI verification
-      setVerificationStatus('passed');
-      return;
-    }
+    // Use default activity description if none specified
+    const verificationActivity = activityName || 'completing the morning wake-up activity';
 
     setVerifying(true);
     setVerificationStatus('verifying');
@@ -138,7 +135,7 @@ export default function ProofCameraScreen() {
       // Call AI verification API
       const response = await apiRequest('POST', '/api/verify-proof', {
         imageBase64: `data:image/jpeg;base64,${imageBase64}`,
-        activityDescription: activityName,
+        activityDescription: verificationActivity,
         referenceImageBase64: referenceImageBase64 ? `data:image/jpeg;base64,${referenceImageBase64}` : undefined,
       });
 
@@ -158,25 +155,11 @@ export default function ProofCameraScreen() {
       }
     } catch (aiError) {
       if (__DEV__) console.log('[ProofCamera] AI verification failed:', aiError);
-      // On API error, fall back to local validation or pass through
-      if (referencePhotoUri && !referencePhotoUri.startsWith('mock://')) {
-        try {
-          const localResult = await validateProofPhoto(referencePhotoUri, uri);
-          if (!localResult.isMatch) {
-            setVerificationStatus('failed');
-            setVerificationError(localResult.message);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          } else {
-            setVerificationStatus('passed');
-          }
-        } catch {
-          // If all validation fails, allow through to not block user
-          setVerificationStatus('passed');
-        }
-      } else {
-        // No reference photo and API failed - allow through
-        setVerificationStatus('passed');
-      }
+      // On API error, show error and require retry (strict verification)
+      setVerificationStatus('failed');
+      setVerificationReason('Verification service error. Please try again.');
+      setVerificationError('Unable to verify photo. Please try again.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setVerifying(false);
     }
