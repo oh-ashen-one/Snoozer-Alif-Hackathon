@@ -128,9 +128,7 @@ const getProofEmoji = (proofType: string): string => {
   switch (proofType) {
     case 'steps': return '\u{1F9ED}'; // compass/navigation emoji
     case 'photo_activity': return '\u{1F4F7}'; // camera emoji
-    case 'scan': return '\u{1F50D}'; // magnifying glass
     case 'math': return '\u{0023}\u{FE0F}\u{20E3}'; // hash emoji
-    case 'shake': return '\u{1F4F1}'; // smartphone emoji
     default: return '\u{1F4F7}'; // camera emoji
   }
 };
@@ -141,12 +139,8 @@ const getProofDescription = (proofType: string, activity: ProofActivity | null):
       return `Walk ${activity?.stepGoal || 50} steps`;
     case 'photo_activity':
       return activity?.activity || 'Take a photo at your wake-up spot';
-    case 'scan':
-      return 'Scan your QR code';
     case 'math':
       return 'Solve 3 math problems';
-    case 'shake':
-      return 'Shake your phone 30 times';
     default:
       return activity?.activity || 'Take a photo at your wake-up spot';
   }
@@ -156,9 +150,7 @@ const getProofButtonText = (proofType: string): string => {
   switch (proofType) {
     case 'steps': return "I'M UP — START WALKING";
     case 'photo_activity': return "I'M UP — TAKE PHOTO";
-    case 'scan': return "I'M UP — SCAN QR";
     case 'math': return "I'M UP — DO MATH";
-    case 'shake': return "I'M UP — SHAKE PHONE";
     default: return "I'M UP — TAKE PHOTO";
   }
 };

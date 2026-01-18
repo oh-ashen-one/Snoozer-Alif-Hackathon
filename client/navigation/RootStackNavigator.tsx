@@ -90,7 +90,7 @@ export type RootStackParamList = {
     extraPunishments?: string[];
     days?: number[];
     // New per-alarm settings
-    proofActivityType?: 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake';
+    proofActivityType?: 'photo_activity' | 'steps' | 'math';
     activityName?: string;
     moneyEnabled?: boolean;
     shameVideoEnabled?: boolean;
@@ -109,7 +109,7 @@ export type RootStackParamList = {
     extraPunishments?: string[];
     days?: number[];
     // New per-alarm settings
-    proofActivityType?: 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake';
+    proofActivityType?: 'photo_activity' | 'steps' | 'math';
     activityName?: string;
     moneyEnabled?: boolean;
     shameVideoEnabled?: boolean;
@@ -128,7 +128,7 @@ export type RootStackParamList = {
     extraPunishments?: string[];
     days?: number[];
     // New per-alarm settings
-    proofActivityType?: 'photo_activity' | 'steps' | 'scan' | 'math' | 'shake';
+    proofActivityType?: 'photo_activity' | 'steps' | 'math';
     activityName?: string;
     moneyEnabled?: boolean;
     shameVideoEnabled?: boolean;

@@ -273,16 +273,37 @@ export default function AddAlarmScreen() {
     if (antiCharity) extraPunishments.push('donate_enemy');
 
     try {
-      await addAlarm({
-        time: timeString,
-        label: activityName || 'Wake up',
-        enabled: true,
-        referencePhotoUri: null,
-        shameVideoUri: null,
-        punishment: moneyEnabled ? amount : 0,
-        extraPunishments,
-        days: selectedDays,
-      });
+      if (isEditing && editAlarmId) {
+        // Update existing alarm
+        await updateAlarm(editAlarmId, {
+          time: timeString,
+          label: activityName || 'Wake up',
+          punishment: moneyEnabled ? amount : 0,
+          extraPunishments,
+          days: selectedDays,
+          proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math',
+          activityName: activityName,
+          // Preserve existing data
+          referencePhotoUri: existingAlarmData?.referencePhotoUri ?? null,
+          shameVideoUri: existingAlarmData?.shameVideoUri ?? null,
+          enabled: existingAlarmData?.enabled ?? true,
+        });
+        if (__DEV__) console.log('[AddAlarm] Alarm updated:', editAlarmId);
+      } else {
+        // Create new alarm
+        await addAlarm({
+          time: timeString,
+          label: activityName || 'Wake up',
+          enabled: true,
+          referencePhotoUri: null,
+          shameVideoUri: null,
+          punishment: moneyEnabled ? amount : 0,
+          extraPunishments,
+          days: selectedDays,
+          proofActivityType: selectedProof as 'photo_activity' | 'steps' | 'math',
+          activityName: activityName,
+        });
+      }
 
       navigation.dispatch(
         CommonActions.reset({
@@ -305,7 +326,7 @@ export default function AddAlarmScreen() {
         <Pressable style={styles.headerButton} onPress={() => navigation.goBack()}>
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>New Alarm</Text>
+        <Text style={styles.headerTitle}>{isEditing ? 'Edit Alarm' : 'New Alarm'}</Text>
         <Pressable style={styles.headerButton} onPress={handleSave}>
           <Text style={styles.saveText}>Save</Text>
         </Pressable>

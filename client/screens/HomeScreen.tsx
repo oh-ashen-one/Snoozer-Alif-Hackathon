@@ -259,7 +259,7 @@ function SectionHeader({ onAddPress }: { onAddPress: () => void }) {
 }
 
 // Alarm List Item Component
-function AlarmListItem({ alarm, onToggle, onDelete, onTest }: { alarm: Alarm; onToggle: () => void; onDelete: () => void; onTest: () => void }) {
+function AlarmListItem({ alarm, onToggle, onDelete, onTest, onEdit }: { alarm: Alarm; onToggle: () => void; onDelete: () => void; onTest: () => void; onEdit: () => void }) {
   const { time, period } = formatTime(alarm.time);
   const selectedDays = alarm.days ?? [1, 2, 3, 4, 5]; // Use stored days or default to weekdays
 
@@ -319,9 +319,14 @@ function AlarmListItem({ alarm, onToggle, onDelete, onTest }: { alarm: Alarm; on
             </View>
             <View style={styles.alarmRight}>
               <Toggle value={alarm.enabled} onValueChange={onToggle} />
-              <Pressable style={styles.testButton} onPress={onTest}>
-                <ThemedText style={styles.testButtonText}>Test</ThemedText>
-              </Pressable>
+              <View style={styles.alarmButtonsRow}>
+                <Pressable style={styles.editButton} onPress={onEdit}>
+                  <ThemedText style={styles.editButtonText}>Edit</ThemedText>
+                </Pressable>
+                <Pressable style={styles.testButton} onPress={onTest}>
+                  <ThemedText style={styles.testButtonText}>Test</ThemedText>
+                </Pressable>
+              </View>
             </View>
           </View>
           <DayPills selectedDays={selectedDays} />
@@ -462,6 +467,20 @@ export default function HomeScreen() {
     [navigation]
   );
 
+  const handleEditAlarm = useCallback(
+    (alarm: Alarm) => {
+      return () => {
+        if (__DEV__) console.log('[Home] Editing alarm:', alarm.id);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('AddAlarm', {
+          isOnboarding: false,
+          editAlarmId: alarm.id,
+        });
+      };
+    },
+    [navigation]
+  );
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
@@ -507,6 +526,7 @@ export default function HomeScreen() {
                   onToggle={handleToggleAlarm(alarm.id)}
                   onDelete={() => handleDeleteAlarm(alarm.id)}
                   onTest={handleTestAlarm(alarm)}
+                  onEdit={handleEditAlarm(alarm)}
                 />
               </AnimatedCard>
             ))}
@@ -826,6 +846,27 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     backgroundColor: Colors.text,
+  },
+
+  // Alarm action buttons row
+  alarmButtonsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+
+  // Edit Button (per alarm)
+  editButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(168, 162, 158, 0.12)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(168, 162, 158, 0.2)',
+  },
+  editButtonText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#A8A29E',
   },
 
   // Test Button (per alarm)
