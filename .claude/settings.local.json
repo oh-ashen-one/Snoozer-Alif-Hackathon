@@ -39,7 +39,15 @@
       "Bash(done)",
       "Bash(identify:*)",
       "Bash(python3:*)",
-      "Bash(eas build:*)"
+      "Bash(eas build:*)",
+      "Bash(ls:*)",
+      "Bash(xargs cat:*)",
+      "Bash(bun add:*)",
+      "Bash(npx patch-package:*)",
+      "Bash(bun install:*)",
+      "Bash(npx:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix iOS build: patch AlarmKit for conditional compilation\n\nAdd patch-package to conditionally compile AlarmKit framework imports.\nThe iOS 26 SDK is required for Apple''s AlarmKit, but may not be available\non all build machines. This patch wraps AlarmKit code in #if canImport\\(\\)\nguards so builds succeed on any Xcode version.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
