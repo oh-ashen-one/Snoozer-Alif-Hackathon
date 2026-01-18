@@ -63,18 +63,11 @@ export async function saveShameVideo(uri: string): Promise<string | null> {
   }
 }
 
+// Proof photos are NOT saved - only used momentarily for comparison
+// This function exists for backwards compatibility but does not persist the photo
 export async function saveProofPhoto(uri: string): Promise<string | null> {
-  try {
-    await ensureDirectories();
-    const timestamp = Date.now();
-    const destination = `${PHOTOS_DIR}proof_${timestamp}.jpg`;
-    
-    await FileSystem.copyAsync({ from: uri, to: destination });
-    return destination;
-  } catch (error) {
-    console.error('Error saving proof photo:', error);
-    return null;
-  }
+  // Return the original URI without saving - proof photos are ephemeral
+  return uri;
 }
 
 export async function getReferencePhoto(): Promise<string | null> {

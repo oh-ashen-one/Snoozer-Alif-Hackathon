@@ -36,9 +36,14 @@ const FAQ_DATA: FAQItem[] = [
       'When your alarm goes off, you need to take a photo that matches your reference location (like your bathroom). The app compares the photos to verify you actually got out of bed. No matching photo means the alarm keeps ringing!',
   },
   {
+    question: 'Is my photo data saved?',
+    answer:
+      'We only save your initial reference photo so it can be used to verify your wake-up location. Proof photos taken when dismissing alarms are never saved or stored - they are only used momentarily for comparison and then discarded.',
+  },
+  {
     question: 'What happens if I snooze?',
     answer:
-      'If you hit snooze, your shame video will play at maximum volume. This is designed to be embarrassing enough to motivate you to get up next time. The alarm will ring again after the snooze period.',
+      'If you snooze, your selected punishments will occur - your shame video plays at maximum volume, and any other punishments you set up (like buddy notifications or donations) will be triggered. The alarm will continue ringing after the snooze period.',
   },
   {
     question: 'How do I change my alarm?',
@@ -107,7 +112,7 @@ export default function HelpScreen() {
         <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
           <Feather name="arrow-left" size={24} color={Colors.text} />
         </Pressable>
-        <ThemedText style={styles.headerTitle}>Help & FAQ</ThemedText>
+        <ThemedText style={styles.headerTitle}>FAQs</ThemedText>
         <View style={styles.headerSpacer} />
       </View>
 

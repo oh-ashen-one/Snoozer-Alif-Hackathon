@@ -11,6 +11,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle } from 'react-native-svg';
+import {
+  hapticForPunishment,
+  getPunishmentLevel,
+  selectionChanged,
+  buttonPress,
+  alarmCreatedPattern,
+} from '@/utils/haptics';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
@@ -107,27 +114,27 @@ export default function AddAlarmScreen() {
   const [showAllPunishments, setShowAllPunishments] = useState(false);
 
   const incrementHour = useCallback(() => {
-    Haptics.selectionAsync();
+    selectionChanged();
     setHour(h => (h === 12 ? 1 : h + 1));
   }, []);
 
   const decrementHour = useCallback(() => {
-    Haptics.selectionAsync();
+    selectionChanged();
     setHour(h => (h === 1 ? 12 : h - 1));
   }, []);
 
   const incrementMinute = useCallback(() => {
-    Haptics.selectionAsync();
+    selectionChanged();
     setMinute(m => (m === 55 ? 0 : m + 5));
   }, []);
 
   const decrementMinute = useCallback(() => {
-    Haptics.selectionAsync();
+    selectionChanged();
     setMinute(m => (m === 0 ? 55 : m - 5));
   }, []);
 
   const toggleDay = useCallback((day: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    buttonPress('secondary');
     setSelectedDays(prev => {
       if (prev.includes(day)) {
         if (prev.length > 1) {
@@ -141,22 +148,26 @@ export default function AddAlarmScreen() {
 
   const togglePeriod = useCallback((p: 'AM' | 'PM') => {
     if (p !== period) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      buttonPress('secondary');
       setPeriod(p);
     }
   }, [period]);
 
   const toggleExtraPunishment = useCallback((id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const hasShameVideo = id === 'shame_video' ? !extraPunishments.includes(id) : extraPunishments.includes('shame_video');
+    const level = getPunishmentLevel(punishment, hasShameVideo);
+    hapticForPunishment(level);
     setExtraPunishments(prev =>
       prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
     );
-  }, []);
+  }, [punishment, extraPunishments]);
 
   const formatMinute = (m: number) => m.toString().padStart(2, '0');
 
   const handleContinue = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const hasShameVideo = extraPunishments.includes('shame_video');
+    const level = getPunishmentLevel(punishment, hasShameVideo);
+    alarmCreatedPattern(level);
     const hour24 = period === 'PM' ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
     const timeString = `${hour24.toString().padStart(2, '0')}:${formatMinute(minute)}`;
     const dayIndices = selectedDays.map(day => DAYS.indexOf(day));
@@ -286,7 +297,9 @@ export default function AddAlarmScreen() {
                     isSelected && (isLater ? styles.punishmentButtonLaterSelected : styles.punishmentButtonSelected),
                   ]}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    const hasShameVideo = extraPunishments.includes('shame_video');
+                    const level = getPunishmentLevel(amount, hasShameVideo);
+                    hapticForPunishment(level);
                     setPunishment(amount);
                   }}
                 >
@@ -343,7 +356,7 @@ export default function AddAlarmScreen() {
           <Pressable
             style={styles.showMoreButton}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              buttonPress('secondary');
               setShowAllPunishments(!showAllPunishments);
             }}
           >
