@@ -197,46 +197,6 @@ export async function getWeekData(): Promise<DayStatus[]> {
   return weekData;
 }
 
-export async function seedMockData(): Promise<void> {
-  const mockData: WakeLogEntry[] = [];
-  const today = new Date();
-  
-  const patterns = [
-    { daysAgo: 0, snoozed: false },
-    { daysAgo: 1, snoozed: false },
-    { daysAgo: 2, snoozed: false },
-    { daysAgo: 3, snoozed: true, snoozeCount: 1 },
-    { daysAgo: 4, snoozed: false },
-    { daysAgo: 5, snoozed: false },
-    { daysAgo: 6, snoozed: false },
-    { daysAgo: 7, snoozed: false },
-    { daysAgo: 8, snoozed: true, snoozeCount: 2 },
-    { daysAgo: 9, snoozed: false },
-    { daysAgo: 10, snoozed: false },
-    { daysAgo: 11, snoozed: false },
-    { daysAgo: 12, snoozed: false },
-    { daysAgo: 13, snoozed: true, snoozeCount: 1 },
-  ];
-  
-  for (const pattern of patterns) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - pattern.daysAgo);
-    
-    const wakeHour = 6 + Math.floor(Math.random() * 2);
-    const wakeMinute = Math.floor(Math.random() * 30);
-    
-    mockData.push({
-      date: formatDate(date),
-      alarmId: 'mock-alarm',
-      wokeAt: `${wakeHour}:${wakeMinute.toString().padStart(2, '0')} AM`,
-      snoozed: pattern.snoozed,
-      snoozeCount: pattern.snoozeCount || 0,
-    });
-  }
-  
-  await saveWakeLog(mockData);
-}
-
 export async function clearTrackingData(): Promise<void> {
   try {
     await AsyncStorage.removeItem(WAKE_LOG_KEY);
