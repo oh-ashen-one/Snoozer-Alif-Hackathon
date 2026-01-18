@@ -54,7 +54,7 @@ import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
 import { getCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
-import { AppleCashPrompt } from '@/components/AppleCashPrompt';
+import { PaymentPressureScreen } from '@/components/PaymentPressureScreen';
 import ShameMessageSent from '@/components/ShameMessageSent';
 
 const CALENDAR_CONNECTED_KEY = '@snoozer/calendar_connected';
@@ -656,13 +656,13 @@ export default function AlarmRingingScreen() {
         onDismiss={() => setCheatModalVisible(false)}
       />
 
-      <AppleCashPrompt
+      <PaymentPressureScreen
         visible={showPaymentPrompt}
         amount={penaltyAmount}
         recipientName={buddyName}
         recipientPhone={buddyInfo?.phone || ''}
         onPaymentSent={handlePaymentSent}
-        onDismiss={() => setShowPaymentPrompt(false)}
+        onShameTriggered={handleShameDismiss}
       />
 
       <ShameMessageSent
