@@ -22,6 +22,7 @@ import {
   getBuddyStats,
   getBuddyWakeEvents,
   getBuddyAlarms,
+  getUserName,
   BuddyInfo,
   BuddyStats,
   WakeEvent,
@@ -43,6 +44,7 @@ export default function BuddyDashboardScreen() {
   const [todayEvents, setTodayEvents] = useState<WakeEvent[]>([]);
   const [upcomingAlarms, setUpcomingAlarms] = useState<BuddyAlarm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState('You');
 
   useEffect(() => {
     loadBuddyData();
@@ -50,17 +52,19 @@ export default function BuddyDashboardScreen() {
 
   const loadBuddyData = async () => {
     try {
-      const [buddyInfo, buddyStats, wakeEvents, alarms] = await Promise.all([
+      const [buddyInfo, buddyStats, wakeEvents, alarms, name] = await Promise.all([
         getBuddyInfo(),
         getBuddyStats(),
         getBuddyWakeEvents(),
         getBuddyAlarms(),
+        getUserName(),
       ]);
 
       setBuddy(buddyInfo);
       setStats(buddyStats);
       setTodayEvents(wakeEvents.slice(0, 3));
       setUpcomingAlarms(alarms.slice(0, 3));
+      if (name) setUserName(name);
     } catch (error) {
       console.error('[BuddyDashboard] Error loading data:', error);
     } finally {
@@ -92,7 +96,7 @@ export default function BuddyDashboardScreen() {
     setPokeLoading(true);
     
     try {
-      await notifyBuddyPoked('You', buddy?.name || 'Buddy');
+      await notifyBuddyPoked(userName, buddy?.name || 'Buddy');
       setPokeSent(true);
       if (__DEV__) console.log('[BuddyDashboard] Poke sent to buddy');
       

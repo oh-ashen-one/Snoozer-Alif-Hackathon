@@ -28,7 +28,7 @@ import { FadeInView } from '@/components/FadeInView';
 import { AnimatedToggle } from '@/components/AnimatedToggle';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { setOnboardingComplete } from '@/utils/storage';
+import { setOnboardingComplete, getUserName, saveUserName } from '@/utils/storage';
 import { useAlarms } from '@/hooks/useAlarms';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
@@ -183,7 +183,7 @@ export default function SettingsScreen() {
   const { isConnected: calendarConnected, isLoading: calendarLoading, connect: connectCalendar, disconnect: disconnectCalendar, error: calendarError } = useGoogleCalendar();
 
   // State
-  const [userName, setUserName] = useState('Alex');
+  const [userName, setUserName] = useState('');
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   // Random default alarm sound
   const [alarmSound, setAlarmSound] = useState<AlarmSoundId>(() => {
@@ -199,6 +199,8 @@ export default function SettingsScreen() {
     useCallback(() => {
       const loadSettings = async () => {
         try {
+          const name = await getUserName();
+          setUserName(name);
           const vibration = await AsyncStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
           if (vibration !== null) {
             setVibrationEnabled(vibration === 'true');
@@ -262,9 +264,11 @@ export default function SettingsScreen() {
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Save',
-            onPress: (name: string | undefined) => {
+            onPress: async (name: string | undefined) => {
               if (name && name.trim()) {
-                setUserName(name.trim());
+                const trimmedName = name.trim();
+                setUserName(trimmedName);
+                await saveUserName(trimmedName);
               }
             },
           },

@@ -5,7 +5,7 @@
  * Screen for inviting an accountability buddy via iMessage.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors, Spacing } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { useIMessage } from '@/hooks/useIMessage';
+import { getUserName } from '@/utils/storage';
 import { hapticFeedback } from '@/utils/haptics';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -37,8 +38,17 @@ export default function InviteBuddyScreen() {
   const [phone, setPhone] = useState('');
   const [buddyName, setBuddyName] = useState('');
   const [sending, setSending] = useState(false);
+  const [userName, setUserName] = useState('');
 
   const { inviteBuddy, saveBuddyInfo, isSMSAvailable } = useIMessage();
+
+  useEffect(() => {
+    const loadName = async () => {
+      const name = await getUserName();
+      setUserName(name);
+    };
+    loadName();
+  }, []);
 
   const formatPhone = (text: string): string => {
     // Basic US phone formatting
@@ -100,7 +110,6 @@ export default function InviteBuddyScreen() {
   };
 
   const isValid = phone.replace(/\D/g, '').length >= 10;
-  const userName = 'You'; // Could be pulled from user profile
 
   return (
     <SafeAreaView style={styles.container}>

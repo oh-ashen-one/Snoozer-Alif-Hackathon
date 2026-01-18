@@ -13,6 +13,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import {
   getBuddyInfo,
   getBuddyStats,
+  getUserName,
   BuddyInfo,
   BuddyStats,
 } from '@/utils/storage';
@@ -35,9 +36,10 @@ export default function BuddyLeaderboardScreen() {
   const [buddyStats, setBuddyStats] = useState<BuddyStats | null>(null);
   const [myStreak, setMyStreak] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState('You');
 
   const myStats: UserStats = {
-    name: 'You',
+    name: userName,
     weeklyWakes: 5,
     currentStreak: myStreak,
     longestStreak: 34,
@@ -60,15 +62,17 @@ export default function BuddyLeaderboardScreen() {
 
   const loadData = async () => {
     try {
-      const [buddyInfo, stats, streak] = await Promise.all([
+      const [buddyInfo, stats, streak, name] = await Promise.all([
         getBuddyInfo(),
         getBuddyStats(),
         getCurrentStreak(),
+        getUserName(),
       ]);
 
       setBuddy(buddyInfo);
       setBuddyStats(stats);
       setMyStreak(streak);
+      if (name) setUserName(name);
     } catch (error) {
       console.error('[BuddyLeaderboard] Error loading data:', error);
     } finally {

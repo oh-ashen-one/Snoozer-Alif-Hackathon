@@ -48,7 +48,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { CheatWarningModal } from '@/components/CheatWarningModal';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
-import { getAlarms, getProofActivity, ProofActivity, getBuddyInfo, BuddyInfo } from '@/utils/storage';
+import { getAlarms, getProofActivity, ProofActivity, getBuddyInfo, BuddyInfo, getUserName } from '@/utils/storage';
 import { logWakeUp, getCurrentStreak } from '@/utils/tracking';
 import { useEscalatingVolume } from '@/hooks/useEscalatingVolume';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
@@ -187,6 +187,7 @@ export default function AlarmRingingScreen() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
   const [buddyInfo, setBuddyInfo] = useState<BuddyInfo | null>(null);
+  const [userName, setUserName] = useState('You');
   const [alarmPunishment, setAlarmPunishment] = useState<number>(5);
   const [showPaymentPrompt, setShowPaymentPrompt] = useState(false);
   const [showShame, setShowShame] = useState(false);
@@ -259,6 +260,9 @@ export default function AlarmRingingScreen() {
     getBuddyInfo().then(buddy => {
       if (__DEV__) console.log('[AlarmRinging] Buddy info:', buddy);
       setBuddyInfo(buddy);
+    });
+    getUserName().then(name => {
+      if (name) setUserName(name);
     });
     
     // Check if calendar is connected before fetching events
@@ -508,7 +512,7 @@ export default function AlarmRingingScreen() {
         if (__DEV__) console.log('[AlarmRinging] Logged snooze');
         
         if (buddyInfo) {
-          await notifyBuddySnoozed('You', penaltyAmount);
+          await notifyBuddySnoozed(userName, penaltyAmount);
           if (__DEV__) console.log('[AlarmRinging] Sent snooze notification to buddy');
         }
       } catch (error) {
@@ -782,7 +786,7 @@ export default function AlarmRingingScreen() {
         ]}
         amountSent={penaltyAmount}
         recipientName={buddyName}
-        userName="You"
+        userName={userName}
         onDismiss={handleShameDismiss}
       />
     </View>

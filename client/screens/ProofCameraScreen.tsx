@@ -18,7 +18,7 @@ import { logWakeUp, getCurrentStreak, getMonthStats } from '@/utils/tracking';
 import { validateProofPhoto } from '@/utils/imageComparison';
 import { CheatWarningModal } from '@/components/CheatWarningModal';
 import { useAntiCheat, CheatType } from '@/hooks/useAntiCheat';
-import { getBuddyInfo } from '@/utils/storage';
+import { getBuddyInfo, getUserName } from '@/utils/storage';
 import { notifyBuddyWoke } from '@/utils/buddyNotifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -68,6 +68,7 @@ export default function ProofCameraScreen() {
   const [activity, setActivity] = useState<ProofActivity | null>(null);
   const [cheatModalVisible, setCheatModalVisible] = useState(false);
   const [detectedCheat, setDetectedCheat] = useState<CheatType | null>(null);
+  const [userName, setUserName] = useState('You');
   const [gesturePrompt] = useState(() => 
     GESTURE_PROMPTS[Math.floor(Math.random() * GESTURE_PROMPTS.length)]
   );
@@ -82,6 +83,9 @@ export default function ProofCameraScreen() {
 
   React.useEffect(() => {
     getProofActivity().then(setActivity);
+    getUserName().then(name => {
+      if (name) setUserName(name);
+    });
   }, []);
 
   const handleCapture = async () => {
@@ -189,7 +193,7 @@ export default function ProofCameraScreen() {
         const wakePeriod = wakeHours >= 12 ? 'PM' : 'AM';
         const wakeDisplayHours = wakeHours % 12 || 12;
         const wakeTimeStr = `${wakeDisplayHours}:${wakeMinutes.toString().padStart(2, '0')} ${wakePeriod}`;
-        await notifyBuddyWoke('You', wakeTimeStr, streak);
+        await notifyBuddyWoke(userName, wakeTimeStr, streak);
         if (__DEV__) console.log('[ProofCamera] Sent wake notification to buddy');
       }
     } catch (error) {

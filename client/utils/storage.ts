@@ -11,7 +11,26 @@ const KEYS = {
   SHAME_CONTACTS: '@snoozer/shame_contacts',
   DEFAULT_PUNISHMENTS: '@snoozer/default_punishments',
   DEFAULT_AMOUNT: '@snoozer/default_amount',
+  USER_NAME: '@snoozer/user_name',
 };
+
+export async function getUserName(): Promise<string> {
+  try {
+    const name = await AsyncStorage.getItem(KEYS.USER_NAME);
+    return name || 'You';
+  } catch (error) {
+    console.error('Error getting user name:', error);
+    return 'You';
+  }
+}
+
+export async function saveUserName(name: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.USER_NAME, name);
+  } catch (error) {
+    console.error('Error saving user name:', error);
+  }
+}
 
 export interface Alarm {
   id: string;

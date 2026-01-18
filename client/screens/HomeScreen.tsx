@@ -19,7 +19,7 @@ import { AnimatedCard } from '@/components/AnimatedCard';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
-import { Alarm } from '@/utils/storage';
+import { Alarm, getUserName } from '@/utils/storage';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 
 const DEBUG_LONG_PRESS_DURATION = 3000;
@@ -111,7 +111,7 @@ function DayPills({ selectedDays }: { selectedDays: number[] }) {
 }
 
 // Header Component with debug mode long press
-function Header({ onDebugModeActivate }: { onDebugModeActivate: () => void }) {
+function Header({ onDebugModeActivate, userName }: { onDebugModeActivate: () => void; userName: string }) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePressIn = () => {
@@ -135,7 +135,7 @@ function Header({ onDebugModeActivate }: { onDebugModeActivate: () => void }) {
         onPressOut={handlePressOut}
       >
         <ThemedText style={styles.greeting}>{getGreeting()}</ThemedText>
-        <ThemedText style={styles.userName}>Alex</ThemedText>
+        <ThemedText style={styles.userName}>{userName || 'You'}</ThemedText>
       </Pressable>
     </View>
   );
@@ -335,10 +335,16 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { alarms, loading, toggleAlarm, deleteAlarm, loadAlarms } = useAlarms();
   const [debugMode, setDebugMode] = useState(false);
+  const [userName, setUserName] = useState('');
 
   useFocusEffect(
     useCallback(() => {
       loadAlarms();
+      const loadUserName = async () => {
+        const name = await getUserName();
+        setUserName(name);
+      };
+      loadUserName();
     }, [loadAlarms])
   );
 
@@ -411,7 +417,7 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Header onDebugModeActivate={handleDebugModeActivate} />
+        <Header onDebugModeActivate={handleDebugModeActivate} userName={userName} />
 
         {nextAlarm ? (
           <>

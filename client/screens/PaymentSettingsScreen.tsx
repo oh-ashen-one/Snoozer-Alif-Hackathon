@@ -15,7 +15,9 @@ import {
   ScrollView,
   TextInput,
   Linking,
+  Alert,
 } from 'react-native';
+import * as Contacts from 'expo-contacts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -33,7 +35,7 @@ import {
   savePaymentInfo,
   getPaymentInfo,
 } from '@/utils/payments';
-import { getDefaultAmount, saveDefaultAmount, getBuddyInfo, BuddyInfo } from '@/utils/storage';
+import { getDefaultAmount, saveDefaultAmount, getBuddyInfo, saveBuddyInfo, BuddyInfo } from '@/utils/storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -202,6 +204,43 @@ export default function PaymentSettingsScreen() {
 
   const handleLearnMore = useCallback(() => {
     Linking.openURL('https://support.apple.com/apple-cash');
+  }, []);
+
+  const handleAccessContacts = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      const { status } = await Contacts.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Contacts Access Required',
+          'Please enable contacts access in Settings to select a buddy.'
+        );
+        return;
+      }
+
+      const contact = await Contacts.presentContactPickerAsync();
+      if (!contact) return;
+
+      const name = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Buddy';
+      const phone = contact.phoneNumbers?.[0]?.number || '';
+
+      if (!phone) {
+        Alert.alert('No Phone Number', 'Selected contact has no phone number.');
+        return;
+      }
+
+      const buddyInfo: BuddyInfo = {
+        name,
+        phone,
+        invitedAt: new Date().toISOString(),
+        hasApp: false,
+      };
+      await saveBuddyInfo(buddyInfo);
+      setBuddy(buddyInfo);
+    } catch (error) {
+      Alert.alert('Error', 'Unable to access contacts.');
+    }
   }, []);
 
   const displayAmount = selectedAmount || parseInt(customAmount, 10) || 5;
