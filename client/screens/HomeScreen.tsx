@@ -17,6 +17,7 @@ import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import { AnimatedCard } from '@/components/AnimatedCard';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
+import Header, { getGreeting } from '@/components/Header';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm, getUserName } from '@/utils/storage';
@@ -29,12 +30,6 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning,';
-  if (hour < 18) return 'Good afternoon,';
-  return 'Good evening,';
-}
 
 function getTimeUntilAlarm(alarmTime: string): string {
   const [hours, minutes] = alarmTime.split(':').map(Number);
@@ -125,36 +120,6 @@ function DayPills({ selectedDays }: { selectedDays: number[] }) {
   );
 }
 
-// Header Component with debug mode long press
-function Header({ onDebugModeActivate, userName }: { onDebugModeActivate: () => void; userName: string }) {
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handlePressIn = () => {
-    longPressTimerRef.current = setTimeout(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onDebugModeActivate();
-    }, DEBUG_LONG_PRESS_DURATION);
-  };
-
-  const handlePressOut = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-
-  return (
-    <View style={styles.header}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-      >
-        <ThemedText style={styles.greeting}>{getGreeting()}</ThemedText>
-        <ThemedText style={styles.userName}>{userName || 'You'}</ThemedText>
-      </Pressable>
-    </View>
-  );
-}
 
 // Active Badge Component
 function ActiveBadge() {
@@ -559,7 +524,14 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Header onDebugModeActivate={handleDebugModeActivate} userName={userName} />
+        <View style={styles.headerContainer}>
+          <Header
+            type="home"
+            greeting={getGreeting()}
+            name={userName || 'You'}
+            onSettingsPress={() => navigation.navigate('Settings')}
+          />
+        </View>
 
         {nextAlarm ? (
           <>
@@ -625,10 +597,7 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  headerContainer: {
     marginBottom: 16,
   },
   greeting: {

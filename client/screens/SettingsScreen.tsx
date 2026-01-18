@@ -26,6 +26,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import { AnimatedToggle } from '@/components/AnimatedToggle';
+import Header from '@/components/Header';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { setOnboardingComplete, getUserName, saveUserName } from '@/utils/storage';
@@ -443,10 +444,8 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
-      <View style={styles.header}>
-        <View style={styles.headerSpacer} />
-        <ThemedText style={styles.headerTitle}>Settings</ThemedText>
-        <View style={styles.headerSpacer} />
+      <View style={styles.headerContainer}>
+        <Header type="settings" />
       </View>
 
       <ScrollView
@@ -738,10 +737,7 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerContainer: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.lg,
   },

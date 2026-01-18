@@ -23,6 +23,7 @@ import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
 import { AnimatedCard } from '@/components/AnimatedCard';
+import Header from '@/components/Header';
 // import { getBuddyInfo, BuddyInfo } from '@/utils/storage'; // Buddy not fully built yet
 
 // Enable LayoutAnimation on Android
@@ -231,9 +232,8 @@ export default function BuddyScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
-      {/* Header */}
-      <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Buddy</ThemedText>
+      <View style={styles.headerContainer}>
+        <Header type="buddy" />
       </View>
 
       <ScrollView
@@ -324,15 +324,9 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  header: {
-    alignItems: 'center',
+  headerContainer: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.lg,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.text,
   },
 
   // ScrollView

@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { BottomNav } from '@/components/BottomNav';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
 import { FadeInView } from '@/components/FadeInView';
+import Header from '@/components/Header';
 import { Colors } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import {
@@ -242,10 +243,8 @@ export default function StatsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackgroundGlow color="orange" />
-      <View style={styles.header}>
-        <View style={styles.headerSpacer} />
-        <ThemedText style={styles.headerTitle}>Stats</ThemedText>
-        <View style={styles.headerSpacer} />
+      <View style={styles.headerContainer}>
+        <Header type="stats" />
       </View>
 
       <ScrollView
@@ -363,10 +362,7 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerContainer: {
     paddingHorizontal: 24,
     paddingVertical: 16,
   },

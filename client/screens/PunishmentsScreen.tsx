@@ -26,6 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import * as SMS from 'expo-sms';
+import * as Linking from 'expo-linking';
 
 import { ThemedText } from '@/components/ThemedText';
 import { BackgroundGlow } from '@/components/BackgroundGlow';
@@ -58,17 +59,43 @@ const PUNISHMENT_OPTIONS: PunishmentOption[] = [
   { id: 'buddy_call', label: 'Auto-call your buddy', description: 'Jake gets woken up too', icon: '📞', color: '#FB923C' },
   { id: 'group_chat', label: 'Text the group chat', description: '"The boys" on iMessage', icon: '💬', color: '#7C3AED' },
   { id: 'wife_dad', label: "Text your wife's dad", description: '"Hey Robert, quick question"', icon: '👴', color: '#EF4444', configurable: true },
-  { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899' },
+  { id: 'mom', label: 'Auto-call your mom', description: "At 6am. She'll be worried.", icon: '👩', color: '#EC4899', configurable: true },
   { id: 'twitter', label: 'Tweet something bad', description: '"I overslept again lol"', icon: '🐦', color: '#1DA1F2' },
   { id: 'text_ex', label: 'Text your ex "I miss u"', description: 'From your actual number', icon: '💔', color: '#EF4444', configurable: true },
   { id: 'email_boss', label: 'Email your boss', description: '"Running late again, sorry"', icon: '📧', color: '#EA4335', configurable: true },
-  { id: 'grandma_call', label: 'Auto-call your grandma', description: 'She WILL answer at 6am', icon: '👵', color: '#EC4899' },
+  { id: 'grandma_call', label: 'Auto-call your grandma', description: 'She WILL answer at 6am', icon: '👵', color: '#EC4899', configurable: true },
   { id: 'tinder_bio', label: 'Update Tinder bio', description: '"Can\'t even wake up on time"', icon: '🔥', color: '#FE3C72', comingSoon: true },
   { id: 'like_ex_photo', label: "Like your ex's old photo", description: "From 2019. They'll know.", icon: '📸', color: '#E4405F', comingSoon: true },
   { id: 'venmo_ex', label: 'Venmo your ex $1', description: 'With memo: "thinking of u"', icon: '💸', color: '#008CFF', comingSoon: true },
   { id: 'donate_enemy', label: 'Donate to a party you hate', description: 'Opposite of your politics', icon: '🗳️', color: '#EF4444', comingSoon: true },
   { id: 'thermostat', label: 'Drop thermostat to 55°F', description: 'Smart home integration', icon: '🥶', color: '#22C55E', comingSoon: true },
 ];
+
+// Embarrassing email templates for boss punishment
+const EMBARRASSING_EMAILS = [
+  { subject: "I pooped my pants this morning", body: "Hi,\n\nI'm running late because I had a bit of an accident. The less said the better.\n\nPlease don't bring this up." },
+  { subject: "A raccoon is living in my car", body: "Hi,\n\nI can't come in because there's a raccoon in my car and it won't leave. It hissed at me. I'm scared.\n\nSend help." },
+  { subject: "I stayed up until 4am playing Fortnite", body: "Hi,\n\nI made some bad decisions last night. I was SO close to a Victory Royale. I didn't get it. And now I'm exhausted.\n\nWorth it though." },
+  { subject: "I got my head stuck in a fence", body: "Hi,\n\nLong story. Fire department is on the way. I'll explain later but please don't ask.\n\nThis is not a joke." },
+  { subject: "I accidentally dyed myself blue", body: "Hi,\n\nI look like a Smurf. I can't come in like this. People will laugh. I'm already crying.\n\nBlue tears." },
+  { subject: "I'm stuck in a children's playground swing", body: "Hi,\n\nI wanted to see if I still fit. I don't. Can't feel my legs. Might need the fire department again.\n\nPlease don't tell anyone." },
+  { subject: "I followed a dog home and got lost", body: "Hi,\n\nI saw a really cute dog and followed it. I have no idea where I am now. My phone is at 3%.\n\nTell my family I love th" },
+  { subject: "My pet ferret escaped into my walls", body: "Hi,\n\nMr. Noodles is somewhere in my walls. I can hear him. I can't leave until I find him. He's my best friend.\n\nThis could take days." },
+  { subject: "I superglued my hand to my face", body: "Hi,\n\nI was trying to fix something and now my hand is permanently on my cheek. I look ridiculous. The ER is packed.\n\nThis hurts." },
+  { subject: "I ate a whole cake and I feel sick", body: "Hi,\n\nIt was my birthday cake. I was supposed to share it with the office. I ate it all at 2am. No regrets. Many regrets.\n\nSend Tums." },
+  { subject: "I got chased by a goose for 2 miles", body: "Hi,\n\nThat goose is still outside my house. It's been 3 hours. It knows what it did. I know what I did.\n\nWe're at a standoff." },
+  { subject: "I cried during a commercial and can't stop", body: "Hi,\n\nIt was the one with the dog waiting for its owner. I'm still crying. I've gone through 3 tissue boxes.\n\nI'm not okay." },
+  { subject: "I wore my shirt inside out all day yesterday", body: "Hi,\n\nNobody told me. Not one person. I trusted you all. I'm taking a mental health day to recover from this betrayal.\n\nHow could you." },
+  { subject: "I thought today was Saturday", body: "Hi,\n\nI'm at brunch. I ordered mimosas. It's Wednesday. I'm in my pajamas. Everyone is staring.\n\nShould I just stay?" },
+  { subject: "I got scared by my own reflection", body: "Hi,\n\nI screamed so loud my neighbors called the police. I had to explain. They laughed. I'm hiding now.\n\nI hate mirrors." },
+  { subject: "I accidentally joined a flash mob", body: "Hi,\n\nI didn't know the dance. Everyone knew the dance. I panicked. I did the Macarena. It was not the Macarena.\n\nI'm never going outside again." },
+  { subject: "I locked myself in the bathroom at home", body: "Hi,\n\nThe lock is jammed. I've been in here for 6 hours. I've named the spiders. We're friends now.\n\nSend a locksmith." },
+  { subject: "My pants ripped in public", body: "Hi,\n\nBig rip. Very visible. Very embarrassing location. I'm currently hiding behind a dumpster.\n\nCan someone bring me pants?" },
+  { subject: "I sleep-texted my ex 47 times", body: "Hi,\n\nI woke up to responses. So many responses. I can never show my face again. I'm changing my identity.\n\nCall me Steve now." },
+  { subject: "I challenged a teenager to a dance battle and lost", body: "Hi,\n\nIt was at the mall. There were witnesses. Someone filmed it. It might go viral. I need to leave the country.\n\nI did the worm. Badly." },
+];
+
+const getRandomEmail = () => EMBARRASSING_EMAILS[Math.floor(Math.random() * EMBARRASSING_EMAILS.length)];
 
 // Toggle Component
 function Toggle({ value, onValueChange }: { value: boolean; onValueChange: () => void }) {
@@ -108,6 +135,8 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
   const [bossEmail, setBossEmail] = useState(config.email_boss?.bossEmail || '');
   const [exPhoneNumber, setExPhoneNumber] = useState(config.text_ex?.exPhoneNumber || '');
   const [wifesDadPhone, setWifesDadPhone] = useState(config.wife_dad?.phoneNumber || '');
+  const [momPhone, setMomPhone] = useState(config.mom?.phoneNumber || '');
+  const [grandmaPhone, setGrandmaPhone] = useState(config.grandma?.phoneNumber || '');
 
   // Sync local state when config changes
   useEffect(() => {
@@ -120,6 +149,12 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
     if (punishment.id === 'wife_dad') {
       setWifesDadPhone(config.wife_dad?.phoneNumber || '');
     }
+    if (punishment.id === 'mom') {
+      setMomPhone(config.mom?.phoneNumber || '');
+    }
+    if (punishment.id === 'grandma_call') {
+      setGrandmaPhone(config.grandma?.phoneNumber || '');
+    }
   }, [config, punishment.id]);
 
   const handleToggle = useCallback(() => {
@@ -131,10 +166,9 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
   const handleTestEmail = useCallback(async () => {
     if (!bossEmail) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const subject = encodeURIComponent("Running late again, sorry");
-    const body = encodeURIComponent(
-      "Hi,\n\nI overslept again this morning. I know this is becoming a pattern and I'm really sorry.\n\nI'll be in as soon as I can.\n\nSorry again."
-    );
+    const email = getRandomEmail();
+    const subject = encodeURIComponent(email.subject);
+    const body = encodeURIComponent(email.body);
     const mailtoUrl = `mailto:${bossEmail}?subject=${subject}&body=${body}`;
     await openURL(mailtoUrl);
   }, [bossEmail]);
@@ -193,6 +227,42 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
       wife_dad: { phoneNumber: wifesDadPhone },
     });
   }, [wifesDadPhone, config, onSaveConfig]);
+
+  const handleTestMom = useCallback(async () => {
+    if (!momPhone) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const telUrl = `tel:${momPhone}`;
+    const canOpen = await Linking.canOpenURL(telUrl);
+    if (canOpen) {
+      await Linking.openURL(telUrl);
+    }
+  }, [momPhone]);
+
+  const handleSaveMomConfig = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSaveConfig({
+      ...config,
+      mom: { phoneNumber: momPhone },
+    });
+  }, [momPhone, config, onSaveConfig]);
+
+  const handleTestGrandma = useCallback(async () => {
+    if (!grandmaPhone) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const telUrl = `tel:${grandmaPhone}`;
+    const canOpen = await Linking.canOpenURL(telUrl);
+    if (canOpen) {
+      await Linking.openURL(telUrl);
+    }
+  }, [grandmaPhone]);
+
+  const handleSaveGrandmaConfig = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onSaveConfig({
+      ...config,
+      grandma: { phoneNumber: grandmaPhone },
+    });
+  }, [grandmaPhone, config, onSaveConfig]);
 
   const content = (
     <View style={styles.punishmentLeft}>
@@ -363,6 +433,106 @@ function PunishmentRow({ punishment, enabled, onToggle, isLast, expanded, config
               style={[styles.saveButton, !wifesDadPhone && styles.buttonDisabled]}
               onPress={handleSaveWifesDadConfig}
               disabled={!wifesDadPhone}
+            >
+              <ThemedText style={styles.saveButtonText}>Save</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Show saved mom's number when configured and not expanded */}
+      {enabled && punishment.id === 'mom' && config.mom?.phoneNumber && !expanded && (
+        <View style={styles.savedConfigRow}>
+          <ThemedText style={styles.savedConfigTextGreen}>
+            📞 {config.mom.phoneNumber}
+          </ThemedText>
+          <View style={styles.savedConfigButtons}>
+            <Pressable style={styles.savedConfigButton} onPress={handleTestMom}>
+              <ThemedText style={styles.testLinkText}>Test</ThemedText>
+            </Pressable>
+            <Pressable style={styles.savedConfigButton} onPress={onExpand}>
+              <ThemedText style={styles.editText}>Edit</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Mom Configuration */}
+      {expanded && punishment.id === 'mom' && (
+        <View style={styles.configSection}>
+          <ThemedText style={styles.configLabel}>What is your mom's number?</ThemedText>
+          <TextInput
+            style={styles.configInput}
+            placeholder="+1 555 123 4567"
+            placeholderTextColor={Colors.textMuted}
+            value={momPhone}
+            onChangeText={setMomPhone}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.configButtons}>
+            <Pressable
+              style={[styles.testButton, !momPhone && styles.buttonDisabled]}
+              onPress={handleTestMom}
+              disabled={!momPhone}
+            >
+              <ThemedText style={styles.testButtonText}>Test</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[styles.saveButton, !momPhone && styles.buttonDisabled]}
+              onPress={handleSaveMomConfig}
+              disabled={!momPhone}
+            >
+              <ThemedText style={styles.saveButtonText}>Save</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Show saved grandma's number when configured and not expanded */}
+      {enabled && punishment.id === 'grandma_call' && config.grandma?.phoneNumber && !expanded && (
+        <View style={styles.savedConfigRow}>
+          <ThemedText style={styles.savedConfigTextGreen}>
+            📞 {config.grandma.phoneNumber}
+          </ThemedText>
+          <View style={styles.savedConfigButtons}>
+            <Pressable style={styles.savedConfigButton} onPress={handleTestGrandma}>
+              <ThemedText style={styles.testLinkText}>Test</ThemedText>
+            </Pressable>
+            <Pressable style={styles.savedConfigButton} onPress={onExpand}>
+              <ThemedText style={styles.editText}>Edit</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Grandma Configuration */}
+      {expanded && punishment.id === 'grandma_call' && (
+        <View style={styles.configSection}>
+          <ThemedText style={styles.configLabel}>What is your grandma's number?</ThemedText>
+          <TextInput
+            style={styles.configInput}
+            placeholder="+1 555 123 4567"
+            placeholderTextColor={Colors.textMuted}
+            value={grandmaPhone}
+            onChangeText={setGrandmaPhone}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.configButtons}>
+            <Pressable
+              style={[styles.testButton, !grandmaPhone && styles.buttonDisabled]}
+              onPress={handleTestGrandma}
+              disabled={!grandmaPhone}
+            >
+              <ThemedText style={styles.testButtonText}>Test</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[styles.saveButton, !grandmaPhone && styles.buttonDisabled]}
+              onPress={handleSaveGrandmaConfig}
+              disabled={!grandmaPhone}
             >
               <ThemedText style={styles.saveButtonText}>Save</ThemedText>
             </Pressable>
