@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HeaderButton } from '@react-navigation/elements';
 import { Feather } from '@expo/vector-icons';
@@ -6,6 +7,8 @@ import * as Haptics from 'expo-haptics';
 
 import IntroScreen from '@/screens/IntroScreen';
 import HomeScreen from '@/screens/HomeScreen';
+import { useAuth } from '@/contexts/AuthContext';
+import { getOnboardingComplete } from '@/utils/storage';
 import AddAlarmScreen from '@/screens/AddAlarmScreen';
 import ReferencePhotoScreen from '@/screens/ReferencePhotoScreen';
 import RecordShameScreen from '@/screens/RecordShameScreen';
@@ -80,10 +83,42 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
+
+  useEffect(() => {
+    const determineInitialRoute = async () => {
+      if (isLoading) return;
+
+      if (!isAuthenticated) {
+        // Not signed in - show intro screen
+        setInitialRoute('Intro');
+      } else {
+        // Signed in - check if onboarding is complete
+        try {
+          const hasOnboarded = await getOnboardingComplete();
+          setInitialRoute(hasOnboarded ? 'Home' : 'Onboarding');
+        } catch {
+          setInitialRoute('Onboarding');
+        }
+      }
+    };
+
+    determineInitialRoute();
+  }, [isAuthenticated, isLoading]);
+
+  // Show loading while determining initial route
+  if (isLoading || !initialRoute) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={Colors.orange} />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator
-      initialRouteName="Intro"
+      initialRouteName={initialRoute}
       screenOptions={{
         ...screenOptions,
         contentStyle: { backgroundColor: Colors.bg },
@@ -229,3 +264,12 @@ export default function RootStackNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.bg,
+  },
+});

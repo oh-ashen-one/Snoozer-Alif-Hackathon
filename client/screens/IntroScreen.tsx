@@ -5,25 +5,24 @@ import {
   StyleSheet,
   Animated,
   Easing,
-  Dimensions,
+  Pressable,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  PanGestureHandler,
-  PanGestureHandlerGestureEvent,
-} from 'react-native-gesture-handler';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Haptics from 'expo-haptics';
+import { Feather } from '@expo/vector-icons';
 
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { RootStackParamList } from '@/navigation/RootStackNavigator';
 import { getOnboardingComplete } from '@/utils/storage';
+import { useAuth } from '@/contexts/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SWIPE_THRESHOLD = 80;
 
 const EXAMPLES = [
   {
@@ -46,8 +45,10 @@ const EXAMPLES = [
 export default function IntroScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
+  const { signInWithApple, signInWithGoogle, isAuthenticated } = useAuth();
   const [phase, setPhase] = useState(0);
-  const [hasNavigated, setHasNavigated] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
 
   // Animation values
   const iconOpacity = useRef(new Animated.Value(0)).current;
@@ -71,6 +72,27 @@ export default function IntroScreen() {
   // Shake animation
   const shakeRotation = useRef(new Animated.Value(0)).current;
   const shakeTranslateX = useRef(new Animated.Value(0)).current;
+
+  // Navigate after successful sign-in
+  useEffect(() => {
+    if (isAuthenticated) {
+      const navigateAfterAuth = async () => {
+        try {
+          const hasOnboarded = await getOnboardingComplete();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: hasOnboarded ? 'Home' : 'Onboarding' }],
+          });
+        } catch {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Onboarding' }],
+          });
+        }
+      };
+      navigateAfterAuth();
+    }
+  }, [isAuthenticated, navigation]);
 
   // Start shake animation loop
   useEffect(() => {
@@ -285,191 +307,233 @@ export default function IntroScreen() {
     glowOpacity,
   ]);
 
-  const handleNavigate = useCallback(async () => {
-    if (hasNavigated) return;
-    setHasNavigated(true);
-
+  const handleAppleSignIn = useCallback(async () => {
+    if (isSigningIn) return;
+    setIsSigningIn(true);
+    setSignInError(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const hasOnboarded = await getOnboardingComplete();
-      if (hasOnboarded) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-      } else {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Onboarding' }],
-        });
-      }
-    } catch {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Onboarding' }],
-      });
+      await signInWithApple();
+    } catch (error) {
+      setSignInError('Sign in failed. Please try again.');
+    } finally {
+      setIsSigningIn(false);
     }
-  }, [hasNavigated, navigation]);
+  }, [isSigningIn, signInWithApple]);
 
-  const handleGesture = useCallback(
-    (event: PanGestureHandlerGestureEvent) => {
-      const { translationY, velocityY } = event.nativeEvent;
+  const handleGoogleSignIn = useCallback(async () => {
+    if (isSigningIn) return;
+    setIsSigningIn(true);
+    setSignInError(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      if (
-        phase >= 8 &&
-        (translationY < -SWIPE_THRESHOLD || velocityY < -500)
-      ) {
-        handleNavigate();
-      }
-    },
-    [phase, handleNavigate]
-  );
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      setSignInError('Sign in failed. Please try again.');
+    } finally {
+      setIsSigningIn(false);
+    }
+  }, [isSigningIn, signInWithGoogle]);
 
   const cardOpacities = [card0Opacity, card1Opacity, card2Opacity];
   const cardTranslates = [card0TranslateX, card1TranslateX, card2TranslateX];
 
   return (
-    <PanGestureHandler onGestureEvent={handleGesture}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Red glow background */}
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingTop: insets.top, paddingBottom: insets.bottom + 24 },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Red glow background */}
+      <Animated.View
+        style={[
+          styles.glow,
+          {
+            opacity: glowOpacity,
+          },
+        ]}
+      />
+
+      {/* Main content */}
+      <View style={styles.mainContent}>
+        {/* Shaking alarm icon */}
+        <Animated.Text
+          style={[
+            styles.icon,
+            {
+              opacity: iconOpacity,
+              transform: [
+                { scale: iconScale },
+                {
+                  rotate: shakeRotation.interpolate({
+                    inputRange: [-8, 8],
+                    outputRange: ['-8deg', '8deg'],
+                  }),
+                },
+                { translateX: shakeTranslateX },
+              ],
+            },
+          ]}
+        >
+          ⏰
+        </Animated.Text>
+
+        {/* Logo */}
+        <Animated.Text
+          style={[
+            styles.logo,
+            {
+              opacity: logoOpacity,
+              transform: [
+                { translateY: logoTranslateY },
+                { scale: logoScale },
+              ],
+            },
+          ]}
+        >
+          SNOOZER
+        </Animated.Text>
+
+        {/* Red line */}
         <Animated.View
           style={[
-            styles.glow,
+            styles.redLine,
             {
-              opacity: glowOpacity,
+              width: lineWidth,
             },
           ]}
         />
 
-        {/* Main content */}
-        <View style={styles.mainContent}>
-          {/* Shaking alarm icon */}
-          <Animated.Text
-            style={[
-              styles.icon,
-              {
-                opacity: iconOpacity,
-                transform: [
-                  { scale: iconScale },
-                  {
-                    rotate: shakeRotation.interpolate({
-                      inputRange: [-8, 8],
-                      outputRange: ['-8deg', '8deg'],
-                    }),
-                  },
-                  { translateX: shakeTranslateX },
-                ],
-              },
-            ]}
-          >
-            ⏰
-          </Animated.Text>
-
-          {/* Logo */}
-          <Animated.Text
-            style={[
-              styles.logo,
-              {
-                opacity: logoOpacity,
-                transform: [
-                  { translateY: logoTranslateY },
-                  { scale: logoScale },
-                ],
-              },
-            ]}
-          >
-            SNOOZER
-          </Animated.Text>
-
-          {/* Red line */}
-          <Animated.View
-            style={[
-              styles.redLine,
-              {
-                width: lineWidth,
-              },
-            ]}
-          />
-
-          {/* Tagline */}
-          <Animated.Text
-            style={[
-              styles.tagline,
-              {
-                opacity: taglineOpacity,
-              },
-            ]}
-          >
-            No mercy
-          </Animated.Text>
-        </View>
-
-        {/* Description */}
+        {/* Tagline */}
         <Animated.Text
           style={[
-            styles.description,
+            styles.tagline,
             {
-              opacity: descOpacity,
-              transform: [{ translateY: descTranslateY }],
+              opacity: taglineOpacity,
             },
           ]}
         >
-          The only app that actually{' '}
-          <Text style={styles.descriptionBold}>punishes you</Text> when you
-          don't do what you're supposed to
+          No mercy
         </Animated.Text>
-
-        {/* Example cards */}
-        <View style={styles.cardsContainer}>
-          {EXAMPLES.map((item, i) => (
-            <Animated.View
-              key={i}
-              style={[
-                styles.card,
-                {
-                  opacity: cardOpacities[i],
-                  transform: [{ translateX: cardTranslates[i] }],
-                },
-              ]}
-            >
-              <Text style={styles.cardEmoji}>{item.emoji}</Text>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardAction}>{item.action}</Text>
-                <Text style={styles.cardConsequence}>{item.consequence}</Text>
-              </View>
-            </Animated.View>
-          ))}
-        </View>
-
-        {/* Bottom CTA */}
-        <Animated.View
-          style={[
-            styles.ctaContainer,
-            {
-              opacity: ctaOpacity,
-              paddingBottom: Math.max(insets.bottom, 24) + 24,
-            },
-          ]}
-        >
-          <Text style={styles.ctaText}>Swipe up to start</Text>
-          <View style={styles.ctaBar} />
-        </Animated.View>
       </View>
-    </PanGestureHandler>
+
+      {/* Description */}
+      <Animated.Text
+        style={[
+          styles.description,
+          {
+            opacity: descOpacity,
+            transform: [{ translateY: descTranslateY }],
+          },
+        ]}
+      >
+        The only app that actually{' '}
+        <Text style={styles.descriptionBold}>punishes you</Text> when you
+        don't do what you're supposed to
+      </Animated.Text>
+
+      {/* Example cards */}
+      <View style={styles.cardsContainer}>
+        {EXAMPLES.map((item, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.card,
+              {
+                opacity: cardOpacities[i],
+                transform: [{ translateX: cardTranslates[i] }],
+              },
+            ]}
+          >
+            <Text style={styles.cardEmoji}>{item.emoji}</Text>
+            <View style={styles.cardContent}>
+              <Text style={styles.cardAction}>{item.action}</Text>
+              <Text style={styles.cardConsequence}>{item.consequence}</Text>
+            </View>
+          </Animated.View>
+        ))}
+      </View>
+
+      {/* Sign-in section */}
+      <Animated.View
+        style={[
+          styles.signInContainer,
+          {
+            opacity: ctaOpacity,
+          },
+        ]}
+      >
+        <Text style={styles.getStartedText}>Get started</Text>
+
+        {/* Error message */}
+        {signInError && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{signInError}</Text>
+          </View>
+        )}
+
+        {/* Apple Sign-In (iOS only) */}
+        {Platform.OS === 'ios' && (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+            cornerRadius={BorderRadius.md}
+            style={styles.appleButton}
+            onPress={handleAppleSignIn}
+          />
+        )}
+
+        {/* Google Sign-In */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.googleButton,
+            pressed && styles.buttonPressed,
+            isSigningIn && styles.buttonDisabled,
+          ]}
+          onPress={handleGoogleSignIn}
+          disabled={isSigningIn}
+        >
+          {isSigningIn ? (
+            <ActivityIndicator size="small" color={Colors.bg} />
+          ) : (
+            <>
+              <View style={styles.googleIconContainer}>
+                <Text style={styles.googleIcon}>G</Text>
+              </View>
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
+          )}
+        </Pressable>
+
+        {/* Terms text */}
+        <Text style={styles.termsText}>
+          By continuing, you agree to our{' '}
+          <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
+          <Text style={styles.termsLink}>Privacy Policy</Text>
+        </Text>
+      </Animated.View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
     backgroundColor: Colors.bg,
+  },
+  scrollContent: {
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
+    minHeight: '100%',
   },
   glow: {
     position: 'absolute',
-    top: '20%',
+    top: '10%',
     left: '50%',
     width: 400,
     height: 400,
@@ -480,7 +544,7 @@ const styles = StyleSheet.create({
   mainContent: {
     alignItems: 'center',
     marginTop: Spacing['3xl'],
-    marginBottom: Spacing['3xl'],
+    marginBottom: Spacing.xl,
   },
   icon: {
     fontSize: 80,
@@ -517,7 +581,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     maxWidth: 300,
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing.xl,
   },
   descriptionBold: {
     color: Colors.text,
@@ -527,6 +591,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     gap: Spacing.md,
+    marginBottom: Spacing['2xl'],
   },
   card: {
     flexDirection: 'row',
@@ -553,20 +618,84 @@ const styles = StyleSheet.create({
     color: Colors.red,
     fontWeight: '500',
   },
-  ctaContainer: {
-    position: 'absolute',
-    bottom: 0,
+  signInContainer: {
+    width: '100%',
+    maxWidth: 340,
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
   },
-  ctaText: {
-    fontSize: 13,
+  getStartedText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.sm,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.red,
+  },
+  appleButton: {
+    width: '100%',
+    height: 56,
+  },
+  googleButton: {
+    width: '100%',
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    backgroundColor: Colors.text,
+    borderRadius: BorderRadius.md,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  googleIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleIcon: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  googleButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.bg,
+  },
+  termsText: {
+    fontSize: 12,
     color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
-  ctaBar: {
-    width: 40,
-    height: 4,
-    backgroundColor: Colors.border,
-    borderRadius: 2,
+  termsLink: {
+    color: Colors.textSecondary,
+    textDecorationLine: 'underline',
   },
 });

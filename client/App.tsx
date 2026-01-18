@@ -15,6 +15,7 @@ import RootStackNavigator, { RootStackParamList } from "@/navigation/RootStackNa
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { addNotificationResponseListener } from "@/utils/notifications";
 import { ensureDirectories } from "@/utils/fileSystem";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -84,16 +85,18 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <GestureHandlerRootView style={styles.root}>
-            <KeyboardProvider>
-              <NavigationContainer ref={navigationRef} onReady={onNavigationReady} theme={navTheme}>
-                <RootStackNavigator />
-              </NavigationContainer>
-              <StatusBar style="light" />
-            </KeyboardProvider>
-          </GestureHandlerRootView>
-        </SafeAreaProvider>
+        <AuthProvider>
+          <SafeAreaProvider>
+            <GestureHandlerRootView style={styles.root}>
+              <KeyboardProvider>
+                <NavigationContainer ref={navigationRef} onReady={onNavigationReady} theme={navTheme}>
+                  <RootStackNavigator />
+                </NavigationContainer>
+                <StatusBar style="light" />
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </SafeAreaProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
