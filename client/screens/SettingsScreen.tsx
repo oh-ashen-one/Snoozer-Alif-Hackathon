@@ -511,17 +511,6 @@ export default function SettingsScreen() {
                 value={ALARM_SOUNDS.find(s => s.id === alarmSound)?.name || 'Nuclear Alarm'}
                 onPress={handleChangeAlarmSound}
               />
-              <View style={styles.rowDivider} />
-              <SettingsRow
-                icon="smartphone"
-                iconColor="#22C55E"
-                iconBg={ICON_COLORS.green}
-                label="Vibration"
-                showChevron={false}
-                rightElement={
-                  <Toggle value={vibrationEnabled} onValueChange={handleToggleVibration} />
-                }
-              />
               {Platform.OS === 'ios' && (
                 <>
                   <View style={styles.rowDivider} />
@@ -566,6 +555,17 @@ export default function SettingsScreen() {
                   </View>
                 </>
               )}
+              <View style={styles.rowDivider} />
+              <SettingsRow
+                icon="smartphone"
+                iconColor="#22C55E"
+                iconBg={ICON_COLORS.green}
+                label="Vibration"
+                showChevron={false}
+                rightElement={
+                  <Toggle value={vibrationEnabled} onValueChange={handleToggleVibration} />
+                }
+              />
             </View>
           </View>
         </FadeInView>
