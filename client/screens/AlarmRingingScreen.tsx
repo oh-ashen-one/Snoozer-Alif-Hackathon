@@ -278,7 +278,7 @@ export default function AlarmRingingScreen() {
   };
 
   const handleSnoozeConfirm = async () => {
-    if (snoozeText.toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase()) {
+    if (snoozeText.trim().toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase()) {
       if (__DEV__) console.log('ALARM: User chose snooze');
       shameTriggerPattern();
       await stopAlarm();
@@ -462,16 +462,16 @@ export default function AlarmRingingScreen() {
               <Pressable
                 style={[
                   styles.confirmSnoozeButton,
-                  snoozeText.toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonActive,
+                  snoozeText.trim().toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonActive,
                 ]}
                 onPress={handleSnoozeConfirm}
-                disabled={snoozeText.toLowerCase() !== SNOOZE_CONFIRMATION.toLowerCase()}
+                disabled={snoozeText.trim().toLowerCase() !== SNOOZE_CONFIRMATION.toLowerCase()}
                 testID="button-confirm-snooze"
               >
                 <ThemedText
                   style={[
                     styles.confirmSnoozeButtonText,
-                    snoozeText.toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonTextActive,
+                    snoozeText.trim().toLowerCase() === SNOOZE_CONFIRMATION.toLowerCase() && styles.confirmSnoozeButtonTextActive,
                   ]}
                 >
                   Confirm

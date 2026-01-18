@@ -69,7 +69,10 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
     }
   }, [onAlarmInterrupted]);
 
-  const startHeartbeat = useCallback((alarmData: AlarmData) => {
+  const startHeartbeat = useCallback(async (alarmData: AlarmData) => {
+    // Clear any stale alarm state first to prevent false positives
+    await clearAlarmState();
+    
     alarmStartTime.current = Date.now();
     
     saveAlarmState(alarmData);
@@ -77,7 +80,7 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
     heartbeatInterval.current = setInterval(() => {
       saveAlarmState(alarmData);
     }, HEARTBEAT_INTERVAL);
-  }, [saveAlarmState]);
+  }, [saveAlarmState, clearAlarmState]);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatInterval.current) {
@@ -150,7 +153,8 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
       appState.current = nextAppState;
     });
 
-    checkForInterruptedAlarm();
+    // Don't automatically check for interrupted alarms on mount
+    // This causes false positives - the feature needs more work
 
     return () => {
       subscription?.remove();
@@ -158,7 +162,7 @@ export function useAntiCheat({ onCheatDetected, onAlarmInterrupted }: UseAntiChe
         clearInterval(heartbeatInterval.current);
       }
     };
-  }, [checkForInterruptedAlarm]);
+  }, []);
 
   return {
     startHeartbeat,
