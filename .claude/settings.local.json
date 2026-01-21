@@ -55,7 +55,8 @@
       "WebFetch(domain:expo.dev)",
       "Bash(chmod:*)",
       "Bash(bun remove:*)",
-      "Bash(eas submit:*)"
+      "Bash(eas submit:*)",
+      "Bash(eas submission:list:*)"
     ]
   }
 }
