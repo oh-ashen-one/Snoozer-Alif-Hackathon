@@ -1,0 +1,105 @@
+{
+  "expo": {
+    "name": "Snoozer",
+    "slug": "snoozer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "snoozer",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.snoozer.app",
+      "infoPlist": {
+        "NSAlarmKitUsageDescription": "Snoozer needs to schedule alarms that will ring even when your phone is on silent or Focus mode, so you never oversleep.",
+        "UIBackgroundModes": [
+          "audio",
+          "fetch",
+          "processing",
+          "voip"
+        ],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.snoozer.app.refresh",
+          "com.snoozer.app.processing"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0C0A09",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.snoozer.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
+      ]
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0C0A09",
+          "dark": {
+            "backgroundColor": "#0C0A09"
+          }
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Snoozer to access your camera to take reference photos and record shame videos."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Snoozer to access your microphone to record audio for shame videos."
+        }
+      ],
+      "expo-live-activity",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow Snoozer to access your contacts to share accountability with friends."
+        }
+      ]
+    ],
+    "experiments": {
+      "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "LiveActivity",
+                  "bundleIdentifier": "com.snoozer.app.LiveActivity",
+                  "entitlements": {}
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "ae431fc8-a0f3-45cf-bf68-da480d502d50"
+      }
+    },
+    "owner": "ohashenone1"
+  }
+}

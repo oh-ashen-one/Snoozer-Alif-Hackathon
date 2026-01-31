@@ -1,0 +1,198 @@
+import React, { useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Animated,
+  Linking,
+  Alert,
+  Platform,
+} from 'react-native';
+import * as SMS from 'expo-sms';
+import { Svg, Path, Polyline } from 'react-native-svg';
+
+const MessageIcon = ({ size = 22, color = '#0C0A09' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+  </Svg>
+);
+
+const VolumeIcon = ({ size = 18, color = '#EF4444' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M11 5 6 9H2v6h4l5 4V5Z" />
+    <Path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    <Path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  </Svg>
+);
+
+const CheckIcon = ({ size = 16, color = '#22C55E' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+    <Polyline points="20 6 9 17 4 12" />
+  </Svg>
+);
+
+export default function AppleCashPrompt({
+  visible = false,
+  amount = 5,
+  recipientName = 'Buddy',
+  recipientPhone = '',
+  onPaymentSent,
+}) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (visible) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.08, duration: 500, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [visible]);
+
+  const handleSendPayment = async () => {
+    try {
+      const isAvailable = await SMS.isAvailableAsync();
+      
+      if (isAvailable) {
+        const { result } = await SMS.sendSMSAsync([recipientPhone], `$${amount}`);
+        if (result === 'sent' || result === 'unknown') {
+          onPaymentSent?.();
+        }
+      } else {
+        const smsUrl = Platform.select({
+          ios: `sms:${recipientPhone}&body=${encodeURIComponent(`$${amount}`)}`,
+          android: `sms:${recipientPhone}?body=${encodeURIComponent(`$${amount}`)}`,
+        });
+        
+        if (await Linking.canOpenURL(smsUrl)) {
+          await Linking.openURL(smsUrl);
+          onPaymentSent?.();
+        } else {
+          Alert.alert('Error', 'Cannot open Messages app');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not open Messages. Please send manually.');
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.overlay}>
+        <View style={styles.modal}>
+          <Animated.Text style={[styles.emoji, { transform: [{ scale: pulseAnim }] }]}>
+            😤
+          </Animated.Text>
+
+          <Text style={styles.title}>You snoozed.</Text>
+          <Text style={styles.subtitle}>Time to pay up.</Text>
+
+          <View style={styles.amountCard}>
+            <Text style={styles.amountLabel}>Send to {recipientName}</Text>
+            <View style={styles.amountRow}>
+              <Text style={styles.dollarSign}>$</Text>
+              <Animated.Text style={[styles.amount, { transform: [{ scale: pulseAnim }] }]}>
+                {amount}
+              </Animated.Text>
+            </View>
+            <View style={styles.methodBadge}>
+              <Text style={styles.methodText}>Apple Cash</Text>
+            </View>
+          </View>
+
+          <View style={styles.stepsContainer}>
+            <View style={styles.stepRow}>
+              <CheckIcon />
+              <Text style={styles.stepText}>Opens iMessage with "${amount}"</Text>
+            </View>
+            <View style={styles.stepRow}>
+              <CheckIcon />
+              <Text style={styles.stepText}>Apple auto-detects payment</Text>
+            </View>
+            <View style={styles.stepRow}>
+              <CheckIcon />
+              <Text style={styles.stepText}>{recipientName} receives instantly</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.payButton} onPress={handleSendPayment} activeOpacity={0.8}>
+            <MessageIcon />
+            <Text style={styles.payButtonText}>Send ${amount} via iMessage</Text>
+          </TouchableOpacity>
+
+          <View style={styles.warningRow}>
+            <VolumeIcon />
+            <Text style={styles.warningText}>Alarm keeps ringing until you pay</Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modal: {
+    backgroundColor: '#1C1917',
+    borderRadius: 24,
+    padding: 28,
+    width: '100%',
+    maxWidth: 360,
+    borderWidth: 2,
+    borderColor: '#EF4444',
+    alignItems: 'center',
+  },
+  emoji: { fontSize: 64, marginBottom: 12 },
+  title: { fontSize: 32, fontWeight: '800', color: '#FAFAF9', marginBottom: 4 },
+  subtitle: { fontSize: 18, color: '#78716C', marginBottom: 24 },
+  amountCard: {
+    backgroundColor: '#0C0A09',
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  amountLabel: { fontSize: 15, color: '#78716C', marginBottom: 12 },
+  amountRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  dollarSign: { fontSize: 32, fontWeight: '700', color: '#EF4444', marginTop: 8, marginRight: 2 },
+  amount: { fontSize: 80, fontWeight: '800', color: '#EF4444', lineHeight: 88 },
+  methodBadge: {
+    backgroundColor: '#292524',
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 12,
+  },
+  methodText: { fontSize: 14, color: '#FAFAF9', fontWeight: '500' },
+  stepsContainer: { width: '100%', marginBottom: 20 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  stepText: { fontSize: 14, color: '#A8A29E' },
+  payButton: {
+    backgroundColor: '#22C55E',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  payButtonText: { fontSize: 18, fontWeight: '700', color: '#0C0A09' },
+  warningRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  warningText: { fontSize: 14, color: '#EF4444', fontWeight: '500' },
+});

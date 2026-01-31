@@ -1,0 +1,571 @@
+/**
+ * PAYMENT PRESSURE SCREEN
+ * PaymentPressureScreen.jsx
+ * 
+ * ════════════════════════════════════════════════════════════════
+ * Makes those 2 taps (send + Face ID) feel URGENT
+ * 
+ * PRESSURE TACTICS:
+ * - Alarm keeps blaring (visual indicator)
+ * - Countdown timer to shame video
+ * - Escalating volume bar
+ * - Screen pulses red
+ * - Buddy is being notified NOW
+ * - Can't dismiss — must pay
+ * ════════════════════════════════════════════════════════════════
+ */
+
+import React, { useState, useEffect } from 'react';
+
+export default function PaymentPressureScreen() {
+  const [secondsLeft, setSecondsLeft] = useState(30);
+  const [volumeLevel, setVolumeLevel] = useState(70);
+  const [pulseRed, setPulseRed] = useState(false);
+  const [shameStage, setShameStage] = useState(0); // 0: warning, 1: sending, 2: sent
+
+  const paymentData = {
+    amount: 5,
+    recipient: 'Jake',
+    phone: '+1 (555) 123-4567',
+  };
+
+  // Countdown timer
+  useEffect(() => {
+    if (secondsLeft <= 0) {
+      setShameStage(2); // Shame video plays
+      return;
+    }
+    
+    const timer = setInterval(() => {
+      setSecondsLeft(s => s - 1);
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [secondsLeft]);
+
+  // Volume escalation
+  useEffect(() => {
+    const volumeTimer = setInterval(() => {
+      setVolumeLevel(v => Math.min(v + 2, 100));
+    }, 2000);
+    return () => clearInterval(volumeTimer);
+  }, []);
+
+  // Red pulse
+  useEffect(() => {
+    const pulseTimer = setInterval(() => {
+      setPulseRed(p => !p);
+    }, 500);
+    return () => clearInterval(pulseTimer);
+  }, []);
+
+  // Shame stages
+  useEffect(() => {
+    if (secondsLeft <= 20 && shameStage === 0) {
+      setShameStage(1); // "Notifying Jake..."
+    }
+  }, [secondsLeft]);
+
+  const getUrgencyColor = () => {
+    if (secondsLeft <= 10) return '#DC2626'; // Deep red
+    if (secondsLeft <= 20) return '#EF4444'; // Red
+    return '#F97316'; // Orange
+  };
+
+  const getUrgencyMessage = () => {
+    if (secondsLeft <= 5) return "SHAME VIDEO IMMINENT";
+    if (secondsLeft <= 10) return "LAST CHANCE";
+    if (secondsLeft <= 20) return "JAKE IS BEING NOTIFIED";
+    return "PAY NOW TO STOP ALARM";
+  };
+
+  return (
+    <div style={{
+      ...styles.container,
+      backgroundColor: pulseRed ? '#1A0505' : '#0C0A09',
+    }}>
+      {/* Pulsing red overlay */}
+      <div style={{
+        ...styles.redOverlay,
+        opacity: pulseRed ? 0.15 : 0.05,
+      }} />
+
+      {/* Alarm indicator - top bar */}
+      <div style={styles.alarmBar}>
+        <div style={styles.alarmDot} />
+        <span style={styles.alarmText}>ALARM RINGING</span>
+        <div style={styles.alarmDot} />
+      </div>
+
+      <div style={styles.content}>
+        {/* Countdown */}
+        <div style={styles.countdownSection}>
+          <span style={styles.countdownLabel}>Shame video plays in</span>
+          <div style={{
+            ...styles.countdownNumber,
+            color: getUrgencyColor(),
+            transform: secondsLeft <= 10 ? `scale(${pulseRed ? 1.1 : 1})` : 'scale(1)',
+          }}>
+            {secondsLeft}
+          </div>
+          <span style={styles.countdownUnit}>seconds</span>
+        </div>
+
+        {/* Urgency message */}
+        <div style={{
+          ...styles.urgencyBanner,
+          backgroundColor: `${getUrgencyColor()}20`,
+          borderColor: `${getUrgencyColor()}50`,
+        }}>
+          <span style={{...styles.urgencyText, color: getUrgencyColor()}}>
+            {getUrgencyMessage()}
+          </span>
+        </div>
+
+        {/* Volume bar */}
+        <div style={styles.volumeSection}>
+          <div style={styles.volumeHeader}>
+            <VolumeIcon color={volumeLevel >= 90 ? '#EF4444' : '#FB923C'} />
+            <span style={styles.volumeLabel}>
+              {volumeLevel >= 100 ? 'MAX VOLUME' : `Volume: ${volumeLevel}%`}
+            </span>
+          </div>
+          <div style={styles.volumeBarBg}>
+            <div style={{
+              ...styles.volumeBarFill,
+              width: `${volumeLevel}%`,
+              backgroundColor: volumeLevel >= 90 ? '#EF4444' : '#FB923C',
+            }} />
+          </div>
+        </div>
+
+        {/* Payment card */}
+        <div style={styles.paymentCard}>
+          <div style={styles.paymentHeader}>
+            <span style={styles.paymentLabel}>SEND NOW</span>
+          </div>
+          
+          <div style={styles.paymentAmount}>
+            <span style={styles.dollarSign}>$</span>
+            <span style={styles.amount}>{paymentData.amount}</span>
+          </div>
+          
+          <div style={styles.recipientRow}>
+            <span style={styles.recipientLabel}>to</span>
+            <span style={styles.recipientName}>{paymentData.recipient}</span>
+          </div>
+
+          <div style={styles.appleCashBadge}>
+            <AppleIcon size={16} />
+            <span>Apple Cash</span>
+          </div>
+        </div>
+
+        {/* Shame status */}
+        <div style={styles.shameStatus}>
+          {shameStage >= 1 && (
+            <div style={styles.shameItem}>
+              <div style={{
+                ...styles.shameDot,
+                backgroundColor: shameStage >= 2 ? '#EF4444' : '#FB923C',
+              }} />
+              <span style={styles.shameText}>
+                {shameStage >= 2 ? `${paymentData.recipient} notified of your failure` : `Notifying ${paymentData.recipient}...`}
+              </span>
+            </div>
+          )}
+          {shameStage >= 2 && (
+            <div style={styles.shameItem}>
+              <div style={{...styles.shameDot, backgroundColor: '#EF4444'}} />
+              <span style={styles.shameText}>Shame video playing at max volume</span>
+            </div>
+          )}
+        </div>
+
+        {/* What happens list */}
+        <div style={styles.consequencesList}>
+          <div style={styles.consequenceItem}>
+            <CheckIcon done={true} />
+            <span style={styles.consequenceText}>Alarm will stop</span>
+          </div>
+          <div style={styles.consequenceItem}>
+            <CheckIcon done={true} />
+            <span style={styles.consequenceText}>Shame video cancelled</span>
+          </div>
+          <div style={styles.consequenceItem}>
+            <CheckIcon done={true} />
+            <span style={styles.consequenceText}>{paymentData.recipient} gets ${paymentData.amount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom CTA */}
+      <div style={styles.footer}>
+        <button style={styles.payButton}>
+          <MessageIcon />
+          <span style={styles.payButtonText}>Open iMessage to Pay</span>
+        </button>
+        
+        <div style={styles.instructions}>
+          <div style={styles.instructionStep}>
+            <span style={styles.stepNum}>1</span>
+            <span style={styles.stepText}>Tap send in iMessage</span>
+          </div>
+          <div style={styles.instructionArrow}>→</div>
+          <div style={styles.instructionStep}>
+            <span style={styles.stepNum}>2</span>
+            <span style={styles.stepText}>Double-tap for Face ID</span>
+          </div>
+        </div>
+
+        <span style={styles.footerWarning}>
+          This is the only way to stop the alarm
+        </span>
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.05; }
+          50% { opacity: 0.15; }
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// ICONS
+// ════════════════════════════════════════════════════════════════
+
+const VolumeIcon = ({ size = 20, color = '#FB923C' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 5 6 9H2v6h4l5 4V5Z"/>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+  </svg>
+);
+
+const MessageIcon = ({ size = 22, color = '#0C0A09' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+  </svg>
+);
+
+const AppleIcon = ({ size = 16, color = '#FAFAF9' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+  </svg>
+);
+
+const CheckIcon = ({ done = false, size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={done ? '#22C55E' : '#57534E'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 6 9 17l-5-5"/>
+  </svg>
+);
+
+// ════════════════════════════════════════════════════════════════
+// STYLES
+// ════════════════════════════════════════════════════════════════
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+    overflow: 'hidden',
+    transition: 'background-color 0.3s ease',
+  },
+  redOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#EF4444',
+    pointerEvents: 'none',
+    transition: 'opacity 0.3s ease',
+  },
+
+  // Alarm bar
+  alarmBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#EF4444',
+    padding: '12px 20px',
+    position: 'relative',
+    zIndex: 1,
+  },
+  alarmDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FAFAF9',
+    animation: 'blink 0.5s ease-in-out infinite',
+  },
+  alarmText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FAFAF9',
+    letterSpacing: 2,
+  },
+
+  content: {
+    flex: 1,
+    padding: '24px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    position: 'relative',
+    zIndex: 1,
+  },
+
+  // Countdown
+  countdownSection: {
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  countdownLabel: {
+    fontSize: 14,
+    color: '#78716C',
+    display: 'block',
+    marginBottom: 4,
+  },
+  countdownNumber: {
+    fontSize: 96,
+    fontWeight: '800',
+    lineHeight: 1,
+    transition: 'transform 0.15s ease, color 0.3s ease',
+  },
+  countdownUnit: {
+    fontSize: 16,
+    color: '#78716C',
+    display: 'block',
+    marginTop: 4,
+  },
+
+  // Urgency banner
+  urgencyBanner: {
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderRadius: 8,
+    padding: '10px 20px',
+    marginBottom: 20,
+    animation: 'shake 0.5s ease-in-out infinite',
+  },
+  urgencyText: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+
+  // Volume
+  volumeSection: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  volumeHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  volumeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FB923C',
+  },
+  volumeBarBg: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#292524',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  volumeBarFill: {
+    height: '100%',
+    borderRadius: 4,
+    transition: 'width 0.5s ease, background-color 0.3s ease',
+  },
+
+  // Payment card
+  paymentCard: {
+    width: '100%',
+    backgroundColor: '#1C1917',
+    border: '2px solid #EF4444',
+    borderRadius: 20,
+    padding: 24,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  paymentHeader: {
+    marginBottom: 8,
+  },
+  paymentLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#EF4444',
+    letterSpacing: 2,
+  },
+  paymentAmount: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  dollarSign: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#FAFAF9',
+    marginTop: 8,
+  },
+  amount: {
+    fontSize: 80,
+    fontWeight: '800',
+    color: '#FAFAF9',
+    lineHeight: 1,
+  },
+  recipientRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  recipientLabel: {
+    fontSize: 16,
+    color: '#78716C',
+  },
+  recipientName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FAFAF9',
+  },
+  appleCashBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#292524',
+    borderRadius: 100,
+    padding: '8px 14px',
+    marginTop: 16,
+    fontSize: 13,
+    color: '#FAFAF9',
+  },
+
+  // Shame status
+  shameStatus: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  shameItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '8px 0',
+  },
+  shameDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    animation: 'blink 1s ease-in-out infinite',
+  },
+  shameText: {
+    fontSize: 14,
+    color: '#A8A29E',
+  },
+
+  // Consequences
+  consequencesList: {
+    width: '100%',
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    border: '1px solid rgba(34, 197, 94, 0.2)',
+    borderRadius: 14,
+    padding: 16,
+  },
+  consequenceItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+  },
+  consequenceText: {
+    fontSize: 14,
+    color: '#A8A29E',
+  },
+
+  // Footer
+  footer: {
+    padding: '16px 20px 32px',
+    position: 'relative',
+    zIndex: 1,
+  },
+  payButton: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#22C55E',
+    border: 'none',
+    borderRadius: 16,
+    padding: '20px 24px',
+    cursor: 'pointer',
+    marginBottom: 16,
+  },
+  payButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0C0A09',
+  },
+  instructions: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  instructionStep: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepNum: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#292524',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FAFAF9',
+  },
+  stepText: {
+    fontSize: 13,
+    color: '#78716C',
+  },
+  instructionArrow: {
+    fontSize: 14,
+    color: '#57534E',
+  },
+  footerWarning: {
+    display: 'block',
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '500',
+  },
+};

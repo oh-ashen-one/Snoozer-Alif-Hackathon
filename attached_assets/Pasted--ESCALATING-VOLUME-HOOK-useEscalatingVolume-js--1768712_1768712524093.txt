@@ -1,0 +1,213 @@
+/**
+ * ESCALATING VOLUME HOOK
+ * useEscalatingVolume.js
+ * 
+ * ════════════════════════════════════════════════════════════════
+ * FLOW DIAGRAM
+ * ════════════════════════════════════════════════════════════════
+ * 
+ *    Alarm starts
+ *         ↓
+ *    Volume: 50% ▓▓▓▓▓░░░░░
+ *         ↓ +30 seconds
+ *    Volume: 60% ▓▓▓▓▓▓░░░░
+ *         ↓ +30 seconds
+ *    Volume: 70% ▓▓▓▓▓▓▓░░░
+ *         ↓ +30 seconds
+ *    Volume: 80% ▓▓▓▓▓▓▓▓░░
+ *         ↓ +30 seconds
+ *    Volume: 90% ▓▓▓▓▓▓▓▓▓░
+ *         ↓ +30 seconds
+ *    Volume: 100% ▓▓▓▓▓▓▓▓▓▓ 🔊 MAX
+ *         ↓
+ *    Stays at max until dismissed
+ * 
+ * ════════════════════════════════════════════════════════════════
+ * CONFIG
+ * ════════════════════════════════════════════════════════════════
+ * 
+ * START_VOLUME: 0.5 (50%)
+ * MAX_VOLUME: 1.0 (100%)
+ * STEP_INTERVAL: 30 seconds
+ * STEP_AMOUNT: 0.1 (10%)
+ * TIME_TO_MAX: 2.5 minutes
+ * 
+ * ════════════════════════════════════════════════════════════════
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Audio } from 'expo-av';
+
+const START_VOLUME = 0.5;
+const MAX_VOLUME = 1.0;
+const STEP_INTERVAL = 30000; // 30 seconds
+const STEP_AMOUNT = 0.1;
+
+export function useEscalatingVolume(alarmSoundUri) {
+  const [volume, setVolume] = useState(START_VOLUME);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const soundRef = useRef(null);
+  const escalateInterval = useRef(null);
+
+  // Load sound
+  const loadSound = useCallback(async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
+
+      const { sound } = await Audio.Sound.createAsync(
+        alarmSoundUri || require('../assets/alarm.mp3'),
+        { 
+          isLooping: true, 
+          volume: START_VOLUME,
+          shouldPlay: false,
+        }
+      );
+
+      soundRef.current = sound;
+    } catch (error) {
+      console.error('Failed to load alarm sound:', error);
+    }
+  }, [alarmSoundUri]);
+
+  // Start alarm with escalating volume
+  const startAlarm = useCallback(async () => {
+    if (!soundRef.current) {
+      await loadSound();
+    }
+
+    setVolume(START_VOLUME);
+    setIsPlaying(true);
+
+    try {
+      await soundRef.current?.setVolumeAsync(START_VOLUME);
+      await soundRef.current?.playAsync();
+    } catch (error) {
+      console.error('Failed to play alarm:', error);
+    }
+
+    // Start escalation
+    escalateInterval.current = setInterval(async () => {
+      setVolume((prev) => {
+        const newVolume = Math.min(prev + STEP_AMOUNT, MAX_VOLUME);
+        
+        soundRef.current?.setVolumeAsync(newVolume).catch(console.error);
+        
+        if (newVolume >= MAX_VOLUME) {
+          clearInterval(escalateInterval.current);
+        }
+        
+        return newVolume;
+      });
+    }, STEP_INTERVAL);
+  }, [loadSound]);
+
+  // Stop alarm
+  const stopAlarm = useCallback(async () => {
+    clearInterval(escalateInterval.current);
+    setIsPlaying(false);
+    setVolume(START_VOLUME);
+
+    try {
+      await soundRef.current?.stopAsync();
+    } catch (error) {
+      console.error('Failed to stop alarm:', error);
+    }
+  }, []);
+
+  // Cleanup
+  useEffect(() => {
+    loadSound();
+
+    return () => {
+      clearInterval(escalateInterval.current);
+      soundRef.current?.unloadAsync();
+    };
+  }, [loadSound]);
+
+  return {
+    startAlarm,
+    stopAlarm,
+    volume,
+    isPlaying,
+    volumePercent: Math.round(volume * 100),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPONENT: VolumeIndicator.jsx
+// ═══════════════════════════════════════════════════════════════
+
+import { View, Text, StyleSheet } from 'react-native';
+
+export function VolumeIndicator({ volumePercent }) {
+  const bars = 10;
+  const filledBars = Math.round((volumePercent / 100) * bars);
+
+  return (
+    <View style={volumeStyles.container}>
+      <Text style={volumeStyles.icon}>🔊</Text>
+      <View style={volumeStyles.barsContainer}>
+        {Array.from({ length: bars }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              volumeStyles.bar,
+              i < filledBars ? volumeStyles.barFilled : volumeStyles.barEmpty,
+              i < filledBars && volumePercent >= 90 && volumeStyles.barMax,
+            ]}
+          />
+        ))}
+      </View>
+      <Text style={[
+        volumeStyles.percent,
+        volumePercent >= 90 && volumeStyles.percentMax,
+      ]}>
+        {volumePercent}%
+      </Text>
+    </View>
+  );
+}
+
+const volumeStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  icon: {
+    fontSize: 20,
+  },
+  barsContainer: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  bar: {
+    width: 6,
+    height: 20,
+    borderRadius: 3,
+  },
+  barEmpty: {
+    backgroundColor: '#292524',
+  },
+  barFilled: {
+    backgroundColor: '#FB923C',
+  },
+  barMax: {
+    backgroundColor: '#EF4444',
+  },
+  percent: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FB923C',
+    width: 45,
+  },
+  percentMax: {
+    color: '#EF4444',
+  },
+});

@@ -1,0 +1,214 @@
+/**
+ * PULSE BACKGROUND COMPONENT
+ * 
+ * Drop this behind any screen for ambient glow effect
+ * 
+ * Usage:
+ * <View style={{ flex: 1 }}>
+ *   <PulseBackground />
+ *   {/* Your content here */}
+ * </View>
+ */
+
+import React from 'react';
+import { View, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+export default function PulseBackground() {
+  return (
+    <View style={styles.container} pointerEvents="none">
+      {/* MAIN CENTER - Orange pulse */}
+      <PulseOrb
+        top="40%"
+        left="50%"
+        size={550}
+        color="251, 146, 60"
+        blur={90}
+        duration={5000}
+        ringCount={4}
+      />
+
+      {/* UPPER RIGHT - Red accent */}
+      <PulseOrb
+        top="8%"
+        left="75%"
+        size={400}
+        color="239, 68, 68"
+        blur={70}
+        duration={6000}
+        delay={500}
+        ringCount={2}
+      />
+
+      {/* LOWER LEFT - Green accent */}
+      <PulseOrb
+        top="80%"
+        left="20%"
+        size={380}
+        color="34, 197, 94"
+        blur={65}
+        duration={5500}
+        delay={1200}
+        ringCount={2}
+      />
+    </View>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// PULSE ORB COMPONENT
+// ════════════════════════════════════════════════════════════════
+
+function PulseOrb({ top, left, size, color, blur, duration, delay = 0, ringCount = 2 }) {
+  const pulseAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: duration / 2,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+          delay,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: duration / 2,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  const scale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1.15],
+  });
+
+  const opacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 0.7],
+  });
+
+  return (
+    <>
+      {/* Main glow */}
+      <Animated.View
+        style={[
+          styles.orb,
+          {
+            top,
+            left,
+            width: size,
+            height: size,
+            transform: [{ translateX: -size / 2 }, { translateY: -size / 2 }, { scale }],
+            opacity,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.orbInner,
+            {
+              backgroundColor: `rgba(${color}, 0.55)`,
+              shadowColor: `rgb(${color})`,
+              shadowRadius: blur,
+            },
+          ]}
+        />
+      </Animated.View>
+
+      {/* Rings */}
+      {Array.from({ length: ringCount }).map((_, i) => (
+        <PulseRing
+          key={i}
+          top={top}
+          left={left}
+          color={color}
+          duration={duration}
+          delay={delay + i * (duration / ringCount / 1.5)}
+        />
+      ))}
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// PULSE RING COMPONENT
+// ════════════════════════════════════════════════════════════════
+
+function PulseRing({ top, left, color, duration, delay }) {
+  const ringAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(ringAnim, {
+        toValue: 1,
+        duration,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+        delay,
+      })
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  const scale = ringAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 2.5],
+  });
+
+  const opacity = ringAnim.interpolate({
+    inputRange: [0, 0.7, 1],
+    outputRange: [0.5, 0.2, 0],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.ring,
+        {
+          top,
+          left,
+          borderColor: `rgba(${color}, 0.35)`,
+          transform: [{ translateX: -100 }, { translateY: -100 }, { scale }],
+          opacity,
+        },
+      ]}
+    />
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// STYLES
+// ════════════════════════════════════════════════════════════════
+
+const styles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  orb: {
+    position: 'absolute',
+    borderRadius: 9999,
+  },
+  orbInner: {
+    flex: 1,
+    borderRadius: 9999,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+  },
+  ring: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    borderWidth: 2,
+  },
+});

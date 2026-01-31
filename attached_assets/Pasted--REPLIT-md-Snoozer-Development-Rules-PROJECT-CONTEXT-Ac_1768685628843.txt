@@ -1,0 +1,248 @@
+# REPLIT.md — Snoozer Development Rules
+
+## PROJECT CONTEXT
+Accountability alarm app. Core loop: alarm rings → take proof photo in bathroom → dismiss. If snooze → shame video plays at max volume.
+
+Tech: Expo (React Native), speed > perfection.
+
+---
+
+## DESIGN TOKENS — USE EXACTLY
+
+bg: #0C0A09
+bgCard: #141211
+bgElevated: #1C1917
+border: #292524
+text: #FAFAF9
+textSecondary: #A8A29E
+textMuted: #78716C
+orange: #FB923C
+green: #22C55E
+red: #EF4444
+spacing: 4/8/12/16/24/32/48
+radius: 6/10/14/16/20/100(pill)
+
+---
+
+## UI DO's ✅
+
+### Screen Structure
+- SafeAreaView wrapper on every screen
+- backgroundColor: #0C0A09
+- 24px horizontal padding
+- Bottom CTA: 24px padding, 48px paddingBottom
+
+### Cards
+- backgroundColor: #1C1917
+- borderRadius: 16
+- borderWidth: 1
+- borderColor: #292524
+- padding: 16
+
+### Primary Buttons (MUST HAVE GLOW)
+- backgroundColor: #FB923C (or #22C55E for confirm)
+- borderRadius: 14
+- paddingVertical: 18
+- paddingHorizontal: 24
+- shadowColor: same as bg color
+- shadowOffset: { width: 0, height: 4 }
+- shadowOpacity: 0.3
+- shadowRadius: 24
+- elevation: 8
+
+### Secondary Buttons
+- backgroundColor: transparent
+- borderRadius: 14
+- borderWidth: 1
+- borderColor: #292524
+- paddingVertical: 16
+
+### Toggle Switch
+- width: 52, height: 32, borderRadius: 16
+- ON: backgroundColor #22C55E
+- OFF: backgroundColor #292524
+- Knob: 26x26, white, animated translateX
+
+### Day Pills
+- Unselected: #141211 bg, #57534E text
+- Selected: rgba(251,146,60,0.15) bg, rgba(251,146,60,0.3) border, #FB923C text
+
+### Active Badge
+- Pill shape with green dot
+- rgba(34,197,94,0.1) bg
+- 8px pulsing green dot
+- "Active" in #22C55E
+
+### Visual Hierarchy
+- ONE primary action per screen
+- Primary button at bottom, big and glowing
+- Secondary actions: outlined or smaller
+- Destructive actions: small, require confirmation
+
+### Touch Targets
+- Minimum 44x44 for all interactive elements
+- Buttons: 48-56px height
+
+---
+
+## UI DON'Ts ❌
+
+### Colors
+- ❌ Pure black #000000 — use #0C0A09
+- ❌ Pure white backgrounds
+- ❌ Blue/purple gradients
+- ❌ More than 3 accent colors per screen
+- ❌ Evenly distributed colors
+
+### Typography
+- ❌ Inter, Roboto, Arial fonts
+- ❌ More than 2 font weights per screen
+- ❌ Centered body text
+- ❌ Line height under 1.4
+
+### Layout
+- ❌ Buttons touching screen edges
+- ❌ Buttons without glow on primary actions
+- ❌ Touch targets under 44x44
+- ❌ Nested ScrollViews
+- ❌ No padding on cards
+
+### Code
+- ❌ Inline styles repeated — use StyleSheet.create
+- ❌ Hardcoded colors — use constants
+- ❌ Magic numbers — use spacing scale
+- ❌ Anonymous functions as props
+
+---
+
+## CODE DO's ✅
+
+### File Structure
+/src
+  /screens
+  /components
+  /hooks
+  /utils
+  /constants
+
+### StyleSheet Pattern
+Always use StyleSheet.create, never inline:
+```jsx
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0C0A09',
+  },
+});
+```
+
+### Storage Keys
+```jsx
+const KEYS = {
+  ALARMS: '@snoozer/alarms',
+  ONBOARDED: '@snoozer/onboarded',
+  REFERENCE_PHOTO: '@snoozer/reference_photo',
+  SHAME_VIDEO: '@snoozer/shame_video',
+};
+```
+
+### Camera Pattern
+```jsx
+const cameraRef = useRef(null);
+const photo = await cameraRef.current.takePictureAsync({
+  quality: 0.7,
+  base64: false,
+  skipProcessing: true,
+});
+```
+
+### Audio (MUST PLAY IN SILENT MODE)
+```jsx
+await Audio.setAudioModeAsync({
+  playsInSilentModeIOS: true,
+  staysActiveInBackground: true,
+});
+```
+
+---
+
+## CODE DON'Ts ❌
+
+- ❌ console.log in production
+- ❌ Hardcoded storage keys
+- ❌ Missing try/catch on async
+- ❌ Components over 200 lines
+- ❌ useEffect without dependency array
+- ❌ FlatList without keyExtractor
+
+---
+
+## SCREEN SPECS
+
+### HomeScreen
+- Header: greeting left, settings button right
+- Next alarm card: big time, countdown in orange, stakes preview
+- Stats row: 3 cards (streak, saved, buddy)
+- Alarm list: time, label, day pills, toggle
+- Bottom nav: 4 tabs
+
+### AddAlarmScreen
+- Progress dots (3)
+- Pill badge with flame
+- Title + subtitle
+- Time picker: hour/minute columns + AM/PM toggle
+- Day pills: S M T W T F S
+- Summary card
+- Continue button with orange glow
+
+### ReferencePhotoScreen
+- Progress dots (step 3/4)
+- Green pill badge
+- Title + subtitle
+- Tips cards with emoji
+- Camera with guide overlay
+- Capture button
+
+### RecordShameScreen
+- Front camera
+- Red record button
+- 15s timer
+- Preview → Retake/Use This
+
+### AlarmRingingScreen
+- Full screen takeover
+- Streak badge top
+- Time huge (64px)
+- Green hero card: "Prove you're up" + camera button
+- Small gray snooze button bottom
+- Snooze requires typing "I FAIL"
+
+### ProofCameraScreen
+- Camera with corner guides
+- Reference photo thumbnail overlay
+- Capture → Confirm dismisses alarm
+
+### ShamePlaybackScreen
+- Full screen video
+- Max volume, can't skip
+- Returns to AlarmRinging after
+
+---
+
+## V1 SCOPE
+
+IN: alarm, reference photo, shame video, proof dismiss, snooze punishment, data persistence
+
+OUT: buddy system, payments, external integrations, stats, streaks, AI matching
+
+---
+
+## PRIORITY
+
+1. Alarm fires
+2. Camera works
+3. Video plays
+4. Data persists
+5. Looks good
+
+Working ugly > Beautiful broken

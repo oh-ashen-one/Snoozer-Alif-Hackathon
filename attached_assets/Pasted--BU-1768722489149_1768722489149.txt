@@ -1,0 +1,42 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                         BUDDY SYSTEM FLOW                           │
+└─────────────────────────────────────────────────────────────────────┘
+
+  PERSON 1 (Inviter)                    PERSON 2 (Buddy)
+  ─────────────────                     ────────────────
+        │                                      │
+        ▼                                      │
+  ┌───────────┐                                │
+  │ Creates   │                                │
+  │ Account   │                                │
+  └─────┬─────┘                                │
+        │                                      │
+        ▼                                      │
+  ┌───────────┐    iMessage invite link        │
+  │ Invites   │ ──────────────────────────────►│
+  │ Buddy     │                                │
+  └─────┬─────┘                                ▼
+        │                               ┌───────────┐
+        │                               │ Clicks    │
+        │                               │ Link      │
+        │                               └─────┬─────┘
+        │                                     │
+        │                                     ▼
+        │                               ┌───────────┐
+        │                               │ Creates   │
+        │                               │ Account   │
+        │                               └─────┬─────┘
+        │                                     │
+        │         Auto-linked                 │
+        │◄────────────────────────────────────┤
+        │                                     │
+        ▼                                     ▼
+  ┌─────────────────────────────────────────────┐
+  │              BUDDIES LINKED                 │
+  │                                             │
+  │  • See each other's alarms                  │
+  │  • Get notified on snooze/wake              │
+  │  • Receive payments when buddy fails        │
+  │  • Widget shows buddy status                │
+  │  • Leaderboard / streak comparison          │
+  └─────────────────────────────────────────────┘

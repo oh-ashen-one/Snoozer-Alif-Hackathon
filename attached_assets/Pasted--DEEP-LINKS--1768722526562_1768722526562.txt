@@ -1,0 +1,104 @@
+// ════════════════════════════════════════════════════════════════
+// DEEP LINKS
+// ════════════════════════════════════════════════════════════════
+
+// Invite link (sent via iMessage)
+snoozer://invite?code=SNOOZE-ALEX-7X9K
+
+// Universal link fallback (opens App Store if not installed)
+https://snoozer.app/invite/SNOOZE-ALEX-7X9K
+
+// App link actions
+snoozer://buddy                  // Open buddy dashboard
+snoozer://buddy/poke             // Send poke to buddy
+snoozer://buddy/history          // View wake history
+snoozer://payments               // View payment history
+```
+
+---
+
+### 🛠️ Implementation Phases
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      IMPLEMENTATION PHASES                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+PHASE 1: Core Linking (Week 1)
+────────────────────────────────
+□ User authentication (phone # based)
+□ Invite generation + iMessage send
+□ Deep link handling
+□ Accept/decline invite screen
+□ Basic buddy linking in database
+□ Unlink buddy flow
+
+PHASE 2: Visibility (Week 2)
+────────────────────────────────
+□ Buddy dashboard screen
+□ See buddy's alarms
+□ See buddy's wake/snooze history
+□ Real-time status updates (awake/asleep)
+□ Push notifications on buddy events
+
+PHASE 3: Payments (Week 3)
+────────────────────────────────
+□ Apple Cash integration (iMessage trigger)
+□ Payment tracking in database
+□ Payment history screen
+□ "Pay now" enforcement on snooze
+□ Payment confirmation flow
+
+PHASE 4: Gamification (Week 4)
+────────────────────────────────
+□ Leaderboard / comparison view
+□ Streak tracking
+□ Weekly/monthly stats
+□ "Poke" feature
+□ Achievements / badges
+
+PHASE 5: Widgets (Week 5)
+────────────────────────────────
+□ Small widget (buddy status)
+□ Medium widget (status + next alarm)
+□ Large widget (full comparison)
+□ Widget refresh on events
+□ Tap actions from widget
+
+PHASE 6: Polish (Week 6)
+────────────────────────────────
+□ Onboarding flow refinement
+□ Edge cases (buddy unlinking mid-alarm)
+□ Offline handling
+□ Error states
+□ Analytics tracking
+```
+
+---
+
+### 🔐 Backend Requirements
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      BACKEND SERVICES                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+Option A: Firebase (Fastest)
+────────────────────────────
+- Auth: Phone authentication
+- Database: Firestore (real-time sync)
+- Functions: Cloud Functions (notifications, payment tracking)
+- Hosting: Dynamic links for invites
+
+Option B: Supabase (Open source)
+────────────────────────────
+- Auth: Phone/SMS auth
+- Database: Postgres with real-time subscriptions
+- Functions: Edge functions
+- Self-hostable
+
+REQUIRED SERVICES:
+────────────────────────────
+1. Real-time database (buddy status sync)
+2. Push notifications (APNs)
+3. SMS verification (Twilio)
+4. Deep linking (Branch.io or Firebase Dynamic Links)
+5. Analytics (Mixpanel/Amplitude)

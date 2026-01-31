@@ -1,0 +1,1196 @@
+/**
+ * CREATE ALARM SCREEN (IMPROVED)
+ * CreateAlarmScreen.jsx
+ * 
+ * Better time picker design - cleaner, more native feel
+ */
+
+import React, { useState } from 'react';
+
+// ════════════════════════════════════════════════════════════════
+// PROOF ACTIVITY OPTIONS
+// ════════════════════════════════════════════════════════════════
+
+const PROOF_ACTIVITIES = [
+  {
+    id: 'photo_activity',
+    name: 'Photo of Activity',
+    description: 'Take a pic doing your morning task',
+    icon: '📸',
+    ctaText: (activity) => `${activity} → Take Photo`,
+  },
+  {
+    id: 'steps',
+    name: 'Walk Steps',
+    description: 'Get moving to dismiss',
+    icon: '🚶',
+    ctaText: (count) => `Walk ${count} Steps`,
+  },
+  {
+    id: 'scan',
+    name: 'Scan QR Code',
+    description: 'Scan a code in another room',
+    icon: '📱',
+    ctaText: (location) => `Scan ${location} QR`,
+  },
+  {
+    id: 'math',
+    name: 'Math Problems',
+    description: 'Solve problems to wake your brain',
+    icon: '🧮',
+    ctaText: () => 'Solve Math Problem',
+  },
+  {
+    id: 'shake',
+    name: 'Shake Phone',
+    description: 'Shake vigorously to dismiss',
+    icon: '📳',
+    ctaText: (count) => `Shake ${count} Times`,
+  },
+];
+
+const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const AMOUNTS = [1, 5, 10, 20];
+
+// ════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ════════════════════════════════════════════════════════════════
+
+export default function CreateAlarmScreen() {
+  // Time state
+  const [hour, setHour] = useState(6);
+  const [minute, setMinute] = useState(0);
+  const [isPM, setIsPM] = useState(false);
+
+  // Repeat
+  const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]);
+
+  // Proof
+  const [selectedProof, setSelectedProof] = useState('photo_activity');
+  const [activityName, setActivityName] = useState('Brush teeth');
+  const [showProofPicker, setShowProofPicker] = useState(false);
+
+  // Punishment
+  const [moneyEnabled, setMoneyEnabled] = useState(true);
+  const [amount, setAmount] = useState(5);
+  const [shameVideo, setShameVideo] = useState(true);
+  const [buddyNotify, setBuddyNotify] = useState(true);
+  const [socialShame, setSocialShame] = useState(false);
+  const [antiCharity, setAntiCharity] = useState(false);
+
+  // Buddy
+  const buddy = { name: 'Jake', phone: '+1 (555) 123-4567' };
+
+  // Escalation
+  const [escalatingVolume, setEscalatingVolume] = useState(true);
+  const [wakeRecheck, setWakeRecheck] = useState(true);
+
+  const toggleDay = (index) => {
+    if (selectedDays.includes(index)) {
+      setSelectedDays(selectedDays.filter(d => d !== index));
+    } else {
+      setSelectedDays([...selectedDays, index].sort());
+    }
+  };
+
+  const getRepeatLabel = () => {
+    if (selectedDays.length === 0) return 'Once';
+    if (selectedDays.length === 7) return 'Every day';
+    if (JSON.stringify(selectedDays) === JSON.stringify([1,2,3,4,5])) return 'Weekdays';
+    if (JSON.stringify(selectedDays) === JSON.stringify([0,6])) return 'Weekends';
+    return selectedDays.map(d => DAY_NAMES[d]).join(', ');
+  };
+
+  const incrementHour = () => setHour(h => h >= 12 ? 1 : h + 1);
+  const decrementHour = () => setHour(h => h <= 1 ? 12 : h - 1);
+  const incrementMinute = () => setMinute(m => m >= 55 ? 0 : m + 5);
+  const decrementMinute = () => setMinute(m => m <= 0 ? 55 : m - 5);
+
+  const selectedProofData = PROOF_ACTIVITIES.find(p => p.id === selectedProof);
+  const ctaPreview = selectedProofData?.ctaText(activityName) || 'Dismiss';
+
+  return (
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <button style={styles.headerButton}>
+          <span style={styles.cancelText}>Cancel</span>
+        </button>
+        <h1 style={styles.headerTitle}>New Alarm</h1>
+        <button style={styles.headerButton}>
+          <span style={styles.saveText}>Save</span>
+        </button>
+      </div>
+
+      <div style={styles.scrollContent}>
+        {/* ════════════════════════════════════════════════════════
+            TIME PICKER - IMPROVED
+        ════════════════════════════════════════════════════════ */}
+        <div style={styles.timeSection}>
+          <div style={styles.timePickerCard}>
+            {/* Hour */}
+            <div style={styles.timeColumn}>
+              <button style={styles.timeArrow} onClick={incrementHour}>
+                <ChevronUpIcon />
+              </button>
+              <span style={styles.timeDigit}>
+                {hour.toString().padStart(2, '0')}
+              </span>
+              <button style={styles.timeArrow} onClick={decrementHour}>
+                <ChevronDownIcon />
+              </button>
+            </div>
+
+            {/* Colon */}
+            <span style={styles.timeColon}>:</span>
+
+            {/* Minute */}
+            <div style={styles.timeColumn}>
+              <button style={styles.timeArrow} onClick={incrementMinute}>
+                <ChevronUpIcon />
+              </button>
+              <span style={styles.timeDigit}>
+                {minute.toString().padStart(2, '0')}
+              </span>
+              <button style={styles.timeArrow} onClick={decrementMinute}>
+                <ChevronDownIcon />
+              </button>
+            </div>
+
+            {/* AM/PM */}
+            <div style={styles.periodColumn}>
+              <button 
+                style={{
+                  ...styles.periodOption,
+                  ...(isPM === false ? styles.periodOptionActive : {}),
+                }}
+                onClick={() => setIsPM(false)}
+              >
+                AM
+              </button>
+              <button 
+                style={{
+                  ...styles.periodOption,
+                  ...(isPM === true ? styles.periodOptionActive : {}),
+                }}
+                onClick={() => setIsPM(true)}
+              >
+                PM
+              </button>
+            </div>
+          </div>
+
+          {/* Repeat Days */}
+          <div style={styles.repeatSection}>
+            <div style={styles.daysRow}>
+              {DAYS.map((day, index) => (
+                <button
+                  key={index}
+                  style={{
+                    ...styles.dayButton,
+                    ...(selectedDays.includes(index) ? styles.dayButtonActive : {}),
+                  }}
+                  onClick={() => toggleDay(index)}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+            <span style={styles.repeatLabel}>{getRepeatLabel()}</span>
+          </div>
+        </div>
+
+        <div style={styles.divider} />
+
+        {/* ════════════════════════════════════════════════════════
+            PROOF OF WAKE
+        ════════════════════════════════════════════════════════ */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>PROOF OF WAKE</h2>
+          <p style={styles.sectionSub}>What you must do to dismiss</p>
+
+          <button 
+            style={styles.proofSelector}
+            onClick={() => setShowProofPicker(!showProofPicker)}
+          >
+            <span style={styles.proofEmoji}>{selectedProofData?.icon}</span>
+            <div style={styles.proofSelectorInfo}>
+              <span style={styles.proofSelectorName}>{selectedProofData?.name}</span>
+              <span style={styles.proofSelectorDesc}>{selectedProofData?.description}</span>
+            </div>
+            <ChevronRightIcon />
+          </button>
+
+          {showProofPicker && (
+            <div style={styles.proofOptions}>
+              {PROOF_ACTIVITIES.map((proof) => (
+                <button
+                  key={proof.id}
+                  style={{
+                    ...styles.proofOption,
+                    ...(selectedProof === proof.id ? styles.proofOptionActive : {}),
+                  }}
+                  onClick={() => {
+                    setSelectedProof(proof.id);
+                    setShowProofPicker(false);
+                  }}
+                >
+                  <span style={styles.proofOptionEmoji}>{proof.icon}</span>
+                  <span style={styles.proofOptionName}>{proof.name}</span>
+                  {selectedProof === proof.id && (
+                    <CheckIcon />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {selectedProof === 'photo_activity' && (
+            <div style={styles.activityInput}>
+              <label style={styles.inputLabel}>Activity name</label>
+              <input
+                type="text"
+                value={activityName}
+                onChange={(e) => setActivityName(e.target.value)}
+                placeholder="Brush teeth"
+                style={styles.textInput}
+              />
+              <div style={styles.suggestions}>
+                {['Brush teeth', 'Make coffee', 'At gym', 'Outside'].map(s => (
+                  <button
+                    key={s}
+                    style={{
+                      ...styles.suggestionChip,
+                      ...(activityName === s ? styles.suggestionChipActive : {}),
+                    }}
+                    onClick={() => setActivityName(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CTA Preview */}
+          <div style={styles.ctaPreviewBox}>
+            <span style={styles.ctaPreviewLabel}>Dismiss button:</span>
+            <div style={styles.ctaPreviewButton}>
+              I'M UP — {ctaPreview}
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.divider} />
+
+        {/* ════════════════════════════════════════════════════════
+            PUNISHMENT
+        ════════════════════════════════════════════════════════ */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>PUNISHMENT</h2>
+          <p style={styles.sectionSub}>What happens when you snooze</p>
+
+          {/* 1. MONEY STAKES */}
+          <div style={styles.punishmentCard}>
+            <div style={styles.punishmentHeader}>
+              <span style={styles.punishmentEmoji}>💸</span>
+              <div style={styles.punishmentInfo}>
+                <span style={styles.punishmentTitle}>Money Stakes</span>
+                <span style={styles.punishmentDesc}>Pay your buddy via Apple Cash</span>
+              </div>
+              <button
+                style={{
+                  ...styles.toggle,
+                  backgroundColor: moneyEnabled ? '#22C55E' : '#292524',
+                }}
+                onClick={() => setMoneyEnabled(!moneyEnabled)}
+              >
+                <div style={{
+                  ...styles.toggleKnob,
+                  transform: moneyEnabled ? 'translateX(20px)' : 'translateX(0)',
+                }} />
+              </button>
+            </div>
+
+            {/* Amount selector - only show if enabled */}
+            {moneyEnabled && (
+              <div style={styles.punishmentExpanded}>
+                <div style={styles.amountRow}>
+                  {AMOUNTS.map((amt) => (
+                    <button
+                      key={amt}
+                      style={{
+                        ...styles.amountButton,
+                        ...(amount === amt ? styles.amountButtonActive : {}),
+                      }}
+                      onClick={() => setAmount(amt)}
+                    >
+                      ${amt}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={styles.recipientCard}>
+                  <div style={styles.recipientAvatar}>{buddy.name[0]}</div>
+                  <div style={styles.recipientInfo}>
+                    <span style={styles.recipientLabel}>Paid to</span>
+                    <span style={styles.recipientName}>{buddy.name}</span>
+                  </div>
+                  <button style={styles.changeBtn}>Change</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. SHAME VIDEO */}
+          <div style={styles.punishmentCard}>
+            <div style={styles.punishmentHeader}>
+              <span style={styles.punishmentEmoji}>📹</span>
+              <div style={styles.punishmentInfo}>
+                <span style={styles.punishmentTitle}>Shame Video</span>
+                <span style={styles.punishmentDesc}>Plays embarrassing video at MAX volume</span>
+              </div>
+              <button
+                style={{
+                  ...styles.toggle,
+                  backgroundColor: shameVideo ? '#22C55E' : '#292524',
+                }}
+                onClick={() => setShameVideo(!shameVideo)}
+              >
+                <div style={{
+                  ...styles.toggleKnob,
+                  transform: shameVideo ? 'translateX(20px)' : 'translateX(0)',
+                }} />
+              </button>
+            </div>
+
+            {shameVideo && (
+              <div style={styles.punishmentExpanded}>
+                <button style={styles.recordVideoBtn}>
+                  <span>🎬</span>
+                  <span>Record Shame Video</span>
+                  <ChevronRightIcon />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 3. BUDDY NOTIFICATION */}
+          <div style={styles.punishmentCard}>
+            <div style={styles.punishmentHeader}>
+              <span style={styles.punishmentEmoji}>📱</span>
+              <div style={styles.punishmentInfo}>
+                <span style={styles.punishmentTitle}>Buddy Notification</span>
+                <span style={styles.punishmentDesc}>Text your buddy that you failed</span>
+              </div>
+              <button
+                style={{
+                  ...styles.toggle,
+                  backgroundColor: buddyNotify ? '#22C55E' : '#292524',
+                }}
+                onClick={() => setBuddyNotify(!buddyNotify)}
+              >
+                <div style={{
+                  ...styles.toggleKnob,
+                  transform: buddyNotify ? 'translateX(20px)' : 'translateX(0)',
+                }} />
+              </button>
+            </div>
+
+            {buddyNotify && (
+              <div style={styles.punishmentExpanded}>
+                <div style={styles.messagePreview}>
+                  <span style={styles.messagePreviewLabel}>They'll receive:</span>
+                  <div style={styles.messagePreviewBubble}>
+                    🚨 {buddy.name}, your buddy snoozed at 6:00 AM! They owe you.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 4. SOCIAL SHAME */}
+          <div style={styles.punishmentCard}>
+            <div style={styles.punishmentHeader}>
+              <span style={styles.punishmentEmoji}>👥</span>
+              <div style={styles.punishmentInfo}>
+                <span style={styles.punishmentTitle}>Social Shame</span>
+                <span style={styles.punishmentDesc}>Post to group chat or social media</span>
+              </div>
+              <button
+                style={{
+                  ...styles.toggle,
+                  backgroundColor: socialShame ? '#22C55E' : '#292524',
+                }}
+                onClick={() => setSocialShame(!socialShame)}
+              >
+                <div style={{
+                  ...styles.toggleKnob,
+                  transform: socialShame ? 'translateX(20px)' : 'translateX(0)',
+                }} />
+              </button>
+            </div>
+
+            {socialShame && (
+              <div style={styles.punishmentExpanded}>
+                <button style={styles.selectGroupBtn}>
+                  <span>💬</span>
+                  <span>Select Group Chat</span>
+                  <ChevronRightIcon />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 5. CHARITY DONATION */}
+          <div style={styles.punishmentCard}>
+            <div style={styles.punishmentHeader}>
+              <span style={styles.punishmentEmoji}>🎗️</span>
+              <div style={styles.punishmentInfo}>
+                <span style={styles.punishmentTitle}>Anti-Charity</span>
+                <span style={styles.punishmentDesc}>Donate to a cause you hate</span>
+              </div>
+              <button
+                style={{
+                  ...styles.toggle,
+                  backgroundColor: antiCharity ? '#22C55E' : '#292524',
+                }}
+                onClick={() => setAntiCharity(!antiCharity)}
+              >
+                <div style={{
+                  ...styles.toggleKnob,
+                  transform: antiCharity ? 'translateX(20px)' : 'translateX(0)',
+                }} />
+              </button>
+            </div>
+
+            {antiCharity && (
+              <div style={styles.punishmentExpanded}>
+                <button style={styles.selectCharityBtn}>
+                  <span>Choose organization...</span>
+                  <ChevronRightIcon />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Stakes tip */}
+          <div style={styles.stakesHint}>
+            <span>💡</span>
+            <span style={styles.stakesHintText}>
+              <strong>More punishments = more motivation.</strong> Users with 3+ punishments enabled wake up 4x more consistently.
+            </span>
+          </div>
+
+          {/* No punishments warning */}
+          {!moneyEnabled && !shameVideo && !buddyNotify && !socialShame && !antiCharity && (
+            <div style={styles.noPunishmentWarning}>
+              <span style={styles.warningIcon}>⚠️</span>
+              <span style={styles.warningText}>
+                No punishments? You might as well use the default alarm app 😅
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div style={styles.divider} />
+
+        {/* ════════════════════════════════════════════════════════
+            ESCALATION
+        ════════════════════════════════════════════════════════ */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>ESCALATION</h2>
+          <p style={styles.sectionSub}>Extra pressure to wake up</p>
+
+          <ToggleRow
+            icon="🔊"
+            title="Escalating Volume"
+            subtitle="Starts soft, gets louder over time"
+            value={escalatingVolume}
+            onChange={() => setEscalatingVolume(!escalatingVolume)}
+          />
+          <ToggleRow
+            icon="⏰"
+            title="5-Min Recheck"
+            subtitle="Verify you're still awake after 5 min"
+            value={wakeRecheck}
+            onChange={() => setWakeRecheck(!wakeRecheck)}
+          />
+        </div>
+
+        {/* Summary */}
+        <div style={styles.summaryCard}>
+          <h3 style={styles.summaryTitle}>Summary</h3>
+          <div style={styles.summaryRow}>
+            <span style={styles.summaryLabel}>Time</span>
+            <span style={styles.summaryValue}>
+              {hour}:{minute.toString().padStart(2, '0')} {isPM ? 'PM' : 'AM'}
+            </span>
+          </div>
+          <div style={styles.summaryRow}>
+            <span style={styles.summaryLabel}>Repeat</span>
+            <span style={styles.summaryValue}>{getRepeatLabel()}</span>
+          </div>
+          <div style={styles.summaryRow}>
+            <span style={styles.summaryLabel}>Dismiss</span>
+            <span style={styles.summaryValue}>{selectedProofData?.name}</span>
+          </div>
+          <div style={styles.summaryRow}>
+            <span style={styles.summaryLabel}>Penalty</span>
+            <span style={styles.summaryValue}>
+              {[
+                moneyEnabled && `$${amount}`,
+                shameVideo && '📹',
+                buddyNotify && '📱',
+                socialShame && '👥',
+                antiCharity && '🎗️',
+              ].filter(Boolean).join(' + ') || 'None'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// TOGGLE ROW COMPONENT
+// ════════════════════════════════════════════════════════════════
+
+function ToggleRow({ icon, title, subtitle, value, onChange }) {
+  return (
+    <div style={styles.toggleRow}>
+      <span style={styles.toggleIcon}>{icon}</span>
+      <div style={styles.toggleInfo}>
+        <span style={styles.toggleTitle}>{title}</span>
+        <span style={styles.toggleSubtitle}>{subtitle}</span>
+      </div>
+      <button
+        style={{
+          ...styles.toggle,
+          backgroundColor: value ? '#22C55E' : '#292524',
+        }}
+        onClick={onChange}
+      >
+        <div style={{
+          ...styles.toggleKnob,
+          transform: value ? 'translateX(20px)' : 'translateX(0)',
+        }} />
+      </button>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// ICONS
+// ════════════════════════════════════════════════════════════════
+
+const ChevronUpIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m18 15-6-6-6 6"/>
+  </svg>
+);
+
+const ChevronDownIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m6 9 6 6 6-6"/>
+  </svg>
+);
+
+const ChevronRightIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#78716C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m9 18 6-6-6-6"/>
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FB923C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+
+// ════════════════════════════════════════════════════════════════
+// STYLES
+// ════════════════════════════════════════════════════════════════
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#0C0A09',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  
+  // Header
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '16px 20px',
+    borderBottom: '1px solid #292524',
+    position: 'sticky',
+    top: 0,
+    backgroundColor: '#0C0A09',
+    zIndex: 10,
+  },
+  headerButton: {
+    background: 'none',
+    border: 'none',
+    padding: '8px 0',
+    cursor: 'pointer',
+    minWidth: 60,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: '#78716C',
+  },
+  saveText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FB923C',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    margin: 0,
+  },
+
+  scrollContent: {
+    flex: 1,
+    padding: '20px',
+    overflowY: 'auto',
+  },
+
+  // TIME SECTION
+  timeSection: {
+    marginBottom: 8,
+  },
+  timePickerCard: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#1C1917',
+    borderRadius: 20,
+    padding: '24px 20px',
+    marginBottom: 20,
+  },
+  timeColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timeArrow: {
+    background: 'none',
+    border: 'none',
+    padding: 8,
+    cursor: 'pointer',
+    borderRadius: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timeDigit: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: '#FAFAF9',
+    lineHeight: 1,
+    minWidth: 90,
+    textAlign: 'center',
+  },
+  timeColon: {
+    fontSize: 56,
+    fontWeight: '700',
+    color: '#57534E',
+    marginTop: -10,
+  },
+  periodColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    marginLeft: 12,
+  },
+  periodOption: {
+    padding: '12px 16px',
+    backgroundColor: '#292524',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#78716C',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  periodOptionActive: {
+    backgroundColor: '#FB923C',
+    color: '#0C0A09',
+  },
+
+  // Repeat
+  repeatSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 10,
+  },
+  daysRow: {
+    display: 'flex',
+    gap: 8,
+  },
+  dayButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#1C1917',
+    border: '1px solid #292524',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#78716C',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  dayButtonActive: {
+    backgroundColor: '#FB923C',
+    borderColor: '#FB923C',
+    color: '#0C0A09',
+  },
+  repeatLabel: {
+    fontSize: 14,
+    color: '#78716C',
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#292524',
+    margin: '24px 0',
+  },
+
+  // SECTIONS
+  section: {
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#78716C',
+    letterSpacing: 1,
+    margin: '0 0 4px 0',
+  },
+  sectionSub: {
+    fontSize: 14,
+    color: '#57534E',
+    margin: '0 0 16px 0',
+  },
+
+  // Proof selector
+  proofSelector: {
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: '#1C1917',
+    border: '1px solid #292524',
+    borderRadius: 14,
+    padding: '14px 16px',
+    cursor: 'pointer',
+    gap: 14,
+    boxSizing: 'border-box',
+  },
+  proofEmoji: {
+    fontSize: 28,
+  },
+  proofSelectorInfo: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    textAlign: 'left',
+  },
+  proofSelectorName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FAFAF9',
+  },
+  proofSelectorDesc: {
+    fontSize: 13,
+    color: '#78716C',
+  },
+  proofOptions: {
+    backgroundColor: '#1C1917',
+    borderRadius: 14,
+    marginTop: 10,
+    overflow: 'hidden',
+    border: '1px solid #292524',
+  },
+  proofOption: {
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    padding: '14px 16px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid #292524',
+    cursor: 'pointer',
+    gap: 12,
+    boxSizing: 'border-box',
+  },
+  proofOptionActive: {
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+  },
+  proofOptionEmoji: {
+    fontSize: 22,
+  },
+  proofOptionName: {
+    flex: 1,
+    fontSize: 15,
+    color: '#FAFAF9',
+    textAlign: 'left',
+  },
+
+  // Activity input
+  activityInput: {
+    marginTop: 16,
+  },
+  inputLabel: {
+    display: 'block',
+    fontSize: 13,
+    color: '#A8A29E',
+    marginBottom: 8,
+  },
+  textInput: {
+    width: '100%',
+    backgroundColor: '#1C1917',
+    border: '1px solid #292524',
+    borderRadius: 12,
+    padding: '14px 16px',
+    fontSize: 16,
+    color: '#FAFAF9',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  suggestions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+  },
+  suggestionChip: {
+    padding: '8px 14px',
+    backgroundColor: '#292524',
+    border: 'none',
+    borderRadius: 100,
+    fontSize: 13,
+    color: '#A8A29E',
+    cursor: 'pointer',
+  },
+  suggestionChipActive: {
+    backgroundColor: '#FB923C',
+    color: '#0C0A09',
+  },
+
+  // CTA Preview
+  ctaPreviewBox: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    border: '1px solid rgba(34, 197, 94, 0.25)',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 16,
+  },
+  ctaPreviewLabel: {
+    fontSize: 12,
+    color: '#78716C',
+    display: 'block',
+    marginBottom: 10,
+  },
+  ctaPreviewButton: {
+    backgroundColor: '#22C55E',
+    borderRadius: 12,
+    padding: '14px 16px',
+    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0C0A09',
+  },
+
+  // Amount
+  amountRow: {
+    display: 'flex',
+    gap: 10,
+    marginBottom: 12,
+  },
+  amountButton: {
+    flex: 1,
+    padding: '14px 10px',
+    backgroundColor: '#292524',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  amountButtonActive: {
+    backgroundColor: '#FB923C',
+    color: '#0C0A09',
+  },
+
+  // Punishment cards
+  punishmentCard: {
+    backgroundColor: '#1C1917',
+    border: '1px solid #292524',
+    borderRadius: 14,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  punishmentHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '14px 16px',
+    gap: 12,
+  },
+  punishmentEmoji: {
+    fontSize: 26,
+  },
+  punishmentInfo: {
+    flex: 1,
+  },
+  punishmentTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    display: 'block',
+  },
+  punishmentDesc: {
+    fontSize: 12,
+    color: '#78716C',
+  },
+  punishmentExpanded: {
+    padding: '0 16px 16px',
+    borderTop: '1px solid #292524',
+    paddingTop: 14,
+  },
+
+  // Record/select buttons
+  recordVideoBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    padding: '12px 14px',
+    backgroundColor: '#292524',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 14,
+    color: '#FAFAF9',
+    cursor: 'pointer',
+  },
+  selectGroupBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    padding: '12px 14px',
+    backgroundColor: '#292524',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 14,
+    color: '#FAFAF9',
+    cursor: 'pointer',
+  },
+  selectCharityBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    padding: '12px 14px',
+    backgroundColor: '#292524',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 14,
+    color: '#78716C',
+    cursor: 'pointer',
+  },
+
+  // Message preview
+  messagePreview: {
+    marginTop: 4,
+  },
+  messagePreviewLabel: {
+    fontSize: 11,
+    color: '#78716C',
+    display: 'block',
+    marginBottom: 8,
+  },
+  messagePreviewBubble: {
+    backgroundColor: '#22C55E',
+    borderRadius: 12,
+    borderBottomLeftRadius: 4,
+    padding: '10px 12px',
+    fontSize: 13,
+    color: '#FAFAF9',
+    lineHeight: 1.4,
+  },
+
+  // No punishment warning
+  noPunishmentWarning: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    border: '1px solid rgba(239, 68, 68, 0.3)',
+    borderRadius: 12,
+    padding: '14px 16px',
+    marginTop: 8,
+  },
+  warningIcon: {
+    fontSize: 20,
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#EF4444',
+    lineHeight: 1.4,
+  },
+
+  stakesHint: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 16,
+    padding: '12px 14px',
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+    borderRadius: 10,
+  },
+  stakesHintText: {
+    fontSize: 13,
+    color: '#A8A29E',
+    lineHeight: 1.4,
+  },
+
+  // Recipient
+  recipientCard: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#292524',
+    borderRadius: 10,
+    padding: '10px 12px',
+    gap: 12,
+    marginTop: 10,
+  },
+  recipientAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FB923C',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0C0A09',
+  },
+  recipientInfo: {
+    flex: 1,
+  },
+  recipientLabel: {
+    fontSize: 12,
+    color: '#78716C',
+    display: 'block',
+  },
+  recipientName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FAFAF9',
+  },
+  changeBtn: {
+    padding: '8px 12px',
+    backgroundColor: '#1C1917',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#A8A29E',
+    cursor: 'pointer',
+  },
+
+  // Toggle rows
+  toggleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#1C1917',
+    border: '1px solid #292524',
+    borderRadius: 14,
+    padding: '14px 16px',
+    marginBottom: 8,
+    gap: 14,
+  },
+  toggleIcon: {
+    fontSize: 24,
+  },
+  toggleInfo: {
+    flex: 1,
+  },
+  toggleTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    display: 'block',
+  },
+  toggleSubtitle: {
+    fontSize: 12,
+    color: '#78716C',
+  },
+  toggle: {
+    width: 52,
+    height: 32,
+    borderRadius: 16,
+    border: 'none',
+    padding: 2,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    transition: 'background-color 0.2s ease',
+  },
+  toggleKnob: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FAFAF9',
+    transition: 'transform 0.2s ease',
+  },
+
+  // Summary
+  summaryCard: {
+    backgroundColor: '#1C1917',
+    border: '1px solid #292524',
+    borderRadius: 16,
+    padding: '16px 18px',
+    marginTop: 24,
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FAFAF9',
+    margin: '0 0 12px 0',
+  },
+  summaryRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '10px 0',
+    borderBottom: '1px solid #292524',
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: '#78716C',
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FAFAF9',
+  },
+};
