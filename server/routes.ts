@@ -4,7 +4,14 @@ import { db } from "./db";
 import { appUsers, invites, buddyPairs, shameVideos, punishmentContacts } from "../shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 import OpenAI from "openai";
-import { verifyProofRateLimit } from "./middleware/rateLimit";
+import { verifyProofRateLimit, rateLimit } from "./middleware/rateLimit";
+
+// Rate limit for data storage endpoints (video/contacts) - prevent abuse
+const dataStorageRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  message: "Too many data storage requests. Please wait.",
+});
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -492,7 +499,8 @@ Respond with ONLY this JSON format:
   // =====================
 
   // POST /api/shame-video - Upload or update shame video (device-based, no auth required)
-  app.post("/api/shame-video", async (req: Request, res: Response) => {
+  // Rate limited to prevent abuse
+  app.post("/api/shame-video", dataStorageRateLimit, async (req: Request, res: Response) => {
     try {
       const { deviceId, videoData, mimeType } = req.body;
 
@@ -591,7 +599,8 @@ Respond with ONLY this JSON format:
   // ============ PUNISHMENT CONTACTS API ============
 
   // POST /api/punishment-contacts - Save/update punishment contacts
-  app.post("/api/punishment-contacts", async (req: Request, res: Response) => {
+  // Rate limited to prevent abuse
+  app.post("/api/punishment-contacts", dataStorageRateLimit, async (req: Request, res: Response) => {
     try {
       const {
         deviceId,
